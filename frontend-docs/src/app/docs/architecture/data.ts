@@ -1,0 +1,238 @@
+// Mermaid diagrams for Architecture page
+
+export const systemArchitectureDiagram = `
+sequenceDiagram
+    participant P1 as Hospital A (Requester)
+    participant GW as WAH4PC Gateway
+    participant P2 as Laboratory B (Target)
+
+    rect rgb(240, 249, 255)
+        Note over P1,P2: Provider Request Flow
+        P1->>GW: POST /api/v1/fhir/request/Patient
+        GW->>GW: Validate Providers
+        GW->>GW: Create Transaction
+        GW->>P2: POST /fhir/process-query
+        P2-->>GW: 200 OK
+        GW-->>P1: 202 Accepted (Transaction ID)
+    end
+
+    rect rgb(240, 253, 244)
+        Note over P1,P2: Provider Response Flow
+        P2->>GW: POST /api/v1/fhir/receive/Patient
+        GW->>GW: Update Transaction Status
+        GW->>P1: POST /fhir/receive-results
+        P1-->>GW: 200 OK
+        GW-->>P2: 200 OK
+    end
+`;
+
+export const layeredArchitectureDiagram = `
+sequenceDiagram
+    participant C as Client Request
+    participant R as Router
+    participant H as Handler
+    participant S as Service
+    participant Repo as Repository
+    participant DB as JSON Storage
+
+    rect rgb(250, 245, 255)
+        Note over C,DB: Request Processing Pipeline
+        C->>R: HTTP Request
+        R->>R: Apply Middleware (CORS, Logging)
+        R->>H: Route to Handler
+        H->>H: Decode JSON, Validate Input
+        H->>S: Call Service Method
+        S->>S: Execute Business Logic
+        S->>Repo: Data Operation
+        Repo->>DB: Read/Write JSON File
+        DB-->>Repo: Data
+        Repo-->>S: Entity
+        S-->>H: Result
+        H-->>C: HTTP Response
+    end
+`;
+
+export const transactionFlowDiagram = `
+sequenceDiagram
+    participant R as Requester (Hospital A)
+    participant G as Gateway
+    participant T as Target (Lab B)
+
+    rect rgb(240, 249, 255)
+        Note over R,T: Phase 1 - Query Initiation
+        R->>+G: POST /api/v1/fhir/request/Patient
+        G->>G: Validate Providers
+        G->>G: Create Transaction (PENDING)
+        G->>+T: POST /fhir/process-query
+        T-->>-G: 200 OK (Acknowledged)
+        G-->>-R: 202 Accepted (Transaction ID)
+    end
+
+    rect rgb(254, 252, 232)
+        Note over R,T: Phase 2 - Async Data Processing
+        T->>T: Fetch Patient Data
+        T->>T: Prepare FHIR Bundle
+    end
+
+    rect rgb(240, 253, 244)
+        Note over R,T: Phase 3 - Data Relay
+        T->>+G: POST /api/v1/fhir/receive/Patient
+        G->>G: Update Status (RECEIVED)
+        G->>+R: POST /fhir/receive-results
+        R-->>-G: 200 OK (Data Received)
+        G->>G: Update Status (COMPLETED)
+        G-->>-T: 200 OK
+    end
+`;
+
+export const transactionStatesDiagram = `
+sequenceDiagram
+    participant TX as Transaction
+    participant S as Status
+
+    rect rgb(254, 252, 232)
+        Note over TX,S: State Transitions
+        TX->>S: Transaction Created
+        S->>S: Status = PENDING
+    end
+
+    alt Target sends data successfully
+        rect rgb(240, 249, 255)
+            TX->>S: Target responds
+            S->>S: Status = RECEIVED
+        end
+        alt Requester acknowledges
+            rect rgb(240, 253, 244)
+                TX->>S: Requester confirms
+                S->>S: Status = COMPLETED
+            end
+        else Requester unreachable
+            rect rgb(254, 242, 242)
+                TX->>S: Delivery failed
+                S->>S: Status = FAILED
+            end
+        end
+    else Target unreachable
+        rect rgb(254, 242, 242)
+            TX->>S: Forward failed
+            S->>S: Status = FAILED
+        end
+    end
+`;
+
+// Static data for tables and cards
+
+export interface TransactionStateData {
+  status: string;
+  statusColor: string;
+  description: string;
+  nextStates: string;
+  [key: string]: unknown;
+}
+
+export const transactionStatesData: TransactionStateData[] = [
+  {
+    status: "PENDING",
+    statusColor: "bg-yellow-100 text-yellow-800",
+    description: "Request sent to target, awaiting response",
+    nextStates: "RECEIVED, FAILED",
+  },
+  {
+    status: "RECEIVED",
+    statusColor: "bg-blue-100 text-blue-800",
+    description: "Target sent data, relaying to requester",
+    nextStates: "COMPLETED, FAILED",
+  },
+  {
+    status: "COMPLETED",
+    statusColor: "bg-green-100 text-green-800",
+    description: "Requester acknowledged receipt",
+    nextStates: "-",
+  },
+  {
+    status: "FAILED",
+    statusColor: "bg-red-100 text-red-800",
+    description: "Provider unreachable or error occurred",
+    nextStates: "-",
+  },
+];
+
+export const architectureLayers = [
+  {
+    iconName: "Server" as const,
+    title: "Router Layer",
+    description: "HTTP routing and middleware (CORS, logging)",
+  },
+  {
+    iconName: "ArrowRightLeft" as const,
+    title: "Handler Layer",
+    description: "Request/response processing and validation",
+  },
+  {
+    iconName: "FileJson" as const,
+    title: "Service Layer",
+    description: "Business logic and orchestration",
+  },
+  {
+    iconName: "Database" as const,
+    title: "Repository Layer",
+    description: "Generic JSON file persistence",
+  },
+] as const;
+
+export const designPrinciples = [
+  {
+    letter: "S",
+    title: "Single Responsibility",
+    description: "Handlers handle HTTP, Services handle logic, Repos handle data.",
+  },
+  {
+    letter: "O",
+    title: "Open/Closed",
+    description: "Generic repository allows new entity types without modification.",
+  },
+  {
+    letter: "D",
+    title: "Dependency Inversion",
+    description: "Services depend on Repository interfaces, not concrete implementations.",
+  },
+] as const;
+
+export const keyPoints = [
+  "The requester receives a transaction ID immediately (202 Accepted)",
+  "Data processing happens asynchronously at the target",
+  "The gateway acts as a relay, never storing FHIR data",
+  "Transaction status is tracked throughout the lifecycle",
+] as const;
+
+export const dataModels = {
+  provider: {
+    title: "Provider",
+    code: `{
+  "id": "uuid",
+  "name": "City Hospital",
+  "type": "hospital",
+  "baseUrl": "https://api.cityhospital.com",
+  "createdAt": "2024-01-15T10:00:00Z",
+  "updatedAt": "2024-01-15T10:00:00Z"
+}`,
+    types: ["clinic", "hospital", "laboratory", "pharmacy"],
+  },
+  transaction: {
+    title: "Transaction",
+    code: `{
+  "id": "uuid",
+  "requesterId": "provider-uuid",
+  "targetId": "provider-uuid",
+  "patientId": "patient-123",
+  "resourceType": "Patient",
+  "status": "PENDING",
+  "metadata": {
+    "reason": "Referral",
+    "notes": "Urgent"
+  },
+  "createdAt": "...",
+  "updatedAt": "..."
+}`,
+  },
+} as const;

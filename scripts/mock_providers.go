@@ -22,10 +22,11 @@ import (
 )
 
 const (
-	gatewayURL    = "http://localhost:8080"
-	clinicAPort   = ":9001"
-	hospitalBPort = ":9002"
-	masterKey     = "tcgtrio123" // Master key for initial API key creation only
+	gatewayURL     = "http://localhost:8080"
+	clinicAPort    = ":9001"
+	hospitalBPort  = ":9002"
+	masterKey      = "tcgtrio123"                  // Master key for initial API key creation only
+	gatewayAuthKey = "sim-gateway-auth-secret-123" // Secret key for Gateway->Provider authentication
 )
 
 // httpClient is a shared client for making authenticated requests
@@ -189,7 +190,15 @@ func startClinicA(wg *sync.WaitGroup) {
 
 	// Endpoint to receive results from gateway
 	mux.HandleFunc("/fhir/receive-results", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("[Clinic A] Received data from Gateway!")
+		// Validate Gateway Authentication
+		authHeader := r.Header.Get("X-Gateway-Auth")
+		if authHeader != gatewayAuthKey {
+			log.Printf("[Clinic A] Unauthorized request - invalid or missing X-Gateway-Auth header")
+			http.Error(w, "Unauthorized - Invalid gateway authentication", http.StatusUnauthorized)
+			return
+		}
+
+		log.Println("[Clinic A] Received data from Gateway (authenticated)!")
 
 		body, _ := io.ReadAll(r.Body)
 		var payload map[string]interface{}
@@ -217,7 +226,15 @@ func startHospitalB(wg *sync.WaitGroup) {
 
 	// Endpoint to process queries from gateway
 	mux.HandleFunc("/fhir/process-query", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("[Hospital B] Received query from Gateway!")
+		// Validate Gateway Authentication
+		authHeader := r.Header.Get("X-Gateway-Auth")
+		if authHeader != gatewayAuthKey {
+			log.Printf("[Hospital B] Unauthorized request - invalid or missing X-Gateway-Auth header")
+			http.Error(w, "Unauthorized - Invalid gateway authentication", http.StatusUnauthorized)
+			return
+		}
+
+		log.Println("[Hospital B] Received query from Gateway (authenticated)!")
 
 		body, _ := io.ReadAll(r.Body)
 		var payload struct {
@@ -364,9 +381,10 @@ func runSimulation() {
 // registerProvider registers a provider with the gateway
 func registerProvider(name, providerType, baseURL string) map[string]interface{} {
 	payload := map[string]string{
-		"name":    name,
-		"type":    providerType,
-		"baseUrl": baseURL,
+		"name":           name,
+		"type":           providerType,
+		"baseUrl":        baseURL,
+		"gatewayAuthKey": gatewayAuthKey, // Secret for Gateway->Provider authentication
 	}
 
 	resp, err := makeRequest(http.MethodPost, gatewayURL+"/api/v1/providers", payload)

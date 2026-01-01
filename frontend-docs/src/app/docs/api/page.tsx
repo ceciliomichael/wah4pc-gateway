@@ -7,6 +7,7 @@ import { JsonViewer } from "@/components/ui/json-viewer";
 import { EndpointCard } from "@/components/ui/endpoint-card";
 import { ErrorTable } from "@/components/ui/data-table";
 import { endpoints, errorData, rateLimitingGuidelines, authenticationInfo } from "./data";
+import { config } from "@/lib/config";
 
 const iconMap = {
   Activity: <Activity className="h-5 w-5" />,
@@ -31,7 +32,7 @@ export default function ApiReferencePage() {
         <h2 className="mb-6 text-2xl font-bold text-slate-900">Base URL</h2>
         <div className="rounded-2xl border border-slate-200 bg-white/50 backdrop-blur-sm p-6">
           <code className="text-base text-slate-900 font-mono bg-slate-100 px-2 py-1 rounded border border-slate-200">
-            https://gateway.wah4pc.com
+            {config.gatewayUrl}
           </code>
           <p className="mt-4 text-sm text-slate-600">
             Replace with your gateway instance URL in production.

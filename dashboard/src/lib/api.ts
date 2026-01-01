@@ -10,7 +10,8 @@ import type {
 } from "@/types";
 
 // Use Next.js API routes (relative path)
-const API_BASE_URL = "/api";
+// Can be overridden via NEXT_PUBLIC_API_URL environment variable
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 
 // Custom error class for API errors
 export class ApiRequestError extends Error {

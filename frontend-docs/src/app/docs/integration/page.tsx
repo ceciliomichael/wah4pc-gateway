@@ -18,6 +18,7 @@ import { CodeBlock } from "@/components/ui/code-block";
 import { JsonViewer } from "@/components/ui/json-viewer";
 import { AlertBlock } from "@/components/ui/alert-block";
 import { FeatureCard } from "@/components/ui/feature-card";
+import { config } from "@/lib/config";
 import { PrerequisiteItem, ChecklistItem } from "@/components/ui/checklist";
 import { MethodBadge } from "@/components/ui/method-badge";
 import { WebhookCard } from "@/components/integration/webhook-card";
@@ -179,7 +180,7 @@ export default function IntegrationPage() {
     }
   ],
   "resourceType": "Patient",
-  "gatewayReturnUrl": "https://gateway.wah4pc.com/api/v1/fhir/receive/Patient"
+  "gatewayReturnUrl": "${config.gatewayUrl}/api/v1/fhir/receive/Patient"
 }`}
           requestTitle="Incoming Request from Gateway"
           steps={[

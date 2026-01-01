@@ -1,4 +1,5 @@
 // Mermaid diagrams for Integration Guide
+import { config } from "@/lib/config";
 
 export const integrationFlowDiagram = `
 sequenceDiagram
@@ -325,7 +326,7 @@ app.post(
 // ─────────────────────────────────────────────────────────────────────────────
 // WAH4PC_API_KEY=wah_your-api-key-here
 // WAH4PC_PROVIDER_ID=your-provider-uuid
-// WAH4PC_GATEWAY_URL=https://gateway.wah4pc.com
+// WAH4PC_GATEWAY_URL=${config.gatewayUrl}
 // GATEWAY_AUTH_KEY=your-secret-gateway-auth-key (set when registering provider)
 
 app.listen(3000, () => console.log('Webhook server running on port 3000'));`;

@@ -1,4 +1,5 @@
 // Transaction Flow Data - Detailed explanations and JSON examples
+import { config } from "@/lib/config";
 
 // ============================================================================
 // MERMAID DIAGRAMS
@@ -121,7 +122,7 @@ export const step3_providerWebhook = `{
     }
   ],
   "requesterId": "prov_clinic_sunrise_002",
-  "callbackUrl": "https://gateway.wah4pc.com/api/v1/fhir/receive/MedicationRequest"
+  "callbackUrl": "${config.gatewayUrl}/api/v1/fhir/receive/MedicationRequest"
 }`;
 
 export const step4_providerCallback = `{

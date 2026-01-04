@@ -22,6 +22,7 @@ import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ProviderTypeBadge, Badge } from "@/components/ui/badge";
+import { CopyButton } from "@/components/ui/copy-button";
 import {
   Dropdown,
   DropdownMenu,
@@ -182,7 +183,7 @@ function ProvidersContent() {
                     <td className="px-5 py-4">
                       <div>
                         <p className="font-medium text-slate-800">{provider.name}</p>
-                        <p className="text-xs text-slate-400 font-mono">{provider.id.slice(0, 8)}...</p>
+                        <CopyButton value={provider.id} label="Provider ID" />
                       </div>
                     </td>
                     <td className="px-5 py-4">

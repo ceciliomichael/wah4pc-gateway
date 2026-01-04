@@ -23,6 +23,7 @@ type ProcessQueryPayload struct {
 	TransactionID    string             `json:"transactionId"`
 	RequesterID      string             `json:"requesterId"`
 	Identifiers      []model.Identifier `json:"identifiers"` // FHIR-compliant patient identifiers
+	ResourceType     string             `json:"resourceType"`
 	GatewayReturnURL string             `json:"gatewayReturnUrl"`
 }
 

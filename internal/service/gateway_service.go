@@ -105,6 +105,7 @@ func (s *GatewayService) InitiateQuery(req QueryRequest) (*model.Transaction, er
 		TransactionID:    tx.ID,
 		RequesterID:      req.RequesterID,
 		Identifiers:      req.Identifiers,
+		ResourceType:     req.ResourceType,
 		GatewayReturnURL: gatewayReturnURL,
 	}
 

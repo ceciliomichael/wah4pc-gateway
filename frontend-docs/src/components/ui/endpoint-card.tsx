@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Copy, Check, Terminal } from "lucide-react";
+import { ChevronDown, ChevronRight, Copy, Check } from "lucide-react";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 
@@ -188,14 +188,14 @@ function CodeSection({ title, code }: { title: string; code: string }) {
         </button>
       </div>
       <div className="relative group">
-        <div className="absolute top-0 left-0 right-0 h-8 bg-slate-900 rounded-t-xl flex items-center px-3 border-b border-slate-800">
+        <div className="absolute top-0 left-0 right-0 h-8 bg-slate-100 rounded-t-xl flex items-center px-3 border-b border-slate-200">
            <div className="flex gap-1.5">
-              <div className="h-2.5 w-2.5 rounded-full bg-slate-700"></div>
-              <div className="h-2.5 w-2.5 rounded-full bg-slate-700"></div>
+              <div className="h-2.5 w-2.5 rounded-full bg-slate-300"></div>
+              <div className="h-2.5 w-2.5 rounded-full bg-slate-300"></div>
            </div>
-           <div className="mx-auto text-[10px] font-medium text-slate-500 font-mono">json</div>
+           <div className="mx-auto text-[10px] font-medium text-slate-400 font-mono">json</div>
         </div>
-        <pre className="overflow-x-auto rounded-xl bg-slate-950 pt-10 pb-4 px-4 text-xs text-slate-300 font-mono leading-relaxed border border-slate-800 shadow-sm">
+        <pre className="overflow-x-auto rounded-xl bg-white pt-10 pb-4 px-4 text-xs text-slate-800 font-mono leading-relaxed border border-slate-200 shadow-inner">
           {code}
         </pre>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { SyntaxHighlighter } from "@/components/ui/syntax-highlighter";
 
 interface ImplementationTabsProps {
   nodeJsCode: string;
@@ -16,14 +17,14 @@ export function ImplementationTabs({
   dartCode,
 }: ImplementationTabsProps) {
   return (
-    <div className="rounded-xl border border-slate-700 bg-slate-900 overflow-hidden shadow-lg">
+    <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-lg">
       <Tabs defaultValue="nodejs">
-        <div className="border-b border-slate-700 bg-slate-800 px-4 py-3">
-          <TabsList className="bg-slate-700/50 border border-slate-600">
-            <TabsTrigger value="nodejs" className="data-[state=active]:bg-slate-900 data-[state=active]:text-white text-slate-400 hover:text-slate-200">Node.js</TabsTrigger>
-            <TabsTrigger value="go" className="data-[state=active]:bg-slate-900 data-[state=active]:text-white text-slate-400 hover:text-slate-200">Go</TabsTrigger>
-            <TabsTrigger value="python" className="data-[state=active]:bg-slate-900 data-[state=active]:text-white text-slate-400 hover:text-slate-200">Python</TabsTrigger>
-            <TabsTrigger value="dart" className="data-[state=active]:bg-slate-900 data-[state=active]:text-white text-slate-400 hover:text-slate-200">Dart</TabsTrigger>
+        <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
+          <TabsList className="bg-slate-100 border border-slate-200">
+            <TabsTrigger value="nodejs" className="data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm text-slate-500 hover:text-slate-900">Node.js</TabsTrigger>
+            <TabsTrigger value="go" className="data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm text-slate-500 hover:text-slate-900">Go</TabsTrigger>
+            <TabsTrigger value="python" className="data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm text-slate-500 hover:text-slate-900">Python</TabsTrigger>
+            <TabsTrigger value="dart" className="data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm text-slate-500 hover:text-slate-900">Dart</TabsTrigger>
           </TabsList>
         </div>
 
@@ -32,27 +33,27 @@ export function ImplementationTabs({
           This allows the "Copy Page" utility (which scrapes DOM textContent) to capture all examples.
         */}
         <TabsContent value="nodejs" className="m-0" forceMount={true}>
-          <pre className="overflow-x-auto p-4 text-xs font-mono leading-relaxed text-slate-300 bg-transparent">
-            {nodeJsCode}
-          </pre>
+          <div className="p-4">
+            <SyntaxHighlighter code={nodeJsCode} language="javascript" />
+          </div>
         </TabsContent>
 
         <TabsContent value="go" className="m-0" forceMount={true}>
-          <pre className="overflow-x-auto p-4 text-xs font-mono leading-relaxed text-slate-300 bg-transparent">
-            {goCode}
-          </pre>
+          <div className="p-4">
+            <SyntaxHighlighter code={goCode} language="go" />
+          </div>
         </TabsContent>
 
         <TabsContent value="python" className="m-0" forceMount={true}>
-          <pre className="overflow-x-auto p-4 text-xs font-mono leading-relaxed text-slate-300 bg-transparent">
-            {pythonCode}
-          </pre>
+          <div className="p-4">
+            <SyntaxHighlighter code={pythonCode} language="python" />
+          </div>
         </TabsContent>
 
         <TabsContent value="dart" className="m-0" forceMount={true}>
-          <pre className="overflow-x-auto p-4 text-xs font-mono leading-relaxed text-slate-300 bg-transparent">
-            {dartCode}
-          </pre>
+          <div className="p-4">
+            <SyntaxHighlighter code={dartCode} language="dart" />
+          </div>
         </TabsContent>
       </Tabs>
     </div>

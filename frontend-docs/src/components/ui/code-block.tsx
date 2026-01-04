@@ -28,25 +28,25 @@ export function CodeBlock({
   };
 
   return (
-    <div className={`max-w-full rounded-xl border border-slate-700 bg-slate-900 overflow-hidden shadow-lg ${className}`}>
+    <div className={`max-w-full rounded-xl border border-slate-200 bg-white overflow-hidden shadow-lg ${className}`}>
       {title && (
-        <div className="flex items-center justify-between border-b border-slate-700 bg-slate-800 px-4 py-3">
+        <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
           <div className="flex items-center gap-2">
-            <FileCode className="h-4 w-4 text-slate-500" />
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">
+            <FileCode className="h-4 w-4 text-slate-400" />
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">
               {title}
             </span>
             {language && (
-              <span className="text-xs text-slate-500">({language})</span>
+              <span className="text-xs text-slate-400">({language})</span>
             )}
           </div>
           {showCopyButton && (
             <button
               onClick={handleCopy}
-              className="flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-sky-400 transition-colors"
+              className="flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-blue-600 transition-colors"
             >
               {copied ? (
-                <><Check className="h-3 w-3 text-emerald-400" /> <span className="text-emerald-400">Copied</span></>
+                <><Check className="h-3 w-3 text-green-600" /> <span className="text-green-600">Copied</span></>
               ) : (
                 <><Copy className="h-3 w-3" /> Copy</>
               )}
@@ -56,7 +56,7 @@ export function CodeBlock({
       )}
       
       <div className="relative">
-        <pre className="overflow-x-auto p-4 text-xs font-mono leading-relaxed text-slate-300 bg-transparent">
+        <pre className="overflow-x-auto p-4 text-xs font-mono leading-relaxed text-slate-800 bg-transparent">
           {code}
         </pre>
         
@@ -64,11 +64,11 @@ export function CodeBlock({
         {!title && showCopyButton && (
            <button
              onClick={handleCopy}
-             className="absolute top-2 right-2 p-1.5 rounded bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-400 hover:text-sky-400 transition-colors shadow-sm"
+             className="absolute top-2 right-2 p-1.5 rounded bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 hover:text-blue-600 transition-colors shadow-md"
              title="Copy to clipboard"
            >
              {copied ? (
-               <Check className="h-3.5 w-3.5 text-emerald-400" />
+               <Check className="h-3.5 w-3.5 text-green-600" />
              ) : (
                <Copy className="h-3.5 w-3.5" />
              )}
@@ -92,11 +92,11 @@ export function CodeBlockWithHeader({
   className = "",
 }: CodeBlockWithHeaderProps) {
   return (
-    <div className={`max-w-full rounded-xl border border-slate-700 bg-slate-900 overflow-hidden shadow-lg ${className}`}>
-      <div className="border-b border-slate-700 bg-slate-800 px-4 py-3">
-        <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">{header}</span>
+    <div className={`max-w-full rounded-xl border border-slate-200 bg-white overflow-hidden shadow-lg ${className}`}>
+      <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
+        <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">{header}</span>
       </div>
-      <pre className="overflow-x-auto p-4 text-xs font-mono leading-relaxed text-slate-300">
+      <pre className="overflow-x-auto p-4 text-xs font-mono leading-relaxed text-slate-800">
         {code}
       </pre>
     </div>

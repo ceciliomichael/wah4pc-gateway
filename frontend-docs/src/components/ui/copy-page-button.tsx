@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { Copy, Check, AlertCircle } from "lucide-react";
-import { formatPageForLLM } from "@/utils/html-to-markdown";
+import { formatPageForLLM } from "@/utils/markdown";
 
 type CopyState = "idle" | "copied" | "error";
 

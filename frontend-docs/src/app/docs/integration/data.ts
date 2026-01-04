@@ -1,6 +1,19 @@
 // Mermaid diagrams for Integration Guide
 import { config } from "@/lib/config";
 
+// ============================================================================
+// REQUIRED HEADERS
+// ============================================================================
+
+export const registrationHeaders = {
+  "X-API-Key": "wah_your-api-key",
+} as const;
+
+export const fhirRequestHeaders = {
+  "X-API-Key": "wah_your-api-key",
+  "X-Provider-ID": "your-provider-id",
+} as const;
+
 export const integrationFlowDiagram = `
 sequenceDiagram
     participant YS as Your System

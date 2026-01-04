@@ -41,25 +41,31 @@ sequenceDiagram
     participant G as WAH4PC Gateway<br/>(:8080)
     participant H as Hospital B<br/>(Source :9002)
 
-    Note over C,H: 1. Registration Phase
-    C->>G: POST /api/v1/providers (with gatewayAuthKey)
-    G-->>C: 201 Created (Provider ID)
-    H->>G: POST /api/v1/providers (with gatewayAuthKey)
-    G-->>H: 201 Created (Provider ID)
+    rect rgb(240, 249, 255)
+        Note over C,H: 1. Registration Phase
+        C->>G: POST /api/v1/providers<br/>(with gatewayAuthKey)
+        G-->>C: 201 Created (Provider ID)
+        H->>G: POST /api/v1/providers<br/>(with gatewayAuthKey)
+        G-->>H: 201 Created (Provider ID)
+    end
 
-    Note over C,H: 2. Request Phase
-    C->>G: POST /api/v1/fhir/request/Patient (X-API-Key)
-    G->>H: POST /fhir/process-query (X-Gateway-Auth)
-    Note right of H: Validates X-Gateway-Auth
-    H-->>G: 200 OK (Acknowledged)
-    G-->>C: 202 Accepted (Transaction ID)
+    rect rgb(240, 253, 244)
+        Note over C,H: 2. Request Phase
+        C->>G: POST /api/v1/fhir/request/Patient<br/>(X-API-Key auth)
+        G->>H: POST /fhir/process-query<br/>(X-Gateway-Auth header)
+        Note right of H: Validates X-Gateway-Auth
+        H-->>G: 200 OK (Acknowledged)
+        G-->>C: 202 Accepted (Transaction ID)
+    end
 
-    Note over C,H: 3. Response Phase (Async)
-    H->>G: POST /api/v1/fhir/receive/Patient (X-API-Key)
-    G->>C: POST /fhir/receive-results (X-Gateway-Auth)
-    Note right of C: Validates X-Gateway-Auth
-    C-->>G: 200 OK (Data Received)
-    Note over G: Transaction COMPLETED
+    rect rgb(254, 252, 232)
+        Note over C,H: 3. Response Phase (Async)
+        H->>G: POST /api/v1/fhir/receive/Patient<br/>(X-API-Key auth)
+        G->>C: POST /fhir/receive-results<br/>(X-Gateway-Auth header)
+        Note right of C: Validates X-Gateway-Auth
+        C-->>G: 200 OK (Data Received)
+        Note over G: Transaction COMPLETED
+    end
 ```
 
 **Authentication Layers:**

@@ -60,8 +60,10 @@ func (h *ApiKeyHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// If bootstrap mode, force admin role for first key
-	if isEmpty {
+	// If bootstrap mode (empty DB and not authenticated as admin), force admin role for first key
+	// This allows Master Key authenticated admins to create user keys even as the first key
+	currentRole := middleware.GetRoleFromContext(r.Context())
+	if isEmpty && currentRole != model.ApiKeyRoleAdmin {
 		req.Role = model.ApiKeyRoleAdmin
 	}
 

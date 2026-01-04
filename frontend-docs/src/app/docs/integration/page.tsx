@@ -18,6 +18,7 @@ import { CodeBlock } from "@/components/ui/code-block";
 import { JsonViewer } from "@/components/ui/json-viewer";
 import { AlertBlock } from "@/components/ui/alert-block";
 import { FeatureCard } from "@/components/ui/feature-card";
+import { RequestHeaders } from "@/components/ui/request-headers";
 import { config } from "@/lib/config";
 import { PrerequisiteItem, ChecklistItem } from "@/components/ui/checklist";
 import { MethodBadge } from "@/components/ui/method-badge";
@@ -36,6 +37,8 @@ import {
   securityFeatures,
   bestPractices,
   commonPitfalls,
+  registrationHeaders,
+  fhirRequestHeaders,
 } from "./data";
 
 export default function IntegrationPage() {
@@ -93,10 +96,12 @@ export default function IntegrationPage() {
             <h3 className="font-bold text-slate-900 text-lg">Registration Request</h3>
           </div>
 
-          <div className="mb-6 flex items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+          <div className="mb-4 flex items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
             <MethodBadge method="POST" className="" />
-            <code className="text-sm font-mono text-slate-700 font-medium">/api/v1/providers</code>
+            <code className="text-sm font-mono text-slate-700 font-medium">{config.gatewayUrl}/api/v1/providers</code>
           </div>
+
+          <RequestHeaders headers={registrationHeaders} />
 
           <JsonViewer
             title="Request Body"
@@ -324,10 +329,12 @@ Body:
             <h3 className="font-bold text-slate-900 text-lg">Initiate a Query</h3>
           </div>
 
-          <div className="mb-6 flex items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+          <div className="mb-4 flex items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
             <MethodBadge method="POST" className="" />
-            <code className="text-sm font-mono text-slate-700 font-medium">/api/v1/fhir/request/Patient</code>
+            <code className="text-sm font-mono text-slate-700 font-medium">{config.gatewayUrl}/api/v1/fhir/request/Patient</code>
           </div>
+
+          <RequestHeaders headers={fhirRequestHeaders} />
 
           <JsonViewer
             title="Request Body"

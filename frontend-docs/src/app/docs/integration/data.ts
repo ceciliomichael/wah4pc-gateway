@@ -110,6 +110,8 @@ interface ProcessQueryPayload {
   identifiers: Identifier[];
   resourceType: string;
   gatewayReturnUrl: string;
+  reason?: string;   // Optional: Purpose of the request
+  notes?: string;    // Optional: Additional context for the target provider
 }
 
 interface ReceiveResultsPayload {
@@ -133,6 +135,8 @@ const ProcessQuerySchema = z.object({
   identifiers: z.array(IdentifierSchema).min(1),
   resourceType: z.string(),
   gatewayReturnUrl: z.string().url(),
+  reason: z.string().optional(),
+  notes: z.string().optional(),
 });
 
 const ReceiveResultsSchema = z.object({
@@ -225,10 +229,12 @@ app.post(
   validateGatewayAuth,
   validateSchema(ProcessQuerySchema),
   async (req: Request, res: Response) => {
-    const { transactionId, identifiers, gatewayReturnUrl } = req.body as ProcessQueryPayload;
+    const { transactionId, identifiers, gatewayReturnUrl, reason, notes } = req.body as ProcessQueryPayload;
 
     console.log(\`[Process Query] Transaction: \${transactionId}\`);
     console.log(\`[Process Query] Identifiers: \${JSON.stringify(identifiers)}\`);
+    if (reason) console.log(\`[Process Query] Reason: \${reason}\`);
+    if (notes) console.log(\`[Process Query] Notes: \${notes}\`);
 
     // IMPORTANT: Acknowledge immediately (Gateway expects quick response)
     res.status(200).json({ message: 'Processing' });
@@ -376,6 +382,8 @@ type ProcessQueryRequest struct {
 	Identifiers      []Identifier \`json:"identifiers" validate:"required,min=1,dive"\`
 	ResourceType     string       \`json:"resourceType" validate:"required"\`
 	GatewayReturnURL string       \`json:"gatewayReturnUrl" validate:"required,url"\`
+	Reason           string       \`json:"reason,omitempty"\`  // Optional: Purpose of the request
+	Notes            string       \`json:"notes,omitempty"\`   // Optional: Additional context
 }
 
 type ReceiveResultsRequest struct {
@@ -649,6 +657,8 @@ class ProcessQueryPayload(BaseModel):
     identifiers: List[Identifier]
     resourceType: str
     gatewayReturnUrl: str
+    reason: Optional[str] = None   # Optional: Purpose of the request
+    notes: Optional[str] = None    # Optional: Additional context
 
     @validator('identifiers')
     def identifiers_not_empty(cls, v):
@@ -860,8 +870,12 @@ Future<Response> handleProcessQuery(Request request) async {
     final String transactionId = payload['transactionId'];
     final String gatewayReturnUrl = payload['gatewayReturnUrl'];
     final List identifiers = payload['identifiers'];
+    final String? reason = payload['reason'];  // Optional
+    final String? notes = payload['notes'];    // Optional
 
     print('[Process Query] Transaction: $transactionId');
+    if (reason != null) print('[Process Query] Reason: $reason');
+    if (notes != null) print('[Process Query] Notes: $notes');
 
     // IMPORTANT: Acknowledge immediately
     // We start processing in background but return 200 OK now

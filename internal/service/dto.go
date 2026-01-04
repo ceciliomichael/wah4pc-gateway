@@ -25,6 +25,8 @@ type ProcessQueryPayload struct {
 	Identifiers      []model.Identifier `json:"identifiers"` // FHIR-compliant patient identifiers
 	ResourceType     string             `json:"resourceType"`
 	GatewayReturnURL string             `json:"gatewayReturnUrl"`
+	Reason           string             `json:"reason,omitempty"` // Optional: Purpose of the request (e.g., "Emergency", "Referral")
+	Notes            string             `json:"notes,omitempty"`  // Optional: Additional context for the target provider
 }
 
 // ReceiveResultPayload is sent to the requester with the retrieved data

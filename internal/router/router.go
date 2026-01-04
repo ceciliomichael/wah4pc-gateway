@@ -1,14 +1,13 @@
 package router
 
 import (
-	"log"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/wah4pc/wah4pc-gateway/internal/handler"
 	"github.com/wah4pc/wah4pc-gateway/internal/middleware"
 	"github.com/wah4pc/wah4pc-gateway/internal/service"
+	"github.com/wah4pc/wah4pc-gateway/pkg/logger"
 )
 
 // Router is the HTTP router for the gateway
@@ -19,6 +18,7 @@ type Router struct {
 	apiKeyHandler       *handler.ApiKeyHandler
 	authMiddleware      *middleware.AuthMiddleware
 	rateLimitMiddleware *middleware.RateLimitMiddleware
+	auditMiddleware     *middleware.AuditMiddleware
 }
 
 // NewRouter creates a new router with all handlers
@@ -28,10 +28,12 @@ func NewRouter(
 	apiKeyHandler *handler.ApiKeyHandler,
 	apiKeyService *service.ApiKeyService,
 	masterKey string,
+	auditLogger *logger.FileLogger,
 ) *Router {
 	// Create middleware instances
 	authMW := middleware.NewAuthMiddleware(apiKeyService, masterKey)
 	rateLimitMW := middleware.NewRateLimitMiddleware(apiKeyService)
+	auditMW := middleware.NewAuditMiddleware(auditLogger)
 
 	r := &Router{
 		mux:                 http.NewServeMux(),
@@ -40,6 +42,7 @@ func NewRouter(
 		apiKeyHandler:       apiKeyHandler,
 		authMiddleware:      authMW,
 		rateLimitMiddleware: rateLimitMW,
+		auditMiddleware:     auditMW,
 	}
 
 	r.registerRoutes()
@@ -69,9 +72,9 @@ func (r *Router) registerRoutes() {
 }
 
 // Handler returns the HTTP handler with middleware chain
-// Order: Logging -> CORS -> Auth -> RateLimit -> Handler
+// Order: Audit -> CORS -> Auth -> RateLimit -> Handler
 func (r *Router) Handler() http.Handler {
-	return r.loggingMiddleware(
+	return r.auditMiddleware.Middleware(
 		r.corsMiddleware(
 			r.authMiddleware.Middleware(
 				r.rateLimitMiddleware.Middleware(r.mux),
@@ -190,15 +193,6 @@ func (r *Router) handleTransactionByID(w http.ResponseWriter, req *http.Request)
 		return
 	}
 	r.gatewayHandler.GetTransaction(w, req)
-}
-
-// loggingMiddleware logs all requests
-func (r *Router) loggingMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		start := time.Now()
-		next.ServeHTTP(w, req)
-		log.Printf("%s %s %s", req.Method, req.URL.Path, time.Since(start))
-	})
 }
 
 // corsMiddleware adds CORS headers for development

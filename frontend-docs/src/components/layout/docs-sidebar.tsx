@@ -11,7 +11,6 @@ import {
   ChevronRight,
   Workflow,
   GitMerge,
-  Bot,
 } from "lucide-react";
 
 interface NavItem {
@@ -104,20 +103,6 @@ const navigationItems: NavItem[] = [
       { title: "Endpoints", href: "/docs/api#endpoints" },
       { title: "Error Responses", href: "/docs/api#errors" },
       { title: "Rate Limiting", href: "/docs/api#rate-limiting" },
-    ],
-  },
-  {
-    title: "AI Capabilities",
-    href: "/docs/ai",
-    icon: <Bot className="h-4 w-4" />,
-    description: "Smart analysis & routing",
-    items: [
-      { title: "Overview", href: "/docs/ai#overview" },
-      { title: "Request Flow", href: "/docs/ai#workflow" },
-      { title: "Analysis Pipeline", href: "/docs/ai#pipeline" },
-      { title: "Capabilities", href: "/docs/ai#capabilities" },
-      { title: "Integration Guide", href: "/docs/ai#integration" },
-      { title: "Best Practices", href: "/docs/ai#best-practices" },
     ],
   },
 ];

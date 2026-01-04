@@ -107,6 +107,8 @@ func (s *GatewayService) InitiateQuery(req QueryRequest) (*model.Transaction, er
 		Identifiers:      req.Identifiers,
 		ResourceType:     req.ResourceType,
 		GatewayReturnURL: gatewayReturnURL,
+		Reason:           req.Reason,
+		Notes:            req.Notes,
 	}
 
 	targetURL := fmt.Sprintf("%s/fhir/process-query", targetProvider.BaseURL)

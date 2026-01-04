@@ -11,6 +11,7 @@ import (
 	"github.com/wah4pc/wah4pc-gateway/internal/repository"
 	"github.com/wah4pc/wah4pc-gateway/internal/router"
 	"github.com/wah4pc/wah4pc-gateway/internal/service"
+	"github.com/wah4pc/wah4pc-gateway/pkg/logger"
 )
 
 func main() {
@@ -53,8 +54,12 @@ func main() {
 	gatewayHandler := handler.NewGatewayHandler(gatewayService)
 	apiKeyHandler := handler.NewApiKeyHandler(apiKeyService)
 
+	// Initialize audit logger (writes to log/YYYY-MM-DD/audit.log)
+	auditLogger := logger.NewFileLogger("log")
+	defer auditLogger.Close()
+
 	// Initialize router with middleware
-	r := router.NewRouter(providerHandler, gatewayHandler, apiKeyHandler, apiKeyService, cfg.Security.MasterKey)
+	r := router.NewRouter(providerHandler, gatewayHandler, apiKeyHandler, apiKeyService, cfg.Security.MasterKey, auditLogger)
 
 	// Start server
 	addr := cfg.Address()

@@ -185,7 +185,9 @@ export default function IntegrationPage() {
     }
   ],
   "resourceType": "Patient",
-  "gatewayReturnUrl": "${config.gatewayUrl}/api/v1/fhir/receive/Patient"
+  "gatewayReturnUrl": "${config.gatewayUrl}/api/v1/fhir/receive/Patient",
+  "reason": "Referral consultation",
+  "notes": "Patient requires urgent cardiac evaluation"
 }`}
           requestTitle="Incoming Request from Gateway"
           steps={[

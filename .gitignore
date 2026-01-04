@@ -1,6 +1,11 @@
 # EchoDE
 .echode/
-data/
 
 # Go Build
 wah4pc.exe
+
+# Logs
+log/
+
+# Data
+data/

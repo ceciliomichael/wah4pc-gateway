@@ -178,9 +178,9 @@ export function SidebarContent({ onNavigate, showSubItems = true }: SidebarConte
                     {item.icon}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <span className="block text-sm font-semibold truncate">{item.title}</span>
+                    <span className="block text-sm font-semibold">{item.title}</span>
                     <span
-                      className={`block text-xs truncate ${
+                      className={`block text-xs ${
                         active ? "text-blue-600/70" : "text-slate-500"
                       }`}
                     >
@@ -204,7 +204,7 @@ export function SidebarContent({ onNavigate, showSubItems = true }: SidebarConte
                         <Link
                           href={subItem.href}
                           onClick={(e) => handleLinkClick(e, subItem.href)}
-                          className="block rounded-md px-3 py-2 text-sm text-slate-600 hover:bg-blue-50 hover:text-blue-700 transition-all duration-150 truncate"
+                          className="block rounded-md px-3 py-2 text-sm text-slate-600 hover:bg-blue-50 hover:text-blue-700 transition-all duration-150"
                         >
                           {subItem.title}
                         </Link>

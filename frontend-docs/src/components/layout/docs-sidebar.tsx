@@ -177,8 +177,8 @@ export function SidebarContent({ onNavigate, showSubItems = true }: SidebarConte
                   >
                     {item.icon}
                   </span>
-                  <div className="flex-1 min-w-0">
-                    <span className="block text-sm font-semibold">{item.title}</span>
+                  <div className="flex-1">
+                    <span className="block text-sm font-semibold whitespace-nowrap">{item.title}</span>
                     <span
                       className={`block text-xs ${
                         active ? "text-blue-600/70" : "text-slate-500"

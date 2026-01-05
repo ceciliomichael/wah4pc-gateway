@@ -21,7 +21,11 @@ var (
 	ErrRequesterUnreachable = errors.New("requester provider unreachable")
 	ErrInvalidStatus        = errors.New("transaction not in pending status")
 	ErrUnauthorizedProvider = errors.New("provider not authorized for this transaction")
+	ErrDuplicateRequest     = errors.New("duplicate request: identical request was made recently")
 )
+
+// duplicateWindow defines how long to check for duplicate requests
+const duplicateWindow = 5 * time.Minute
 
 // TransactionRepository defines the interface for transaction data access
 type TransactionRepository interface {
@@ -29,6 +33,7 @@ type TransactionRepository interface {
 	GetByID(id string) (model.Transaction, error)
 	Create(tx model.Transaction) error
 	Update(tx model.Transaction) error
+	Find(predicate func(model.Transaction) bool) ([]model.Transaction, error)
 }
 
 // GatewayService handles FHIR resource transfer orchestration
@@ -74,6 +79,36 @@ func (s *GatewayService) InitiateQuery(req QueryRequest) (*model.Transaction, er
 	targetProvider, err := s.providerService.GetByID(req.TargetID)
 	if err != nil {
 		return nil, fmt.Errorf("target: %w", err)
+	}
+
+	// Check for duplicate requests within the time window
+	cutoff := time.Now().UTC().Add(-duplicateWindow)
+	duplicates, err := s.txRepo.Find(func(tx model.Transaction) bool {
+		// Time check first (fastest to fail)
+		if tx.CreatedAt.Before(cutoff) {
+			return false
+		}
+		// Check all matching criteria
+		if tx.RequesterID != req.RequesterID {
+			return false
+		}
+		if tx.TargetID != req.TargetID {
+			return false
+		}
+		if tx.ResourceType != req.ResourceType {
+			return false
+		}
+		// Check identifiers match (set equality)
+		if !model.IdentifiersMatch(tx.Identifiers, req.Identifiers) {
+			return false
+		}
+		return true
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to check for duplicates: %w", err)
+	}
+	if len(duplicates) > 0 {
+		return nil, ErrDuplicateRequest
 	}
 
 	// Create transaction record

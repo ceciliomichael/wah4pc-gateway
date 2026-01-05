@@ -12,6 +12,7 @@ export const registrationHeaders = {
 export const fhirRequestHeaders = {
   "X-API-Key": "wah_your-api-key",
   "X-Provider-ID": "your-provider-id",
+  "Idempotency-Key": "uuid-v4-for-safe-retries",
 } as const;
 
 export const integrationFlowDiagram = `
@@ -274,13 +275,15 @@ app.post(
           };
         }
 
-        // 2. Send response to gateway
+        // 2. Send response to gateway (with Idempotency-Key for safe retries)
+        const idempotencyKey = crypto.randomUUID();
         const response = await fetch(gatewayReturnUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'X-API-Key': process.env.WAH4PC_API_KEY!,
             'X-Provider-ID': process.env.WAH4PC_PROVIDER_ID!,
+            'Idempotency-Key': idempotencyKey,
           },
           body: JSON.stringify(responsePayload),
         });
@@ -587,6 +590,7 @@ func sendToGateway(url string, payload GatewayResponse) error {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-API-Key", config.APIKey)
 	req.Header.Set("X-Provider-ID", config.ProviderID)
+	req.Header.Set("Idempotency-Key", generateUUID()) // Use google/uuid package
 
 	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(req)
@@ -1013,6 +1017,8 @@ export const checklistItems = [
   "Implement POST /fhir/receive-results endpoint",
   "Add validation for X-Gateway-Auth header in your webhooks",
   "Add patient matching logic for FHIR identifiers",
+  "Generate unique Idempotency-Key (UUID v4) for each request",
+  "Handle 409 Conflict (retry after delay) and 429 errors (duplicate detected)",
   "Test with a sandbox/staging gateway first",
   "Ensure HTTPS is configured on your base URL",
   "Implement proper error handling and logging",
@@ -1077,9 +1083,19 @@ export const bestPractices = [
     icon: "Clock",
   },
   {
-    title: "Handle Idempotency",
-    description: "The same transaction ID may be sent twice. Check if you've already processed it before re-processing.",
+    title: "Use Idempotency Keys",
+    description: "Generate a UUID v4 for each request and include it in the Idempotency-Key header. Reuse the same key when retrying failed requests. Keys are cached for 24 hours.",
     icon: "CheckCircle2",
+  },
+  {
+    title: "Handle Duplicate Detection",
+    description: "The gateway prevents identical requests (same requester, target, identifiers) within 5 minutes. Handle 429 errors gracefully and avoid immediate retries.",
+    icon: "CheckCircle2",
+  },
+  {
+    title: "Handle 409 Conflict",
+    description: "If you receive 409, your previous request with the same Idempotency-Key is still processing. Wait and retry after a short delay.",
+    icon: "Clock",
   },
   {
     title: "Log Everything",

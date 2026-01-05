@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BookOpen, ChevronRight, Terminal } from "lucide-react";
-import { CodeBlock } from "@/components/ui/code-block";
+import { ArrowRight, ChevronRight, Terminal } from "lucide-react";
+import { SyntaxHighlighter } from "@/components/ui/syntax-highlighter";
 
 const sampleRequest = `POST /api/v1/transactions HTTP/1.1
 Host: api.wah4pc-gateway.com
@@ -86,13 +86,13 @@ export function Hero() {
               </div>
               
               {/* Code Content */}
-              <CodeBlock
-                code={sampleRequest}
-                language="http"
-                showCopyButton={false}
-                variant="dark"
-                className="!bg-transparent !border-0 !shadow-none !rounded-none"
-              />
+              <div className="p-4">
+                <SyntaxHighlighter
+                  code={sampleRequest}
+                  language="http"
+                  theme="dark"
+                />
+              </div>
               
               {/* Status Bar */}
               <div className="flex justify-between border-t border-white/10 bg-white/5 px-4 py-2 text-[10px] text-slate-500">

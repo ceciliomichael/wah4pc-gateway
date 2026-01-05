@@ -17,10 +17,10 @@ type Identifier struct {
 
 // CommonIdentifierSystems defines well-known identifier systems for the Philippines
 var CommonIdentifierSystems = struct {
-	PhilHealth       string
-	PSABirthCert     string
+	PhilHealth          string
+	PSABirthCert        string
 	PhilHealthDependent string
-	Passport         string
+	Passport            string
 }{
 	PhilHealth:          "http://philhealth.gov.ph",
 	PSABirthCert:        "http://psa.gov.ph/birth-certificate",
@@ -46,4 +46,28 @@ func GetBySystem(identifiers []Identifier, system string) (Identifier, bool) {
 		}
 	}
 	return Identifier{}, false
+}
+
+// IdentifiersMatch checks if two identifier slices contain the same set of identifiers
+// Order independent - treats slices as sets for comparison
+func IdentifiersMatch(a, b []Identifier) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	// Check that every identifier in 'a' exists in 'b'
+	for _, idA := range a {
+		found := false
+		for _, idB := range b {
+			if idA.System == idB.System && idA.Value == idB.Value {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+
+	return true
 }

@@ -2,22 +2,25 @@
 
 interface SyntaxHighlighterProps {
   code: string;
-  language?: "javascript" | "go" | "python" | "dart" | "json";
+  language?: "javascript" | "go" | "python" | "dart" | "json" | "http";
   className?: string;
+  theme?: "light" | "dark";
 }
 
 interface Token {
-  type: "keyword" | "string" | "number" | "comment" | "function" | "property" | "plain";
+  type: "keyword" | "string" | "number" | "comment" | "function" | "property" | "plain" | "method" | "header" | "url";
   value: string;
 }
 
-export function SyntaxHighlighter({ code, language = "javascript", className = "" }: SyntaxHighlighterProps) {
+export function SyntaxHighlighter({ code, language = "javascript", className = "", theme = "light" }: SyntaxHighlighterProps) {
   const tokens = tokenize(code, language);
   
+  const baseTextColor = theme === "dark" ? "text-slate-300" : "text-slate-800";
+  
   return (
-    <pre className={`overflow-x-auto text-xs font-mono leading-relaxed text-slate-800 ${className}`}>
+    <pre className={`overflow-x-auto text-xs font-mono leading-relaxed ${baseTextColor} ${className}`}>
       {tokens.map((token, i) => (
-        <span key={i} className={getTokenClass(token.type)}>
+        <span key={i} className={getTokenClass(token.type, theme)}>
           {token.value}
         </span>
       ))}
@@ -25,7 +28,33 @@ export function SyntaxHighlighter({ code, language = "javascript", className = "
   );
 }
 
-function getTokenClass(type: Token["type"]): string {
+function getTokenClass(type: Token["type"], theme: "light" | "dark"): string {
+  if (theme === "dark") {
+    switch (type) {
+      case "keyword":
+        return "text-purple-400 font-medium";
+      case "string":
+        return "text-emerald-400";
+      case "number":
+        return "text-amber-400";
+      case "comment":
+        return "text-slate-500 italic";
+      case "function":
+        return "text-blue-400";
+      case "property":
+        return "text-cyan-400";
+      case "method":
+        return "text-pink-400 font-semibold";
+      case "header":
+        return "text-sky-400";
+      case "url":
+        return "text-yellow-300";
+      default:
+        return "";
+    }
+  }
+  
+  // Light theme
   switch (type) {
     case "keyword":
       return "text-purple-600 font-medium";
@@ -39,12 +68,160 @@ function getTokenClass(type: Token["type"]): string {
       return "text-blue-600";
     case "property":
       return "text-cyan-600";
+    case "method":
+      return "text-pink-600 font-semibold";
+    case "header":
+      return "text-sky-600";
+    case "url":
+      return "text-amber-700";
     default:
       return "";
   }
 }
 
+function tokenizeHttp(code: string): Token[] {
+  const tokens: Token[] = [];
+  const lines = code.split("\n");
+  const httpMethods = new Set(["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]);
+  
+  let inBody = false;
+  
+  for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+    const line = lines[lineIdx];
+    
+    // Empty line marks start of body
+    if (line.trim() === "") {
+      inBody = true;
+      tokens.push({ type: "plain", value: line });
+      if (lineIdx < lines.length - 1) tokens.push({ type: "plain", value: "\n" });
+      continue;
+    }
+    
+    if (inBody) {
+      // Tokenize JSON body
+      const jsonTokens = tokenizeJson(line);
+      tokens.push(...jsonTokens);
+      if (lineIdx < lines.length - 1) tokens.push({ type: "plain", value: "\n" });
+      continue;
+    }
+    
+    // First line: METHOD URL HTTP/VERSION
+    if (lineIdx === 0) {
+      const parts = line.split(" ");
+      if (parts.length >= 1 && httpMethods.has(parts[0])) {
+        tokens.push({ type: "method", value: parts[0] });
+        if (parts.length >= 2) {
+          tokens.push({ type: "plain", value: " " });
+          tokens.push({ type: "url", value: parts[1] });
+        }
+        if (parts.length >= 3) {
+          tokens.push({ type: "plain", value: " " });
+          tokens.push({ type: "keyword", value: parts.slice(2).join(" ") });
+        }
+      } else {
+        tokens.push({ type: "plain", value: line });
+      }
+      if (lineIdx < lines.length - 1) tokens.push({ type: "plain", value: "\n" });
+      continue;
+    }
+    
+    // Header lines: Name: Value
+    const colonIdx = line.indexOf(":");
+    if (colonIdx > 0) {
+      tokens.push({ type: "header", value: line.slice(0, colonIdx) });
+      tokens.push({ type: "plain", value: ":" });
+      const value = line.slice(colonIdx + 1);
+      tokens.push({ type: "string", value: value });
+    } else {
+      tokens.push({ type: "plain", value: line });
+    }
+    
+    if (lineIdx < lines.length - 1) tokens.push({ type: "plain", value: "\n" });
+  }
+  
+  return tokens;
+}
+
+function tokenizeJson(line: string): Token[] {
+  const tokens: Token[] = [];
+  let i = 0;
+  
+  while (i < line.length) {
+    // Whitespace
+    if (/\s/.test(line[i])) {
+      let j = i;
+      while (j < line.length && /\s/.test(line[j])) j++;
+      tokens.push({ type: "plain", value: line.slice(i, j) });
+      i = j;
+      continue;
+    }
+    
+    // Strings
+    if (line[i] === '"') {
+      let j = i + 1;
+      while (j < line.length && line[j] !== '"') {
+        if (line[j] === "\\") j++;
+        j++;
+      }
+      const strEnd = j < line.length ? j + 1 : j;
+      const str = line.slice(i, strEnd);
+      
+      // Check if it's a property (followed by :)
+      let k = strEnd;
+      while (k < line.length && /\s/.test(line[k])) k++;
+      if (line[k] === ":") {
+        tokens.push({ type: "property", value: str });
+      } else {
+        tokens.push({ type: "string", value: str });
+      }
+      i = strEnd;
+      continue;
+    }
+    
+    // Numbers
+    if (/[\d-]/.test(line[i])) {
+      let j = i;
+      if (line[j] === "-") j++;
+      while (j < line.length && /[\d.eE+-]/.test(line[j])) j++;
+      tokens.push({ type: "number", value: line.slice(i, j) });
+      i = j;
+      continue;
+    }
+    
+    // Keywords (true, false, null)
+    if (/[tfn]/.test(line[i])) {
+      const remaining = line.slice(i);
+      if (remaining.startsWith("true")) {
+        tokens.push({ type: "keyword", value: "true" });
+        i += 4;
+        continue;
+      }
+      if (remaining.startsWith("false")) {
+        tokens.push({ type: "keyword", value: "false" });
+        i += 5;
+        continue;
+      }
+      if (remaining.startsWith("null")) {
+        tokens.push({ type: "keyword", value: "null" });
+        i += 4;
+        continue;
+      }
+    }
+    
+    // Other characters
+    tokens.push({ type: "plain", value: line[i] });
+    i++;
+  }
+  
+  return tokens;
+}
+
 function tokenize(code: string, language: string): Token[] {
+  // Use specialized HTTP tokenizer
+  if (language === "http") {
+    return tokenizeHttp(code);
+  }
+  
   const tokens: Token[] = [];
   const keywords = getKeywords(language);
   const keywordSet = new Set(keywords);

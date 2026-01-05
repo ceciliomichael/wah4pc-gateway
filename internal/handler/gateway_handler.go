@@ -52,6 +52,10 @@ func (h *GatewayHandler) RequestQuery(w http.ResponseWriter, r *http.Request) {
 			respondError(w, http.StatusBadGateway, "target provider unreachable")
 			return
 		}
+		if errors.Is(err, service.ErrDuplicateRequest) {
+			respondError(w, http.StatusTooManyRequests, "duplicate request: identical request was made recently, please wait before retrying")
+			return
+		}
 		respondError(w, http.StatusInternalServerError, "failed to initiate query: "+err.Error())
 		return
 	}

@@ -15,6 +15,7 @@ interface HeaderParam {
   name: string;
   value: string;
   required: boolean;
+  description?: string;
 }
 
 export interface EndpointCardProps {

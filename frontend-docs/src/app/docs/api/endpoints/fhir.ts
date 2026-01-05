@@ -18,6 +18,12 @@ export const fhirEndpoints: EndpointCardProps[] = [
         value: "wah_your-api-key",
         required: true,
       },
+      {
+        name: "Idempotency-Key",
+        value: "550e8400-e29b-41d4-a716-446655440000",
+        required: false,
+        description: "UUID for safe retries. Recommended for all requests.",
+      },
     ],
     requestBody: `{
   "requesterId": "your-provider-uuid",
@@ -69,6 +75,9 @@ export const fhirEndpoints: EndpointCardProps[] = [
       "Common systems: http://philhealth.gov.ph, http://psa.gov.ph/birth-certificate, or your hospital's MRN system",
       "The gateway forwards the request to the target's /fhir/process-query endpoint",
       "Results will be delivered to your /fhir/receive-results endpoint asynchronously",
+      "**Idempotency**: Use `Idempotency-Key` header for safe retries. Keys are cached for 24 hours.",
+      "**Duplicate Detection**: Identical requests (same requester, target, identifiers) within 5 minutes return 429.",
+      "**Response Headers**: `Idempotency-Replayed: true` and `Idempotency-Original-Date` indicate cached responses.",
     ],
   },
   {
@@ -92,6 +101,12 @@ export const fhirEndpoints: EndpointCardProps[] = [
         name: "X-Provider-ID",
         value: "your-provider-uuid",
         required: false,
+      },
+      {
+        name: "Idempotency-Key",
+        value: "550e8400-e29b-41d4-a716-446655440000",
+        required: false,
+        description: "UUID for safe retries when sending results back.",
       },
     ],
     requestBody: `{

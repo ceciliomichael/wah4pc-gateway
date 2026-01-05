@@ -202,3 +202,23 @@ func (r *JsonRepository[T]) Exists(id string) (bool, error) {
 
 	return false, nil
 }
+
+// Find returns all entities matching the predicate function
+func (r *JsonRepository[T]) Find(predicate func(T) bool) ([]T, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	entities, err := r.readAll()
+	if err != nil {
+		return nil, err
+	}
+
+	matches := make([]T, 0)
+	for _, e := range entities {
+		if predicate(e) {
+			matches = append(matches, e)
+		}
+	}
+
+	return matches, nil
+}

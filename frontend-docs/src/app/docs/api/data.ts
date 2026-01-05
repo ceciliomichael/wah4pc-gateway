@@ -55,6 +55,23 @@ export const authenticationInfo = {
   alternativeHeader: "Authorization: Bearer YOUR_API_KEY"
 };
 
+// Idempotency information
+export const idempotencyInfo = {
+  description: "For safe retries on mutating requests (POST, PUT, PATCH, DELETE), include an Idempotency-Key header. The gateway caches responses for 24 hours, preventing duplicate processing.",
+  header: "Idempotency-Key",
+  valueFormat: "UUID v4 (e.g., 550e8400-e29b-41d4-a716-446655440000)",
+  responseHeaders: {
+    replayed: "Idempotency-Replayed",
+    originalDate: "Idempotency-Original-Date"
+  },
+  notes: [
+    "Generate a unique UUID for each logical operation",
+    "Reuse the same key when retrying a failed request",
+    "Keys are valid for 24 hours after first use",
+    "If the original request is still processing, you'll receive a 409 Conflict"
+  ]
+};
+
 // Error response data
 export const errorData = [
   {
@@ -78,9 +95,14 @@ export const errorData = [
     causes: "The requested resource does not exist"
   },
   {
+    code: 409,
+    meaning: "Conflict",
+    causes: "Idempotency key is currently being processed. Retry after a short delay."
+  },
+  {
     code: 429,
     meaning: "Too Many Requests",
-    causes: "Rate limit exceeded for your API key"
+    causes: "Rate limit exceeded OR duplicate request detected within 5-minute window"
   },
   {
     code: 500,

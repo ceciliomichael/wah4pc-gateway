@@ -12,13 +12,14 @@ import (
 
 // Router is the HTTP router for the gateway
 type Router struct {
-	mux                 *http.ServeMux
-	providerHandler     *handler.ProviderHandler
-	gatewayHandler      *handler.GatewayHandler
-	apiKeyHandler       *handler.ApiKeyHandler
-	authMiddleware      *middleware.AuthMiddleware
-	rateLimitMiddleware *middleware.RateLimitMiddleware
-	auditMiddleware     *middleware.AuditMiddleware
+	mux                   *http.ServeMux
+	providerHandler       *handler.ProviderHandler
+	gatewayHandler        *handler.GatewayHandler
+	apiKeyHandler         *handler.ApiKeyHandler
+	authMiddleware        *middleware.AuthMiddleware
+	rateLimitMiddleware   *middleware.RateLimitMiddleware
+	auditMiddleware       *middleware.AuditMiddleware
+	idempotencyMiddleware *middleware.IdempotencyMiddleware
 }
 
 // NewRouter creates a new router with all handlers
@@ -34,15 +35,17 @@ func NewRouter(
 	authMW := middleware.NewAuthMiddleware(apiKeyService, masterKey)
 	rateLimitMW := middleware.NewRateLimitMiddleware(apiKeyService)
 	auditMW := middleware.NewAuditMiddleware(auditLogger)
+	idempotencyMW := middleware.NewIdempotencyMiddleware()
 
 	r := &Router{
-		mux:                 http.NewServeMux(),
-		providerHandler:     providerHandler,
-		gatewayHandler:      gatewayHandler,
-		apiKeyHandler:       apiKeyHandler,
-		authMiddleware:      authMW,
-		rateLimitMiddleware: rateLimitMW,
-		auditMiddleware:     auditMW,
+		mux:                   http.NewServeMux(),
+		providerHandler:       providerHandler,
+		gatewayHandler:        gatewayHandler,
+		apiKeyHandler:         apiKeyHandler,
+		authMiddleware:        authMW,
+		rateLimitMiddleware:   rateLimitMW,
+		auditMiddleware:       auditMW,
+		idempotencyMiddleware: idempotencyMW,
 	}
 
 	r.registerRoutes()
@@ -72,12 +75,14 @@ func (r *Router) registerRoutes() {
 }
 
 // Handler returns the HTTP handler with middleware chain
-// Order: Audit -> CORS -> Auth -> RateLimit -> Handler
+// Order: Audit -> CORS -> Auth -> RateLimit -> Idempotency -> Handler
 func (r *Router) Handler() http.Handler {
 	return r.auditMiddleware.Middleware(
 		r.corsMiddleware(
 			r.authMiddleware.Middleware(
-				r.rateLimitMiddleware.Middleware(r.mux),
+				r.rateLimitMiddleware.Middleware(
+					r.idempotencyMiddleware.Middleware(r.mux),
+				),
 			),
 		),
 	)
@@ -200,7 +205,8 @@ func (r *Router) corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-API-Key")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-API-Key, Idempotency-Key")
+		w.Header().Set("Access-Control-Expose-Headers", "Idempotency-Replayed, Idempotency-Original-Date")
 
 		if req.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusOK)

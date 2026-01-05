@@ -56,6 +56,7 @@ type ApiKeyListItem struct {
 	ID         string     `json:"id"`
 	Prefix     string     `json:"prefix"`
 	Owner      string     `json:"owner"`
+	ProviderID string     `json:"providerId,omitempty"`
 	Role       ApiKeyRole `json:"role"`
 	RateLimit  int        `json:"rateLimit"`
 	IsActive   bool       `json:"isActive"`
@@ -69,6 +70,7 @@ func (a ApiKey) ToListItem() ApiKeyListItem {
 		ID:         a.ID,
 		Prefix:     a.Prefix,
 		Owner:      a.Owner,
+		ProviderID: a.ProviderID,
 		Role:       a.Role,
 		RateLimit:  a.RateLimit,
 		IsActive:   a.IsActive,

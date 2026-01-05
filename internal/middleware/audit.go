@@ -11,76 +11,6 @@ import (
 	"github.com/wah4pc/wah4pc-gateway/pkg/logger"
 )
 
-// responseWriterWrapper wraps http.ResponseWriter to capture status code, headers, and body
-type responseWriterWrapper struct {
-	http.ResponseWriter
-	statusCode    int
-	written       bool
-	body          *bytes.Buffer
-	maxBodySize   int
-	bodyTruncated bool
-}
-
-// newResponseWriterWrapper creates a new wrapper with default 200 status
-func newResponseWriterWrapper(w http.ResponseWriter, maxBodySize int) *responseWriterWrapper {
-	return &responseWriterWrapper{
-		ResponseWriter: w,
-		statusCode:     http.StatusOK,
-		written:        false,
-		body:           &bytes.Buffer{},
-		maxBodySize:    maxBodySize,
-		bodyTruncated:  false,
-	}
-}
-
-// WriteHeader captures the status code before calling the underlying WriteHeader
-func (rw *responseWriterWrapper) WriteHeader(code int) {
-	if !rw.written {
-		rw.statusCode = code
-		rw.written = true
-	}
-	rw.ResponseWriter.WriteHeader(code)
-}
-
-// Write captures the response body while also writing to the original writer
-func (rw *responseWriterWrapper) Write(b []byte) (int, error) {
-	if !rw.written {
-		rw.statusCode = http.StatusOK
-		rw.written = true
-	}
-
-	// Capture body up to max size
-	if !rw.bodyTruncated {
-		remaining := rw.maxBodySize - rw.body.Len()
-		if remaining > 0 {
-			if len(b) <= remaining {
-				rw.body.Write(b)
-			} else {
-				rw.body.Write(b[:remaining])
-				rw.bodyTruncated = true
-			}
-		} else {
-			rw.bodyTruncated = true
-		}
-	}
-
-	return rw.ResponseWriter.Write(b)
-}
-
-// GetBody returns the captured response body as a string
-func (rw *responseWriterWrapper) GetBody() string {
-	body := rw.body.String()
-	if rw.bodyTruncated {
-		body += "\n\n[TRUNCATED - Response exceeded max capture size]"
-	}
-	return body
-}
-
-// GetBodySize returns the captured body size
-func (rw *responseWriterWrapper) GetBodySize() int {
-	return rw.body.Len()
-}
-
 // AuditMiddleware logs all HTTP requests to the file-based audit log with full details
 type AuditMiddleware struct {
 	logger *logger.FileLogger
@@ -113,7 +43,7 @@ func (m *AuditMiddleware) Middleware(next http.Handler) http.Handler {
 		requestHeaders := cloneHeaders(req.Header)
 
 		// Wrap the response writer to capture status code, headers, and body
-		wrapper := newResponseWriterWrapper(w, logger.MaxBodySize)
+		wrapper := NewResponseWriterWrapper(w, logger.MaxBodySize)
 
 		// Process the request
 		next.ServeHTTP(wrapper, req)
@@ -162,7 +92,7 @@ func (m *AuditMiddleware) Middleware(next http.Handler) http.Handler {
 			RequestBody:     reqBodyStr,
 			RequestBodySize: reqBodySize,
 
-			StatusCode:       wrapper.statusCode,
+			StatusCode:       wrapper.StatusCode(),
 			ResponseHeaders:  cloneHeaders(wrapper.Header()),
 			ResponseBody:     wrapper.GetBody(),
 			ResponseBodySize: wrapper.GetBodySize(),

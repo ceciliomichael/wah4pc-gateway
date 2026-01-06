@@ -34,9 +34,7 @@ const navigationItems: NavItem[] = [
     icon: <Blocks className="h-4 w-4" />,
     description: "System design & flow",
     items: [
-      { title: "Overview", href: "/docs/architecture#overview" },
       { title: "System Components", href: "/docs/architecture#components" },
-      { title: "Layered Architecture", href: "/docs/architecture#layers" },
       { title: "Transaction Flow", href: "/docs/architecture#transaction-flow" },
       { title: "Transaction States", href: "/docs/architecture#states" },
       { title: "Data Models", href: "/docs/architecture#models" },

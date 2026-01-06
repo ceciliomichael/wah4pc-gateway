@@ -1,30 +1,19 @@
 "use client";
 
-import { Server, Database, ArrowRightLeft, FileJson, CheckCircle2 } from "lucide-react";
+import { Server, ArrowRightLeft, FileJson } from "lucide-react";
 import { DocsHeader } from "@/components/ui/docs-header";
-import { CompactFeatureCard } from "@/components/ui/feature-card";
 import { DiagramContainer } from "@/components/ui/diagram-container";
 import { JsonViewer } from "@/components/ui/json-viewer";
 import { AlertBlock } from "@/components/ui/alert-block";
 import { DataTable } from "@/components/ui/data-table";
 import {
   systemArchitectureDiagram,
-  layeredArchitectureDiagram,
   transactionFlowDiagram,
   transactionStatesDiagram,
   transactionStatesData,
-  architectureLayers,
-  designPrinciples,
   keyPoints,
   dataModels,
 } from "./data";
-
-const iconMap = {
-  Server: <Server className="h-5 w-5" />,
-  ArrowRightLeft: <ArrowRightLeft className="h-5 w-5" />,
-  FileJson: <FileJson className="h-5 w-5" />,
-  Database: <Database className="h-5 w-5" />,
-};
 
 export default function ArchitecturePage() {
   return (
@@ -33,32 +22,10 @@ export default function ArchitecturePage() {
         badge="Architecture"
         badgeColor="purple"
         title="System Architecture"
-        description="Understanding the internal structure, data flow, and design patterns of the WAH4PC Gateway."
+        description="Understanding the data flow and transaction lifecycle of the WAH4PC Gateway."
       />
 
-      {/* Overview */}
-      <section id="overview" className="mb-16">
-        <h2 className="mb-6 text-2xl font-bold text-slate-900">Overview</h2>
-        <p className="mb-8 text-lg text-slate-600 leading-relaxed">
-          The WAH4PC Gateway is a centralized orchestration service that manages FHIR
-          resource transfers between healthcare providers. It follows a clean layered
-          architecture with clear separation of concerns.
-        </p>
-
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-          {architectureLayers.map((layer) => (
-            <CompactFeatureCard
-              key={layer.title}
-              icon={iconMap[layer.iconName]}
-              title={layer.title}
-              description={layer.description}
-              iconBgColor="bg-purple-50 text-purple-600"
-            />
-          ))}
-        </div>
-      </section>
-
-      {/* System Architecture Diagram */}
+      {/* System Components */}
       <section id="components" className="mb-16">
         <div className="flex items-center gap-3 mb-6">
           <Server className="h-5 w-5 text-purple-600" />
@@ -73,38 +40,6 @@ export default function ArchitecturePage() {
           title="Component Interaction Model"
           filename="system_architecture.mmd"
         />
-      </section>
-
-      {/* Layered Architecture */}
-      <section id="layers" className="mb-16">
-        <div className="flex items-center gap-3 mb-6">
-          <Database className="h-5 w-5 text-blue-600" />
-          <h2 className="text-2xl font-bold text-slate-900">Layered Architecture</h2>
-        </div>
-        <p className="mb-6 text-slate-600">
-          The codebase follows SOLID principles with dependency injection. Each layer
-          has a single responsibility and depends only on abstractions.
-        </p>
-        <DiagramContainer 
-          chart={layeredArchitectureDiagram} 
-          title="Clean Architecture Layers"
-          filename="layered_architecture.mmd"
-          className="mb-8"
-        />
-
-        <div className="rounded-2xl border border-slate-200 bg-white/50 backdrop-blur-sm p-6">
-          <h3 className="mb-4 text-lg font-semibold text-slate-900">Design Principles</h3>
-          <ul className="space-y-4">
-            {designPrinciples.map((principle) => (
-              <DesignPrincipleItem
-                key={principle.letter}
-                letter={principle.letter}
-                title={principle.title}
-                description={principle.description}
-              />
-            ))}
-          </ul>
-        </div>
       </section>
 
       {/* Transaction Flow */}
@@ -209,27 +144,5 @@ export default function ArchitecturePage() {
         </div>
       </section>
     </article>
-  );
-}
-
-function DesignPrincipleItem({
-  letter,
-  title,
-  description,
-}: {
-  letter: string;
-  title: string;
-  description: string;
-}) {
-  return (
-    <li className="flex gap-4 p-3 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-sm font-bold text-blue-700 shadow-sm">
-        {letter}
-      </span>
-      <div>
-        <span className="font-bold text-slate-900 block mb-1">{title}</span>
-        <p className="text-sm text-slate-600 leading-relaxed">{description}</p>
-      </div>
-    </li>
   );
 }

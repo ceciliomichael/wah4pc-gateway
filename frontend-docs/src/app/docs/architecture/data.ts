@@ -26,32 +26,6 @@ sequenceDiagram
     end
 `;
 
-export const layeredArchitectureDiagram = `
-sequenceDiagram
-    participant C as Client Request
-    participant R as Router
-    participant H as Handler
-    participant S as Service
-    participant Repo as Repository
-    participant DB as JSON Storage
-
-    rect rgb(250, 245, 255)
-        Note over C,DB: Request Processing Pipeline
-        C->>R: HTTP Request
-        R->>R: Apply Middleware (CORS, Logging)
-        R->>H: Route to Handler
-        H->>H: Decode JSON, Validate Input
-        H->>S: Call Service Method
-        S->>S: Execute Business Logic
-        S->>Repo: Data Operation
-        Repo->>DB: Read/Write JSON File
-        DB-->>Repo: Data
-        Repo-->>S: Entity
-        S-->>H: Result
-        H-->>C: HTTP Response
-    end
-`;
-
 export const transactionFlowDiagram = `
 sequenceDiagram
     participant R as Requester (Hospital A)
@@ -156,47 +130,6 @@ export const transactionStatesData: TransactionStateData[] = [
     nextStates: "-",
   },
 ];
-
-export const architectureLayers = [
-  {
-    iconName: "Server" as const,
-    title: "Router Layer",
-    description: "HTTP routing and middleware (CORS, logging)",
-  },
-  {
-    iconName: "ArrowRightLeft" as const,
-    title: "Handler Layer",
-    description: "Request/response processing and validation",
-  },
-  {
-    iconName: "FileJson" as const,
-    title: "Service Layer",
-    description: "Business logic and orchestration",
-  },
-  {
-    iconName: "Database" as const,
-    title: "Repository Layer",
-    description: "Generic JSON file persistence",
-  },
-] as const;
-
-export const designPrinciples = [
-  {
-    letter: "S",
-    title: "Single Responsibility",
-    description: "Handlers handle HTTP, Services handle logic, Repos handle data.",
-  },
-  {
-    letter: "O",
-    title: "Open/Closed",
-    description: "Generic repository allows new entity types without modification.",
-  },
-  {
-    letter: "D",
-    title: "Dependency Inversion",
-    description: "Services depend on Repository interfaces, not concrete implementations.",
-  },
-] as const;
 
 export const keyPoints = [
   "The requester receives a transaction ID immediately (202 Accepted)",

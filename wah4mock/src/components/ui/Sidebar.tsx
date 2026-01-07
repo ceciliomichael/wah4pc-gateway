@@ -13,6 +13,8 @@ import {
   LuArrowLeftRight,
 } from 'react-icons/lu';
 import { useState } from 'react';
+
+const clinicName = process.env.NEXT_PUBLIC_CLINIC_NAME || 'FHIR Clinic';
 import clsx from 'clsx';
 
 interface NavItem {
@@ -98,7 +100,7 @@ export function Sidebar() {
             <div className="w-8 h-8 rounded-lg bg-teal-500 flex items-center justify-center">
               <LuHeart className="w-5 h-5 text-white" />
             </div>
-            <span className="font-semibold text-slate-800">FHIR Clinic</span>
+            <span className="font-semibold text-slate-800">{clinicName}</span>
           </div>
           <button
             type="button"

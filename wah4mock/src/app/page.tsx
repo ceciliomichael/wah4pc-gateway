@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { LuUsers, LuUserCog, LuCalendarClock, LuArrowRight, LuActivity } from 'react-icons/lu';
 
+const clinicName = process.env.NEXT_PUBLIC_CLINIC_NAME || 'FHIR Clinic';
+
 interface DashboardStats {
   patients: number;
   practitioners: number;
@@ -92,7 +94,7 @@ export default function DashboardPage() {
     <div className="p-4 md:p-6 lg:p-8">
       <div className="sticky top-0 z-10 bg-slate-50/95 backdrop-blur-sm -mx-4 px-4 md:-mx-6 md:px-6 lg:-mx-8 lg:px-8 py-4 -mt-4 mb-4">
         <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Dashboard</h1>
-        <p className="text-slate-500 mt-1">Welcome to FHIR Clinic Management System</p>
+        <p className="text-slate-500 mt-1">Welcome to {clinicName} Management System</p>
       </div>
 
       {/* Stats Grid */}
@@ -171,23 +173,6 @@ export default function DashboardPage() {
           </div>
         </CardContent>
       </Card>
-
-      {/* FHIR Compliance Badge */}
-      <div className="mt-8 p-4 bg-white rounded-xl border border-slate-200">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
-            <svg className="w-6 h-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <div className="min-w-0">
-            <p className="font-medium text-slate-900">FHIR R4 Compliant</p>
-            <p className="text-sm text-slate-500">
-              This system follows PHCore (Philippine Core) FHIR Implementation Guide standards
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

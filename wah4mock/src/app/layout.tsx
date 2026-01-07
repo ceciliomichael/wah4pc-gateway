@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Sidebar } from "@/components/ui/Sidebar";
 
+const clinicName = process.env.NEXT_PUBLIC_CLINIC_NAME || 'FHIR Clinic';
+
 export const metadata: Metadata = {
-  title: "FHIR Clinic — PHCore Compliant Healthcare System",
-  description: "A FHIR R4 compliant clinic management system following Philippine Core (PHCore) standards for healthcare data interoperability.",
+  title: `${clinicName} — PHCore Compliant Healthcare System`,
+  description: `A clinic management system following Philippine Core (PHCore) standards for healthcare data interoperability.`,
   icons: {
     icon: "/favicon.svg",
   },

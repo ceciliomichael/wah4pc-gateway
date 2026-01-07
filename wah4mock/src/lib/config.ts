@@ -3,6 +3,11 @@
  * Loads environment variables for WAH4PC Gateway integration
  */
 
+interface AppSettings {
+  /** Clinic/Provider display name (used in UI) */
+  clinicName: string;
+}
+
 interface IntegrationConfig {
   /** Gateway base URL (e.g., http://localhost:8080) */
   gatewayUrl: string;
@@ -21,6 +26,7 @@ interface IntegrationConfig {
 }
 
 interface AppConfig {
+  app: AppSettings;
   integration: IntegrationConfig;
   isDev: boolean;
 }
@@ -42,6 +48,9 @@ function getRequiredEnvVar(key: string): string {
  * All integration-related settings are loaded from environment variables
  */
 export const config: AppConfig = {
+  app: {
+    clinicName: process.env.NEXT_PUBLIC_CLINIC_NAME || 'FHIR Clinic',
+  },
   integration: {
     gatewayUrl: getEnvVar('WAH4PC_GATEWAY_URL', 'http://localhost:8080'),
     providerId: getEnvVar('WAH4PC_PROVIDER_ID'),

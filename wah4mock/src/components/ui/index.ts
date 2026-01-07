@@ -18,3 +18,6 @@ export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 export { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, EmptyState } from './Table';
 
 export { Sidebar } from './Sidebar';
+
+export { Textarea } from './Textarea';
+export type { TextareaProps } from './Textarea';

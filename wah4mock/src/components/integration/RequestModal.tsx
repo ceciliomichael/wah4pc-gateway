@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
 import { Select } from '@/components/ui/Select';
 import { LuX, LuSend, LuLoader } from 'react-icons/lu';
 
@@ -273,11 +274,12 @@ export function RequestModal({ isOpen, onClose, onSuccess }: RequestModalProps) 
             hint="The patient's ID in the specified system"
           />
 
-          <Input
+          <Textarea
             label="Reason (Optional)"
             placeholder="e.g., Referral consultation"
             value={formData.reason}
             onChange={(e) => handleChange('reason', e.target.value)}
+            rows={3}
           />
 
           {/* Actions */}

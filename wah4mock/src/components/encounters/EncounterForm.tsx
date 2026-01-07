@@ -11,6 +11,7 @@ import {
   Button,
   Input,
   Select,
+  Textarea,
 } from '@/components/ui';
 import { LuSave } from 'react-icons/lu';
 import type { Patient, Practitioner, EncounterFormData } from '@/lib/types/fhir';
@@ -245,12 +246,13 @@ export function EncounterForm({
                 hint="Leave empty if ongoing"
               />
               <div className="md:col-span-2 lg:col-span-3">
-                <Input
+                <Textarea
                   label="Reason for Visit"
                   name="reasonText"
                   value={formData.reasonText}
                   onChange={handleChange}
                   placeholder="e.g., Annual checkup, Follow-up consultation, Fever and cough"
+                  rows={3}
                 />
               </div>
             </div>

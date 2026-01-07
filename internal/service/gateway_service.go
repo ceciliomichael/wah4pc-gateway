@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sort"
 	"time"
 
 	"github.com/google/uuid"
@@ -247,20 +248,27 @@ func (s *GatewayService) GetAllTransactions(filterProviderID string) ([]model.Tr
 		return nil, err
 	}
 
-	// If no filter, return all (admin access)
-	if filterProviderID == "" {
-		return allTx, nil
-	}
+	var result []model.Transaction
 
-	// Filter transactions where the provider is involved
-	filtered := make([]model.Transaction, 0)
-	for _, tx := range allTx {
-		if tx.RequesterID == filterProviderID || tx.TargetID == filterProviderID {
-			filtered = append(filtered, tx)
+	// If no filter, use all transactions (admin access)
+	if filterProviderID == "" {
+		result = allTx
+	} else {
+		// Filter transactions where the provider is involved
+		result = make([]model.Transaction, 0)
+		for _, tx := range allTx {
+			if tx.RequesterID == filterProviderID || tx.TargetID == filterProviderID {
+				result = append(result, tx)
+			}
 		}
 	}
 
-	return filtered, nil
+	// Sort by CreatedAt descending (newest first)
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].CreatedAt.After(result[j].CreatedAt)
+	})
+
+	return result, nil
 }
 
 // forwardToTarget sends the query request to the target provider

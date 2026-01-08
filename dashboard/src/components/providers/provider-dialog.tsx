@@ -176,7 +176,7 @@ export function ProviderDialog({
 
           {/* Gateway Auth Key */}
           <Input
-            label="Gateway Auth Key (Optional)"
+            label="Gateway Auth Key"
             name="gatewayAuthKey"
             type="password"
             value={formData.gatewayAuthKey}

@@ -145,41 +145,4 @@ export const providersEndpoints: EndpointCardProps[] = [
       "Active transactions may fail if provider is deleted",
     ],
   },
-  {
-    method: "POST",
-    path: "/api/v1/providers/{id}/status",
-    description: "Enable or disable a provider. Disabled providers cannot participate in data exchanges.",
-    pathParams: [
-      { name: "id", type: "string", description: "Provider UUID" },
-    ],
-    headers: [
-      {
-        name: "X-API-Key",
-        value: "wah_your-admin-api-key",
-        required: true,
-      },
-    ],
-    requestBody: `{
-  "active": true
-}`,
-    responseStatus: 200,
-    responseBody: `{
-  "success": true,
-  "data": {
-    "id": "550e8400-e29b-41d4-a716-446655440000",
-    "name": "Example Hospital",
-    "type": "hospital",
-    "baseUrl": "https://your-api.example.com",
-    "isActive": true,
-    "createdAt": "2024-01-15T10:30:00Z",
-    "updatedAt": "2024-01-15T14:00:00Z"
-  }
-}`,
-    notes: [
-      "Requires admin role",
-      "Set active: false to temporarily disable a provider",
-      "Set active: true to re-enable a disabled provider",
-      "Disabled providers will reject incoming FHIR requests",
-    ],
-  },
 ];

@@ -2,7 +2,6 @@ import type { EndpointCardProps } from "@/components/ui/endpoint-card";
 
 // Import endpoint modules
 import { healthEndpoints } from "./endpoints/health";
-import { apikeysEndpoints } from "./endpoints/apikeys";
 import { providersEndpoints } from "./endpoints/providers";
 import { fhirEndpoints } from "./endpoints/fhir";
 import { transactionsEndpoints } from "./endpoints/transactions";
@@ -10,7 +9,7 @@ import { transactionsEndpoints } from "./endpoints/transactions";
 // Endpoint categories with their items
 export interface EndpointCategory {
   category: string;
-  iconName: "Activity" | "Users" | "Server" | "FileText" | "Key";
+  iconName: "Activity" | "Users" | "Server" | "FileText";
   description: string;
   items: EndpointCardProps[];
 }
@@ -21,12 +20,6 @@ export const endpoints: EndpointCategory[] = [
     iconName: "Activity",
     description: "System health and status (public endpoint)",
     items: healthEndpoints,
-  },
-  {
-    category: "API Keys",
-    iconName: "Key",
-    description: "Manage API keys for authentication (Admin only)",
-    items: apikeysEndpoints,
   },
   {
     category: "Providers",

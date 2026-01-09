@@ -68,16 +68,6 @@ sequenceDiagram
         GW-->>P: 201 Created
         Note left of GW: {id, name, type, baseUrl, createdAt}
     end
-
-    rect rgb(254, 243, 199)
-        Note over P,DB: API Key Generation
-        P->>GW: POST /api/v1/apikeys
-        Note right of P: {providerId, name}
-        GW->>GW: Generate Secure Key
-        GW->>DB: Store Key Hash
-        GW-->>P: 201 Created
-        Note left of GW: {id, key: "wah_xxx...", providerId}
-    end
 `;
 
 export const discoveryFlowDiagram = `
@@ -345,24 +335,18 @@ export const quickStartSteps = [
   },
   {
     step: 2,
-    action: "Generate API Key",
-    endpoint: "POST /api/v1/apikeys",
-    result: "API Key (wah_...)",
-  },
-  {
-    step: 3,
     action: "Implement Webhooks",
     endpoint: "Your server",
     result: "/fhir/process-query & /fhir/receive-results",
   },
   {
-    step: 4,
+    step: 3,
     action: "Discover Providers",
     endpoint: "GET /api/v1/providers",
     result: "List of target IDs",
   },
   {
-    step: 5,
+    step: 4,
     action: "Request Data",
     endpoint: "POST /api/v1/fhir/request/{type}",
     result: "Transaction ID",

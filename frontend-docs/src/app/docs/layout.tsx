@@ -7,7 +7,7 @@ interface DocsLayoutProps {
 
 export default function DocsLayout({ children }: DocsLayoutProps) {
   return (
-    <div className="flex min-h-screen relative selection:bg-blue-100">
+    <div className="flex h-screen relative selection:bg-blue-100 overflow-hidden">
       {/* Continuous Grid Background */}
       <div className="pointer-events-none fixed inset-0 z-0 opacity-[0.03]" style={{ 
         backgroundImage: "linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)", 
@@ -23,8 +23,8 @@ export default function DocsLayout({ children }: DocsLayoutProps) {
       {/* Desktop Sidebar */}
       <DocsSidebar />
       
-      {/* Main Content */}
-      <main className="relative z-10 flex-1 overflow-y-auto pt-14 lg:pt-0">
+      {/* Main Content - scrolls independently with its own scrollbar */}
+      <main className="relative z-10 flex-1 h-full overflow-y-auto pt-14 lg:pt-0">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-20">
           {children}
         </div>

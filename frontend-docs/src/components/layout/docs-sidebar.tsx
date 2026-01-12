@@ -24,7 +24,7 @@ interface NavItem {
 const navigationItems: NavItem[] = [
   {
     title: "Introduction",
-    href: "/docs",
+    href: "/docs/introduction",
     icon: <Home className="h-4 w-4" />,
     description: "Overview of the gateway",
   },
@@ -114,8 +114,8 @@ export function SidebarContent({ onNavigate, showSubItems = true }: SidebarConte
   const pathname = usePathname();
 
   const isActive = (href: string) => {
-    if (href === "/docs") {
-      return pathname === "/docs";
+    if (href === "/docs/introduction") {
+      return pathname === "/docs/introduction";
     }
     return pathname.startsWith(href);
   };
@@ -143,7 +143,7 @@ export function SidebarContent({ onNavigate, showSubItems = true }: SidebarConte
     <div className="flex h-full flex-col bg-white">
       {/* Header */}
       <div className="border-b border-slate-200 px-6 py-6">
-        <Link href="/docs" className="flex items-center gap-3 group" onClick={onNavigate}>
+        <Link href="/docs/introduction" className="flex items-center gap-3 group" onClick={onNavigate}>
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-600 shadow-sm transition-transform group-hover:scale-105">
             <BookOpen className="h-5 w-5 text-white" />
           </div>

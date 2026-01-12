@@ -14,15 +14,26 @@ interface CodeBlockProps {
   inline?: boolean;
   className?: string;
   children?: React.ReactNode;
+  node?: { position?: { start?: { line?: number }; end?: { line?: number } } };
 }
 
 // Memoized code block with copy functionality
-const CodeBlock = memo(function CodeBlock({ inline, className, children }: CodeBlockProps) {
+const CodeBlock = memo(function CodeBlock({ inline, className, children, node }: CodeBlockProps) {
   const [copied, setCopied] = useState(false);
   
   const match = /language-(\w+)/.exec(className || "");
   const language = match ? match[1] : "";
   const codeString = String(children).replace(/\n$/, "");
+  
+  // Determine if this is truly inline code:
+  // 1. Explicitly marked as inline
+  // 2. No language class (fenced blocks have language classes)
+  // 3. No newlines in content
+  // 4. Single line in AST node
+  const hasLanguage = Boolean(match);
+  const hasNewlines = codeString.includes("\n");
+  const isMultiLine = node?.position?.start?.line !== node?.position?.end?.line;
+  const isInlineCode = inline || (!hasLanguage && !hasNewlines && !isMultiLine);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(codeString);
@@ -31,7 +42,7 @@ const CodeBlock = memo(function CodeBlock({ inline, className, children }: CodeB
   };
 
   // Inline code
-  if (inline) {
+  if (isInlineCode) {
     return (
       <code className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-[0.85em] text-pink-600 border border-slate-200">
         {children}

@@ -59,7 +59,7 @@ param2: value2
 ### Important Rules
 - Only use ONE tool at a time
 - Wait for the tool result before continuing
-- After receiving a tool result (marked as [[[tool_result: ...]]]), use that information to answer the user's question
+- After receiving a tool result, use that information to answer the user's question
 - Be helpful and explain concepts clearly based on what you read from the documentation
 - If you already know the answer from previous tool results in the conversation, you don't need to call tools again`;
 

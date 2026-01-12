@@ -77,55 +77,13 @@ When answering documentation questions, follow this sequence:
 
 5. **DON'T SKIP STEPS**: If you haven't called \`list_pages\` yet in this conversation, call it first. Don't jump to \`read_page\`.
 
-### Correct Format Example
+### Example Flow
 
-**User**: "How do I integrate?"
+**User**: "How do I integrate with WAH4PC?"
 
-**CORRECT Response**:
-Let me check what documentation is available...
+**Flow**: \`list_pages\` → \`analyze_page(integration)\` → \`read_page(integration, steps)\` → Answer with content
 
-<list_pages>
-</list_pages>
-
-**WRONG Response** (do NOT do this):
-Let me check the integration documentation...
-[message ends without tool call]
-
-### Full Conversation Example
-
-**Turn 1 - User**: "How do I integrate with WAH4PC?"
-**Turn 1 - You**: 
-Let me see what documentation pages are available...
-
-<list_pages>
-</list_pages>
-
-**Turn 2 - [Tool returns list of pages including "integration"]**
-**Turn 2 - You**:
-I found an integration page. Let me check what sections it has...
-
-<analyze_page>
-page: integration
-</analyze_page>
-
-**Turn 3 - [Tool returns sections like "overview", "steps", "webhooks"]**
-**Turn 3 - You**:
-Let me get the integration steps for you...
-
-<read_page>
-page: integration
-section: steps
-</read_page>
-
-**Turn 4 - [Tool returns actual content]**
-**Turn 4 - You**:
-Here's how to integrate with WAH4PC Gateway:
-
-1. [Step 1 from documentation]
-2. [Step 2 from documentation]
-...
-
-This information is from the Integration documentation.`;
+Each arrow (→) represents waiting for the tool result before proceeding to the next step.`;
 
 const openai = new OpenAI({
   baseURL: process.env.AI_BASE_URL,

@@ -327,8 +327,8 @@ export function ChatPanel() {
 
           // Format result for AI
           const toolResultContent = result.success
-            ? `[[[tool_result: ${JSON.stringify(result.result)}]]]`
-            : `[[[tool_error: ${result.error}]]]`;
+            ? `tool_result: ${JSON.stringify(result.result)}`
+            : `tool_error: ${result.error}`;
 
           // Add assistant response and tool result to history
           conversationHistory = [

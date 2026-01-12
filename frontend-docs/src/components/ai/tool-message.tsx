@@ -96,16 +96,18 @@ const ToolResultDropdown = memo(function ToolResultDropdown({
     <div className="mt-2">
       <button
         onClick={onToggle}
-        className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-800 transition-colors"
+        className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-800 transition-colors w-full text-left"
       >
-        {isOpen ? (
-          <ChevronDown className="h-3.5 w-3.5" />
-        ) : (
-          <ChevronRight className="h-3.5 w-3.5" />
-        )}
-        <span className="font-medium">View Result</span>
+        <span className="shrink-0">
+          {isOpen ? (
+            <ChevronDown className="h-3.5 w-3.5" />
+          ) : (
+            <ChevronRight className="h-3.5 w-3.5" />
+          )}
+        </span>
+        <span className="font-medium whitespace-nowrap shrink-0">View Result</span>
         {!isOpen && (
-          <span className="text-slate-400 font-mono truncate max-w-[200px]">
+          <span className="text-slate-400 font-mono truncate min-w-0">
             {preview}
           </span>
         )}

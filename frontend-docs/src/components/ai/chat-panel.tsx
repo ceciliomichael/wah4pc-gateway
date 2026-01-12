@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { Bot } from "lucide-react";
+import { Bot, X } from "lucide-react";
 import { ChatInput } from "./chat-input";
 import { MarkdownRenderer } from "./markdown-renderer";
 import { ThinkingIndicator } from "./thinking-indicator";
@@ -112,7 +112,11 @@ function stripToolCalls(content: string): string {
 // MAIN COMPONENT
 // ============================================================================
 
-export function ChatPanel() {
+interface ChatPanelProps {
+  onClose?: () => void;
+}
+
+export function ChatPanel({ onClose }: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -386,7 +390,7 @@ export function ChatPanel() {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex items-center border-b border-slate-200 bg-white px-4 py-4">
+      <div className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-4">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 shadow-sm">
             <Bot className="h-5 w-5 text-white" />
@@ -396,6 +400,16 @@ export function ChatPanel() {
             <p className="text-xs text-slate-500">WAH4PC Assistant</p>
           </div>
         </div>
+        {/* Mobile close button - visible only on mobile */}
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors md:hidden"
+            aria-label="Close AI Assistant"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
       </div>
 
       {/* Messages */}

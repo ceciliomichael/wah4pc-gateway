@@ -91,6 +91,8 @@ export async function POST(request: NextRequest) {
       model: process.env.AI_MODEL || "gpt-3.5-turbo",
       messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
       stream: true,
+      temperature: Number(process.env.AI_TEMPERATURE) || 0.3,
+      max_tokens: Number(process.env.AI_MAX_TOKENS) || 32000,
     });
 
     const encoder = new TextEncoder();

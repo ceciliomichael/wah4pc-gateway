@@ -87,16 +87,16 @@ export function AppLayout({ children, sidebar }: AppLayoutProps) {
 
   return (
     <SidebarContext.Provider value={contextValue}>
-      <div className="flex min-h-screen w-full">
+      <div className="flex h-screen w-full overflow-hidden">
         {/* Main Content - no margin on mobile, sidebar margin on desktop */}
         <div
-          className={`flex-1 min-w-0 lg:mr-0 ${transitionClass}`}
+          className={`flex-1 min-w-0 h-full lg:mr-0 ${transitionClass}`}
           style={{
             // Only apply margin on lg+ screens via CSS variable
             ["--sidebar-width" as string]: `${currentWidth}px`,
           }}
         >
-          <div className="lg:[margin-right:var(--sidebar-width)]">
+          <div className="lg:[margin-right:var(--sidebar-width)] h-full overflow-y-auto">
             {children}
           </div>
         </div>

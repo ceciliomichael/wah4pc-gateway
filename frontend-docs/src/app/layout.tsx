@@ -17,8 +17,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className="overflow-x-hidden">
-      <body suppressHydrationWarning className="overflow-x-hidden">
+    <html lang="en" suppressHydrationWarning className="h-full overflow-hidden">
+      <body suppressHydrationWarning className="h-full overflow-hidden">
         <AppLayout sidebar={<AiSidebar />}>
           {children}
         </AppLayout>

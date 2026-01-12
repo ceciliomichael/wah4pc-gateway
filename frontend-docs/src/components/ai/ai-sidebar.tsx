@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useCallback, useEffect } from "react";
-import { ChevronRight, X } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { ChatPanel } from "./chat-panel";
 import { useSidebar } from "@/components/layout/app-layout";
 
@@ -66,7 +66,7 @@ export function AiSidebar() {
         </button>
       </div>
 
-      <ChatPanel onClose={close} />
+      <ChatPanel />
     </aside>
   );
 }

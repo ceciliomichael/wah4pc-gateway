@@ -88,19 +88,22 @@ export function AppLayout({ children, sidebar }: AppLayoutProps) {
   return (
     <SidebarContext.Provider value={contextValue}>
       <div className="flex min-h-screen w-full">
-        {/* Main Content - always has margin for sidebar (collapsed or expanded) */}
+        {/* Main Content - no margin on mobile, sidebar margin on desktop */}
         <div
-          className={`flex-1 min-w-0 ${transitionClass}`}
+          className={`flex-1 min-w-0 lg:mr-0 ${transitionClass}`}
           style={{
-            marginRight: currentWidth,
+            // Only apply margin on lg+ screens via CSS variable
+            ["--sidebar-width" as string]: `${currentWidth}px`,
           }}
         >
-          {children}
+          <div className="lg:[margin-right:var(--sidebar-width)]">
+            {children}
+          </div>
         </div>
 
-        {/* Sidebar Area - fixed to right, always visible */}
+        {/* Sidebar Area - desktop only, hidden on mobile */}
         <div
-          className={`fixed right-0 top-0 h-full z-50 ${transitionClass}`}
+          className={`hidden lg:block fixed right-0 top-0 h-full z-50 ${transitionClass}`}
           style={{ width: currentWidth }}
         >
           {/* Collapsed Bar - full height container */}

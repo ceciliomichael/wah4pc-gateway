@@ -315,14 +315,28 @@ const SECTION_REGISTRY: Record<string, SectionInfo[]> = {
 /**
  * list_pages - Returns a list of all available documentation pages
  */
-export function listPages(): PageInfo[] {
-  return Object.values(PAGE_REGISTRY);
+export function listPages(): string {
+  const pages = Object.values(PAGE_REGISTRY);
+  
+  const lines = [
+    "# Documentation Pages",
+    "",
+    "The following documentation pages are available:",
+    ""
+  ];
+
+  for (const page of pages) {
+    lines.push(`- **${page.title}** (\`${page.id}\`)`);
+    lines.push(`  ${page.description}`);
+  }
+
+  return lines.join("\n");
 }
 
 /**
  * analyze_page - Returns detailed section information for a specific page
  */
-export function analyzePage(pageId: string): PageAnalysis | null {
+export function analyzePage(pageId: string): string | null {
   const normalizedId = pageId.toLowerCase().trim();
   const pageInfo = PAGE_REGISTRY[normalizedId];
   const sections = SECTION_REGISTRY[normalizedId];
@@ -331,12 +345,23 @@ export function analyzePage(pageId: string): PageAnalysis | null {
     return null;
   }
 
-  return {
-    page: pageInfo.id,
-    title: pageInfo.title,
-    description: pageInfo.description,
-    sections,
-  };
+  const lines = [
+    `# ${pageInfo.title} (\`${pageInfo.id}\`)`,
+    "",
+    pageInfo.description,
+    "",
+    "## Sections",
+    "",
+    "The following sections can be read individually:",
+    ""
+  ];
+
+  for (const section of sections) {
+    lines.push(`- **${section.name}** (\`${section.id}\`)`);
+    lines.push(`  ${section.description}`);
+  }
+
+  return lines.join("\n");
 }
 
 /**
@@ -416,7 +441,7 @@ export interface ToolRequest {
 export interface ToolResponse {
   success: boolean;
   tool: ToolName;
-  result?: string | PageInfo[] | PageAnalysis;
+  result?: string;
   error?: string;
 }
 

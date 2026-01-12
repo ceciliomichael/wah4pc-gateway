@@ -350,10 +350,20 @@ export function cleanJsxToText(jsxContent: string, dataMap: DataMap = {}): strin
   text = text
     .split("\n")
     .map((line) => line.trim())
+    .filter((line, index, array) => {
+      // Remove consecutive empty lines during split
+      if (line === "" && array[index - 1] === "") {
+        return false;
+      }
+      return true;
+    })
     .join("\n");
   
   // Remove empty bullet points
   text = text.replace(/•\s*\n/g, "");
+
+  // Final cleanup of multiple newlines one last time
+  text = text.replace(/\n{3,}/g, "\n\n");
   
   // Final trim
   text = text.trim();

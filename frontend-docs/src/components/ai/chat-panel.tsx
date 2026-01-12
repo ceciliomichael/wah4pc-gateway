@@ -1,22 +1,17 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Bot } from "lucide-react";
 import { ChatInput } from "./chat-input";
 import { MarkdownRenderer } from "./markdown-renderer";
 import { ThinkingIndicator } from "./thinking-indicator";
 import { ToolMessage, type ToolCall, type ToolStatus, type ToolResult } from "./tool-message";
+import { useAutoScroll } from "../../hooks/use-auto-scroll";
+import type { Message } from "../../types/chat";
 
 // ============================================================================
 // TYPES
 // ============================================================================
-
-interface Message {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  toolCalls?: ToolCall[];
-}
 
 interface ParsedToolCall {
   name: string;
@@ -122,16 +117,10 @@ export function ChatPanel() {
   const [isLoading, setIsLoading] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [isExecutingTool, setIsExecutingTool] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  useAutoScroll(messagesContainerRef, messages);
 
   /**
    * Execute a tool call via the API
@@ -280,7 +269,7 @@ export function ChatPanel() {
 
       let continueLoop = true;
       let loopCount = 0;
-      const maxLoops = 5; // Prevent infinite loops
+      const maxLoops = 9999; // Prevent infinite loops
 
       while (continueLoop && loopCount < maxLoops) {
         loopCount++;
@@ -410,7 +399,10 @@ export function ChatPanel() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto bg-slate-50 p-4">
+      <div
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto bg-slate-50 p-4"
+      >
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-center">
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100">
@@ -463,7 +455,6 @@ export function ChatPanel() {
                 </div>
               </div>
             )}
-            <div ref={messagesEndRef} />
           </div>
         )}
       </div>

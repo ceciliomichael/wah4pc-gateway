@@ -83,6 +83,8 @@ When answering documentation questions, follow this sequence:
 
 **Flow**: \`list_pages\` → \`analyze_page(integration)\` → \`read_page(integration, steps)\` → Answer with content
 
+**Reasoning**: You can give reasoning after each tool call, but you MUST always finish with a tool call or a complete answer.
+
 Each arrow (→) represents waiting for the tool result before proceeding to the next step.`;
 
 const openai = new OpenAI({

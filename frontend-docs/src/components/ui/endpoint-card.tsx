@@ -55,14 +55,14 @@ export function EndpointCard({
     <div className="group rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:shadow-md overflow-hidden">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3 sm:py-4 text-left transition-colors hover:bg-slate-50/50"
+        className="w-full flex items-start gap-3 sm:gap-4 px-4 sm:px-5 py-3 sm:py-4 text-left transition-colors hover:bg-slate-50/50"
       >
-        <div className={`flex h-7 sm:h-8 min-w-[3.5rem] sm:min-w-[4rem] shrink-0 items-center justify-center rounded-lg border text-[10px] sm:text-xs font-bold font-mono ${methodStyles[method]}`}>
+        <div className={`flex h-7 sm:h-8 min-w-[3.5rem] sm:min-w-[4rem] shrink-0 items-center justify-center rounded-lg border text-[10px] sm:text-xs font-bold font-mono mt-0.5 ${methodStyles[method]}`}>
           {method}
         </div>
         <div className="flex-1 min-w-0">
-          <code className="font-mono text-xs sm:text-sm text-slate-700 font-semibold truncate block">{path}</code>
-          <span className="text-sm text-slate-500 hidden sm:block truncate">{description}</span>
+          <code className="font-mono text-xs sm:text-sm text-slate-700 font-semibold break-words whitespace-normal block">{path}</code>
+          <span className="text-sm text-slate-500 hidden sm:block mt-1">{description}</span>
         </div>
         <div className="shrink-0">
           {isExpanded ? (

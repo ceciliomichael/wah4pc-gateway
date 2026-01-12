@@ -96,9 +96,9 @@ export default function IntegrationPage() {
             <h3 className="font-bold text-slate-900 text-lg">Registration Request</h3>
           </div>
 
-          <div className="mb-4 flex items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
-            <MethodBadge method="POST" className="" />
-            <code className="text-sm font-mono text-slate-700 font-medium">{config.gatewayUrl}/api/v1/providers</code>
+          <div className="mb-4 flex flex-wrap items-start gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <MethodBadge method="POST" className="shrink-0" />
+            <code className="text-sm font-mono text-slate-700 font-medium break-all min-w-0">{config.gatewayUrl}/api/v1/providers</code>
           </div>
 
           <RequestHeaders headers={registrationHeaders} />
@@ -331,9 +331,9 @@ Body:
             <h3 className="font-bold text-slate-900 text-lg">Initiate a Query</h3>
           </div>
 
-          <div className="mb-4 flex items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
-            <MethodBadge method="POST" className="" />
-            <code className="text-sm font-mono text-slate-700 font-medium">{config.gatewayUrl}/api/v1/fhir/request/Patient</code>
+          <div className="mb-4 flex flex-wrap items-start gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <MethodBadge method="POST" className="shrink-0" />
+            <code className="text-sm font-mono text-slate-700 font-medium break-all min-w-0">{config.gatewayUrl}/api/v1/fhir/request/Patient</code>
           </div>
 
           <RequestHeaders headers={fhirRequestHeaders} />

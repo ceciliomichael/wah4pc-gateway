@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, memo } from "react";
-import { ChevronDown, ChevronRight, Wrench, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { memo } from "react";
+import { useRouter } from "next/navigation";
+import { Wrench, CheckCircle, XCircle, Loader2 } from "lucide-react";
 
 // ============================================================================
 // TYPES
@@ -23,12 +24,6 @@ export interface ToolCall {
 
 interface ToolMessageProps {
   toolCall: ToolCall;
-}
-
-interface ToolResultDropdownProps {
-  result: ToolResult;
-  isOpen: boolean;
-  onToggle: () => void;
 }
 
 // ============================================================================
@@ -75,56 +70,56 @@ function getStatusLabel(status: ToolStatus): string {
 }
 
 // ============================================================================
-// TOOL RESULT DROPDOWN
+// NAVIGATION HELPER
 // ============================================================================
 
-const ToolResultDropdown = memo(function ToolResultDropdown({
-  result,
-  isOpen,
-  onToggle,
-}: ToolResultDropdownProps) {
-  const formattedResult = typeof result === "string" 
-    ? result 
-    : JSON.stringify(result, null, 2);
+/** Tools that support click-to-navigate behavior */
+const NAVIGABLE_TOOLS = ["read_page", "analyze_page"] as const;
 
-  // Truncate for preview
-  const preview = formattedResult.length > 100 
-    ? formattedResult.slice(0, 100) + "..." 
-    : formattedResult;
+/**
+ * Constructs a navigation URL from tool parameters
+ * @returns URL path or null if tool is not navigable
+ */
+function getNavigationUrl(toolCall: ToolCall): string | null {
+  const { name, params } = toolCall;
+  
+  if (!NAVIGABLE_TOOLS.includes(name as typeof NAVIGABLE_TOOLS[number])) {
+    return null;
+  }
+  
+  const page = params?.page;
+  if (!page) return null;
+  
+  const section = params?.section;
+  const basePath = `/docs/${page}`;
+  
+  return section ? `${basePath}#${section}` : basePath;
+}
 
-  return (
-    <div className="mt-2">
-      <button
-        onClick={onToggle}
-        className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-800 transition-colors w-full text-left"
-      >
-        <span className="shrink-0">
-          {isOpen ? (
-            <ChevronDown className="h-3.5 w-3.5" />
-          ) : (
-            <ChevronRight className="h-3.5 w-3.5" />
-          )}
-        </span>
-        <span className="font-medium whitespace-nowrap shrink-0">View Result</span>
-        {!isOpen && (
-          <span className="text-slate-400 font-mono truncate min-w-0">
-            {preview}
-          </span>
-        )}
-      </button>
-
-      {isOpen && (
-        <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 overflow-hidden">
-          <div className="max-h-[300px] overflow-auto p-3">
-            <pre className="text-xs font-mono text-slate-700 whitespace-pre-wrap break-words">
-              {formattedResult}
-            </pre>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-});
+/**
+ * Gets the display label for navigable tools
+ * - read_page: shows "page > section" or just "page"
+ * - analyze_page: shows "page"
+ * @returns Display label or null if not a navigable tool
+ */
+function getNavigableToolLabel(toolCall: ToolCall): string | null {
+  const { name, params } = toolCall;
+  
+  if (!NAVIGABLE_TOOLS.includes(name as typeof NAVIGABLE_TOOLS[number])) {
+    return null;
+  }
+  
+  const page = params?.page;
+  if (!page) return null;
+  
+  const section = params?.section;
+  
+  if (name === "read_page" && section) {
+    return `${page} › ${section}`;
+  }
+  
+  return page;
+}
 
 // ============================================================================
 // TOOL NAME DISPLAY
@@ -150,34 +145,60 @@ function formatParams(params?: Record<string, string>): string {
 // ============================================================================
 
 export const ToolMessage = memo(function ToolMessage({ toolCall }: ToolMessageProps) {
-  const [isResultOpen, setIsResultOpen] = useState(false);
-
-  const { name, params, status, result, errorMessage } = toolCall;
+  const router = useRouter();
+  
+  const { name, status, errorMessage } = toolCall;
   const statusColor = getStatusColor(status);
   const statusLabel = getStatusLabel(status);
+  const navigationUrl = getNavigationUrl(toolCall);
+  const isClickable = navigationUrl !== null;
+  const navigableLabel = getNavigableToolLabel(toolCall);
+
+  const handleClick = () => {
+    if (navigationUrl) {
+      router.push(navigationUrl);
+    }
+  };
+
+  // For navigable tools (read_page, analyze_page), show page/section instead of status
+  const showNavigableLabel = navigableLabel && status === "success";
+  
+  // Hide status for list_pages tool when successful
+  const hideStatusForListPages = name === "list_pages" && status === "success";
 
   return (
-    <div className={`rounded-lg border p-3 ${statusColor} transition-colors`}>
+    <div
+      className={`rounded-lg border p-3 ${statusColor} transition-all ${
+        isClickable 
+          ? "cursor-pointer hover:shadow-md hover:border-blue-300 active:scale-[0.99]" 
+          : ""
+      }`}
+      onClick={isClickable ? handleClick : undefined}
+      role={isClickable ? "button" : undefined}
+      tabIndex={isClickable ? 0 : undefined}
+      onKeyDown={isClickable ? (e) => e.key === "Enter" && handleClick() : undefined}
+    >
       {/* Header */}
       <div className="flex items-center gap-2">
         <div className="flex h-6 w-6 items-center justify-center rounded-md bg-white border border-slate-200 shadow-sm">
           <Wrench className="h-3.5 w-3.5 text-slate-600" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-baseline gap-2">
             <span className="text-sm font-medium text-slate-900">
               {formatToolName(name)}
             </span>
-            <div className="flex items-center gap-1">
-              <ToolStatusIcon status={status} />
-              <span className="text-xs text-slate-500">{statusLabel}</span>
-            </div>
+            {showNavigableLabel ? (
+              <span className="text-sm text-slate-500 font-mono truncate">
+                {navigableLabel}
+              </span>
+            ) : hideStatusForListPages ? null : (
+              <div className="flex items-center gap-1">
+                <ToolStatusIcon status={status} />
+                <span className="text-xs text-slate-500">{statusLabel}</span>
+              </div>
+            )}
           </div>
-          {params && Object.keys(params).length > 0 && (
-            <p className="text-xs text-slate-500 font-mono mt-0.5 truncate">
-              {formatParams(params)}
-            </p>
-          )}
         </div>
       </div>
 
@@ -186,15 +207,6 @@ export const ToolMessage = memo(function ToolMessage({ toolCall }: ToolMessagePr
         <div className="mt-2 rounded-md bg-red-100 border border-red-200 px-3 py-2">
           <p className="text-xs text-red-700">{errorMessage}</p>
         </div>
-      )}
-
-      {/* Result Dropdown */}
-      {status === "success" && result && (
-        <ToolResultDropdown
-          result={result}
-          isOpen={isResultOpen}
-          onToggle={() => setIsResultOpen(!isResultOpen)}
-        />
       )}
     </div>
   );

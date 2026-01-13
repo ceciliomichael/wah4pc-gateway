@@ -79,33 +79,9 @@ const PAGE_REGISTRY: Record<string, PageInfo> = {
 // ============================================================================
 
 const SECTION_REGISTRY: Record<string, SectionInfo[]> = {
-  // Introduction page - no explicit section IDs, uses implicit sections
-  introduction: [
-    {
-      id: "core-capabilities",
-      name: "Core Capabilities",
-      description:
-        "Async transaction model, provider validation, multi-provider support, transaction logging",
-    },
-    {
-      id: "system-architecture",
-      name: "System Architecture",
-      description:
-        "High-level sequence diagram showing provider request flow through the gateway",
-    },
-    {
-      id: "quick-start",
-      name: "Quick Start",
-      description:
-        "Links to architecture, transaction flow, integration guide, and API reference",
-    },
-    {
-      id: "fhir-resources",
-      name: "Supported FHIR Resources",
-      description:
-        "List of supported FHIR R4 resources: Patient, Observation, DiagnosticReport, etc.",
-    },
-  ],
+  // Introduction page - no explicit section IDs in the page
+  introduction: [],
+  
   // Architecture page - matches <section id="..."> in page.tsx
   architecture: [
     {
@@ -133,121 +109,142 @@ const SECTION_REGISTRY: Record<string, SectionInfo[]> = {
         "Provider and Transaction JSON structures with field descriptions",
     },
   ],
-  // System-flow page sections
+  
+  // System-flow page sections - matches actual section IDs
   "system-flow": [
     {
-      id: "lifecycle-overview",
-      name: "Lifecycle Overview",
+      id: "intro",
+      name: "Introduction",
+      description:
+        "Overview of the WAH4PC Gateway and comparison between System Flow and Transaction Flow",
+    },
+    {
+      id: "lifecycle",
+      name: "The Provider Lifecycle",
       description:
         "5-phase ecosystem lifecycle: Onboard → Discover → Secure → Exchange → Monitor",
     },
     {
-      id: "onboarding",
-      name: "Phase 1: Onboarding",
+      id: "phases",
+      name: "Phase-by-Phase Breakdown",
       description:
-        "Provider registration process: POST /api/v1/providers, receive Provider ID and API Key",
+        "Detailed breakdown of each phase with diagrams and key insights",
     },
     {
-      id: "discovery",
-      name: "Phase 2: Discovery",
+      id: "comparison",
+      name: "System Flow vs Transaction Flow",
       description:
-        "Finding other providers: GET /api/v1/providers, search by type, get target IDs",
+        "Comparison table explaining the difference between macro and micro level flows",
     },
     {
-      id: "security",
-      name: "Phase 3: Security",
-      description:
-        "Authentication flow: X-API-Key validation, rate limiting, authorization",
-    },
-    {
-      id: "data-exchange",
-      name: "Phase 4: Data Exchange",
-      description:
-        "Core FHIR data exchange orchestration between requester and target providers",
-    },
-    {
-      id: "monitoring",
-      name: "Phase 5: Monitoring",
-      description:
-        "Transaction status tracking, audit logs, GET /api/v1/transactions",
-    },
-    {
-      id: "key-concepts",
+      id: "concepts",
       name: "Key Concepts",
       description:
         "Provider ID, API Key, Base URL, Transaction definitions and examples",
     },
+    {
+      id: "quick-start",
+      name: "Quick Start Path",
+      description:
+        "Step-by-step guide from registration to first data exchange",
+    },
+    {
+      id: "next-steps",
+      name: "Next Steps",
+      description:
+        "Links to Provider Integration and Transaction Flow documentation",
+    },
   ],
-  // Flow page sections
+  
+  // Flow page sections - matches actual section IDs
   flow: [
     {
-      id: "flow-overview",
-      name: "Flow Overview",
+      id: "intro",
+      name: "Introduction",
       description:
-        "Complete transaction flow sequence diagram with 5 phases and numbered steps",
-    },
-    {
-      id: "step-by-step",
-      name: "Step-by-Step Walkthrough",
-      description:
-        "Detailed explanation of each step from request initiation to data retrieval",
-    },
-    {
-      id: "json-examples",
-      name: "JSON Examples",
-      description:
-        "Request/response payloads for each step: initial request, gateway response, webhook, callback",
+        "Overview of the asynchronous request/response model and transaction_id importance",
     },
     {
       id: "transaction-id",
-      name: "Transaction ID Importance",
+      name: "The Transaction ID",
       description:
         "Why transaction_id matters: correlation, async processing, audit trail, idempotency",
     },
     {
-      id: "consistency-rules",
+      id: "lifecycle",
+      name: "Complete Transaction Lifecycle",
+      description:
+        "Complete flow sequence diagram from request initiation to final response",
+    },
+    {
+      id: "step-by-step",
+      name: "Step-by-Step with JSON Examples",
+      description:
+        "Detailed walkthrough with request/response payloads for each step",
+    },
+    {
+      id: "consistency",
       name: "Consistency Rules",
       description:
-        "Rules for handling transaction_id: never modify, always include, store locally, validate format",
+        "Rules for handling transaction_id: never modify, always include, store locally",
     },
     {
-      id: "error-scenarios",
-      name: "Error Scenarios",
+      id: "errors",
+      name: "Common Error Scenarios",
       description:
-        "Common errors: missing transaction_id, transaction not found, with request/response examples",
+        "Common errors: missing transaction_id, transaction not found, with examples",
+    },
+    {
+      id: "steps",
+      name: "Detailed Step Reference",
+      description:
+        "Comprehensive breakdown of each step in the transaction lifecycle",
+    },
+    {
+      id: "summary",
+      name: "Summary",
+      description:
+        "Key takeaways about transaction_id handling and async processing",
     },
   ],
-  // Integration page sections
+  
+  // Integration page sections - matches actual section IDs
   integration: [
     {
-      id: "overview",
-      name: "Integration Overview",
+      id: "prerequisites",
+      name: "Prerequisites",
       description:
-        "Complete integration flow diagram showing registration, requesting data, and providing data",
+        "Requirements before starting integration: HTTPS endpoint, FHIR knowledge, etc.",
     },
     {
-      id: "required-headers",
-      name: "Required Headers",
+      id: "flow",
+      name: "Integration Flow Overview",
       description:
-        "X-API-Key, X-Provider-ID, Idempotency-Key headers for API requests",
+        "Complete integration flow diagram showing registration, requesting, and providing data",
     },
     {
-      id: "webhook-handlers",
-      name: "Webhook Handlers",
+      id: "registration",
+      name: "Register Your Organization",
       description:
-        "Two required webhooks: /fhir/process-query and /fhir/receive-results",
+        "Step 1: POST /api/v1/providers to create a provider record",
     },
     {
-      id: "nodejs-example",
-      name: "Node.js/TypeScript Example",
+      id: "webhooks",
+      name: "Implement Webhook Endpoints",
       description:
-        "Production-ready Express.js implementation with Zod validation and error handling",
+        "Step 2: Two required webhooks - /fhir/process-query and /fhir/receive-results",
     },
     {
-      id: "go-example",
-      name: "Go Example",
+      id: "identifiers",
+      name: "Understanding Patient Identifiers",
       description:
-        "Production-ready Go implementation with validation and middleware",
+        "FHIR-compliant identifiers with system URIs and matching logic",
+    },
+    {
+      id: "requests",
+      name: "Request Data from Other Providers",
+      description:
+        "Step 3: Initiate queries using POST /api/v1/fhir/request/{resourceType}",
     },
     {
       id: "best-practices",
@@ -255,49 +252,57 @@ const SECTION_REGISTRY: Record<string, SectionInfo[]> = {
       description:
         "Security, error handling, idempotency, and async processing recommendations",
     },
+    {
+      id: "pitfalls",
+      name: "Common Pitfalls to Avoid",
+      description:
+        "Common mistakes and how to avoid them during integration",
+    },
+    {
+      id: "security",
+      name: "Security Considerations",
+      description:
+        "Security best practices for API keys, HTTPS, and data protection",
+    },
+    {
+      id: "examples",
+      name: "Complete Webhook Implementation",
+      description:
+        "Production-ready code examples in Node.js, Go, Python, and Dart",
+    },
+    {
+      id: "checklist",
+      name: "Integration Checklist",
+      description:
+        "Final checklist to verify your integration is complete",
+    },
   ],
-  // API page sections
+  
+  // API page sections - matches actual section IDs
   api: [
     {
-      id: "health-endpoints",
-      name: "Health Endpoints",
+      id: "base-url",
+      name: "Base URL",
       description:
-        "System health and status check endpoints (public, no auth required)",
+        "Gateway base URL for all API requests",
     },
     {
-      id: "provider-endpoints",
-      name: "Provider Endpoints",
-      description:
-        "CRUD operations for healthcare provider registrations: list, get, create, update, delete",
-    },
-    {
-      id: "fhir-endpoints",
-      name: "FHIR Gateway Endpoints",
-      description:
-        "FHIR resource transfer: POST /api/v1/fhir/request/{type} and /receive/{type}",
-    },
-    {
-      id: "transaction-endpoints",
-      name: "Transaction Endpoints",
-      description:
-        "View and track transactions: list all, get by ID, filtered by requester/target",
-    },
-    {
-      id: "authentication",
+      id: "auth",
       name: "Authentication",
-      description: "API key authentication via X-API-Key or Authorization header",
+      description:
+        "API key authentication via X-API-Key or Authorization header",
     },
     {
-      id: "idempotency",
-      name: "Idempotency",
+      id: "endpoints",
+      name: "API Endpoints",
       description:
-        "Safe retries with Idempotency-Key header, 24-hour caching, duplicate prevention",
+        "All available endpoints: Health, Providers, FHIR Gateway, and Transactions",
     },
     {
-      id: "error-codes",
-      name: "Error Codes",
+      id: "errors",
+      name: "Error Responses",
       description:
-        "HTTP status codes: 400, 401, 403, 404, 409, 429, 500, 503 with causes",
+        "Standard error format and HTTP status codes: 400, 401, 403, 404, 429, 500, etc.",
     },
     {
       id: "rate-limiting",

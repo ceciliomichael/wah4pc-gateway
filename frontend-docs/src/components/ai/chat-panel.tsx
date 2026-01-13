@@ -447,14 +447,6 @@ export function ChatPanel() {
               </div>
             ))}
             {(isLoading && !isStreaming) && <ThinkingIndicator />}
-            {isExecutingTool && (
-              <div className="px-4">
-                <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <div className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
-                  <span>Executing tool...</span>
-                </div>
-              </div>
-            )}
           </div>
         )}
       </div>

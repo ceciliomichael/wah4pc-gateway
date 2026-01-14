@@ -7,6 +7,7 @@ import { config } from "@/lib/config";
 
 export const registrationHeaders = {
   "X-API-Key": "wah_your-api-key",
+  "Idempotency-Key": "uuid-v4-for-safe-retries",
 } as const;
 
 export const fhirRequestHeaders = {

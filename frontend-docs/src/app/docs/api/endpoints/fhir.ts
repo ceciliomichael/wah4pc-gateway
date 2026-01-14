@@ -21,8 +21,8 @@ export const fhirEndpoints: EndpointCardProps[] = [
       {
         name: "Idempotency-Key",
         value: "550e8400-e29b-41d4-a716-446655440000",
-        required: false,
-        description: "UUID for safe retries. Recommended for all requests.",
+        required: true,
+        description: "UUID for safe retries. Required for mutating requests.",
       },
     ],
     requestBody: `{
@@ -105,7 +105,7 @@ export const fhirEndpoints: EndpointCardProps[] = [
       {
         name: "Idempotency-Key",
         value: "550e8400-e29b-41d4-a716-446655440000",
-        required: false,
+        required: true,
         description: "UUID for safe retries when sending results back.",
       },
     ],

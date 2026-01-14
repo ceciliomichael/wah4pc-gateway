@@ -433,13 +433,93 @@ export function readPage(pageId: string, sectionId?: string): string | null {
 }
 
 /**
- * search_page - Searches for text across all documentation pages
+ * Reads the FULL content of a documentation page including ALL sections and data files.
+ * This is used for comprehensive searching - it reads everything, not just one section.
+ * 
+ * @param pageId - The page identifier
+ * @returns Complete page content including all sections and data file content
+ */
+function readFullPageContent(pageId: string): string | null {
+  const normalizedPageId = pageId.toLowerCase().trim();
+  const pageInfo = PAGE_REGISTRY[normalizedPageId];
+
+  if (!pageInfo) {
+    return null;
+  }
+
+  const docsDir = path.join(process.cwd(), "src", "app", "docs", normalizedPageId);
+  const contentParts: string[] = [];
+
+  // Read the main page.tsx file
+  const pageTsxPath = path.join(docsDir, "page.tsx");
+  if (fs.existsSync(pageTsxPath)) {
+    const pageContent = fs.readFileSync(pageTsxPath, "utf-8");
+    contentParts.push(pageContent);
+  }
+
+  // Read the data.ts file if it exists
+  const dataTsPath = path.join(docsDir, "data.ts");
+  if (fs.existsSync(dataTsPath)) {
+    const dataContent = fs.readFileSync(dataTsPath, "utf-8");
+    contentParts.push(dataContent);
+  }
+
+  // For the API page, also read all endpoint definition files
+  if (normalizedPageId === "api") {
+    const endpointsDir = path.join(docsDir, "endpoints");
+    if (fs.existsSync(endpointsDir)) {
+      const endpointFiles = fs.readdirSync(endpointsDir);
+      for (const file of endpointFiles) {
+        if (file.endsWith(".ts")) {
+          const filePath = path.join(endpointsDir, file);
+          const fileContent = fs.readFileSync(filePath, "utf-8");
+          contentParts.push(fileContent);
+        }
+      }
+    }
+  }
+
+  if (contentParts.length === 0) {
+    return null;
+  }
+
+  return contentParts.join("\n\n");
+}
+
+/**
+ * Extracts a readable snippet from content around a match.
+ * Cleans up code artifacts and formats nicely.
+ */
+function extractSnippet(content: string, matchIndex: number, queryLength: number): string {
+  const snippetRadius = 100;
+  const snippetStart = Math.max(0, matchIndex - snippetRadius);
+  const snippetEnd = Math.min(content.length, matchIndex + queryLength + snippetRadius);
+  
+  let snippet = content.slice(snippetStart, snippetEnd).trim();
+  
+  // Clean up: remove code artifacts, normalize whitespace
+  snippet = snippet
+    .replace(/[{}[\]`;]/g, " ")  // Remove code brackets/semicolons
+    .replace(/\n+/g, " ")        // Replace newlines with spaces
+    .replace(/\s+/g, " ")        // Collapse whitespace
+    .trim();
+  
+  // Add ellipsis if truncated
+  if (snippetStart > 0) snippet = "..." + snippet;
+  if (snippetEnd < content.length) snippet = snippet + "...";
+
+  return snippet;
+}
+
+/**
+ * search_page - Searches for text across documentation pages
  * Returns matching pages with context snippets for quick navigation.
  * 
- * @param query - The search term to find across all pages
+ * @param query - The search term to find
+ * @param targetPage - Optional: specific page ID to search within (searches all pages if not provided)
  * @returns Formatted search results with page matches and context
  */
-export function searchPage(query: string): string {
+export function searchPage(query: string, targetPage?: string): string {
   if (!query || query.trim().length === 0) {
     return "Error: Search query cannot be empty.";
   }
@@ -448,47 +528,59 @@ export function searchPage(query: string): string {
   const results: Array<{
     pageId: string;
     pageTitle: string;
-    snippet: string;
+    snippets: string[];
     matchCount: number;
   }> = [];
 
-  // Search through all registered pages
-  for (const pageId of Object.keys(PAGE_REGISTRY)) {
-    const pageInfo = PAGE_REGISTRY[pageId];
-    const content = readPage(pageId);
+  // Determine which pages to search
+  const pagesToSearch = targetPage 
+    ? [targetPage.toLowerCase().trim()]
+    : Object.keys(PAGE_REGISTRY);
 
+  // Validate target page if specified
+  if (targetPage && !PAGE_REGISTRY[targetPage.toLowerCase().trim()]) {
+    return `Error: Page "${targetPage}" not found. Available pages: ${Object.keys(PAGE_REGISTRY).join(", ")}`;
+  }
+
+  // Search through pages
+  for (const pageId of pagesToSearch) {
+    const pageInfo = PAGE_REGISTRY[pageId];
+    if (!pageInfo) continue;
+
+    // Read FULL page content including all data files
+    const content = readFullPageContent(pageId);
     if (!content) continue;
 
     const lowerContent = content.toLowerCase();
-    const matchIndex = lowerContent.indexOf(normalizedQuery);
-
-    if (matchIndex !== -1) {
-      // Count total matches in page
-      let matchCount = 0;
-      let searchIndex = 0;
-      while ((searchIndex = lowerContent.indexOf(normalizedQuery, searchIndex)) !== -1) {
-        matchCount++;
-        searchIndex += normalizedQuery.length;
+    
+    // Find all matches and collect snippets
+    const snippets: string[] = [];
+    let matchCount = 0;
+    let searchIndex = 0;
+    
+    while ((searchIndex = lowerContent.indexOf(normalizedQuery, searchIndex)) !== -1) {
+      matchCount++;
+      
+      // Collect up to 3 unique snippets per page
+      if (snippets.length < 3) {
+        const snippet = extractSnippet(content, searchIndex, normalizedQuery.length);
+        // Avoid duplicate or very similar snippets
+        const isDuplicate = snippets.some(s => 
+          s.includes(snippet.slice(10, 50)) || snippet.includes(s.slice(10, 50))
+        );
+        if (!isDuplicate) {
+          snippets.push(snippet);
+        }
       }
+      
+      searchIndex += normalizedQuery.length;
+    }
 
-      // Extract context snippet around first match
-      const snippetRadius = 80;
-      const snippetStart = Math.max(0, matchIndex - snippetRadius);
-      const snippetEnd = Math.min(content.length, matchIndex + normalizedQuery.length + snippetRadius);
-      
-      let snippet = content.slice(snippetStart, snippetEnd).trim();
-      
-      // Clean up snippet: replace newlines with spaces, collapse whitespace
-      snippet = snippet.replace(/\n+/g, " ").replace(/\s+/g, " ");
-      
-      // Add ellipsis if truncated
-      if (snippetStart > 0) snippet = "..." + snippet;
-      if (snippetEnd < content.length) snippet = snippet + "...";
-
+    if (matchCount > 0) {
       results.push({
         pageId,
         pageTitle: pageInfo.title,
-        snippet,
+        snippets,
         matchCount,
       });
     }
@@ -496,28 +588,33 @@ export function searchPage(query: string): string {
 
   // Format results
   if (results.length === 0) {
-    return `# Search Results\n\nNo matches found for "${query}".\n\nTry different keywords or use \`list_pages\` to browse available documentation.`;
+    const searchScope = targetPage ? `in page "${targetPage}"` : "across all documentation pages";
+    return `# Search Results\n\nNo matches found for "${query}" ${searchScope}.\n\nTry different keywords or use \`list_pages\` to browse available documentation.`;
   }
 
   // Sort by match count (most relevant first)
   results.sort((a, b) => b.matchCount - a.matchCount);
 
+  const searchScope = targetPage ? ` in "${targetPage}"` : "";
   const lines = [
-    `# Search Results for "${query}"`,
+    `# Search Results for "${query}"${searchScope}`,
     "",
-    `Found ${results.length} page(s) containing "${query}":`,
+    `Found ${results.reduce((sum, r) => sum + r.matchCount, 0)} match(es) across ${results.length} page(s):`,
     "",
   ];
 
   for (let i = 0; i < results.length; i++) {
-    const { pageId, pageTitle, snippet, matchCount } = results[i];
-    lines.push(`${i + 1}. **${pageTitle}** (\`${pageId}\`) - ${matchCount} match(es)`);
-    lines.push(`   > "${snippet}"`);
+    const { pageId, pageTitle, snippets, matchCount } = results[i];
+    lines.push(`## ${i + 1}. ${pageTitle} (\`${pageId}\`) - ${matchCount} match(es)`);
     lines.push("");
+    for (const snippet of snippets) {
+      lines.push(`> ${snippet}`);
+      lines.push("");
+    }
   }
 
   lines.push("---");
-  lines.push("Use `read_page` with the page ID to read the full content.");
+  lines.push("Use `read_page` with the page ID to read the full content, or use `search_page` with a specific page to narrow your search.");
 
   return lines.join("\n");
 }
@@ -588,7 +685,8 @@ export function executeDocsTool(request: ToolRequest): ToolResponse {
       if (!query) {
         return { success: false, tool, error: "Missing required parameter: query" };
       }
-      const result = searchPage(query);
+      const page = params?.page; // Optional: target specific page
+      const result = searchPage(query, page);
       return { success: true, tool, result };
     }
 

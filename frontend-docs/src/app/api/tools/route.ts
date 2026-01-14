@@ -108,15 +108,20 @@ export async function GET(): Promise<NextResponse> {
       },
       {
         name: "search_page",
-        description: "Searches for text across all documentation pages to find specific information quickly",
+        description: "Searches for text across documentation pages. Can search all pages or target a specific page. Format: page -> query (e.g., 'api' -> 'Idempotency-Key')",
         params: {
           query: {
             required: true,
             type: "string",
-            description: "Text to search for across all documentation pages",
+            description: "Text to search for in documentation",
+          },
+          page: {
+            required: false,
+            type: "string",
+            description: "Optional: specific page ID to search within (introduction, architecture, system-flow, flow, integration, api). If omitted, searches all pages.",
           },
         },
-        example: { tool: "search_page", params: { query: "webhook" } },
+        example: { tool: "search_page", params: { page: "api", query: "Idempotency-Key" } },
       },
     ],
   });

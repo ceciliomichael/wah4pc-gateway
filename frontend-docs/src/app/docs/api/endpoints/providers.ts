@@ -37,6 +37,12 @@ export const providersEndpoints: EndpointCardProps[] = [
         value: "wah_your-api-key",
         required: true,
       },
+      {
+        name: "Idempotency-Key",
+        value: "550e8400-e29b-41d4-a716-446655440000",
+        required: true,
+        description: "UUID for safe retries",
+      },
     ],
     requestBody: `{
   "name": "Example Hospital",
@@ -104,6 +110,12 @@ export const providersEndpoints: EndpointCardProps[] = [
         value: "wah_your-api-key",
         required: true,
       },
+      {
+        name: "Idempotency-Key",
+        value: "550e8400-e29b-41d4-a716-446655440000",
+        required: true,
+        description: "UUID for safe retries",
+      },
     ],
     requestBody: `{
   "name": "Example Hospital - Updated",
@@ -136,6 +148,12 @@ export const providersEndpoints: EndpointCardProps[] = [
         name: "X-API-Key",
         value: "wah_your-api-key",
         required: true,
+      },
+      {
+        name: "Idempotency-Key",
+        value: "550e8400-e29b-41d4-a716-446655440000",
+        required: true,
+        description: "UUID for safe retries",
       },
     ],
     responseStatus: 204,

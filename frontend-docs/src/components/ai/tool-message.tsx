@@ -121,6 +121,20 @@ function getNavigableToolLabel(toolCall: ToolCall): string | null {
   return page;
 }
 
+/**
+ * Gets the search query label for search_page tool
+ * @returns Search query or null
+ */
+function getSearchQueryLabel(toolCall: ToolCall): string | null {
+  const { name, params } = toolCall;
+  
+  if (name !== "search_page") {
+    return null;
+  }
+  
+  return params?.query || null;
+}
+
 // ============================================================================
 // TOOL NAME DISPLAY
 // ============================================================================
@@ -153,6 +167,7 @@ export const ToolMessage = memo(function ToolMessage({ toolCall }: ToolMessagePr
   const navigationUrl = getNavigationUrl(toolCall);
   const isClickable = navigationUrl !== null;
   const navigableLabel = getNavigableToolLabel(toolCall);
+  const searchLabel = getSearchQueryLabel(toolCall);
 
   const handleClick = () => {
     if (navigationUrl) {
@@ -163,6 +178,9 @@ export const ToolMessage = memo(function ToolMessage({ toolCall }: ToolMessagePr
   // For navigable tools (read_page, analyze_page), show page/section instead of status
   const showNavigableLabel = navigableLabel && status === "success";
   
+  // Show search query for search_page tool when successful
+  const showSearchLabel = searchLabel && status === "success";
+
   // Hide status for list_pages tool when successful
   const hideStatusForListPages = name === "list_pages" && status === "success";
 
@@ -191,6 +209,10 @@ export const ToolMessage = memo(function ToolMessage({ toolCall }: ToolMessagePr
             {showNavigableLabel ? (
               <span className="text-sm text-slate-500 font-mono truncate">
                 {navigableLabel}
+              </span>
+            ) : showSearchLabel ? (
+              <span className="text-sm text-slate-500 font-mono truncate">
+                {searchLabel}
               </span>
             ) : hideStatusForListPages ? null : (
               <div className="flex items-center gap-1">

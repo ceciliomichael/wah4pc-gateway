@@ -51,11 +51,19 @@ param2: value2
    section: optional-section-id
    </read_page>
 
-4. **search_page** - Searches for text across ALL documentation pages (use for quick lookups)
-   Usage:
+4. **search_page** - Searches for text in documentation. Can search all pages or target a specific page.
+   Usage (search all pages):
    <search_page>
    query: your search term
    </search_page>
+   
+   Usage (search specific page - more precise):
+   <search_page>
+   page: api
+   query: Idempotency-Key
+   </search_page>
+   
+   The \`page\` parameter is optional. When provided, searches only that page for better precision.
 
 ## TOOL USAGE FLOW
 

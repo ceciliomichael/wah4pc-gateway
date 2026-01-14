@@ -122,8 +122,9 @@ function getNavigableToolLabel(toolCall: ToolCall): string | null {
 }
 
 /**
- * Gets the search query label for search_page tool
- * @returns Search query or null
+ * Gets the search label for search_page tool
+ * Shows "page → query" when searching a specific page, or just "query" for all pages
+ * @returns Formatted search label or null
  */
 function getSearchQueryLabel(toolCall: ToolCall): string | null {
   const { name, params } = toolCall;
@@ -132,7 +133,13 @@ function getSearchQueryLabel(toolCall: ToolCall): string | null {
     return null;
   }
   
-  return params?.query || null;
+  const query = params?.query;
+  if (!query) return null;
+  
+  const page = params?.page;
+  
+  // Format: "page → query" or just "query"
+  return page ? `${page} → ${query}` : query;
 }
 
 // ============================================================================

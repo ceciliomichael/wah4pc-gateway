@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	gatewayURL     = "http://localhost:8080"
+	gatewayURL     = "http://localhost:3040"
 	clinicAPort    = ":9001"
 	hospitalBPort  = ":9002"
 	masterKey      = "tcgtrio123"                  // Master key for initial API key creation only

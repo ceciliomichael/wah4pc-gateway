@@ -1,6 +1,6 @@
 "use client";
 
-import { Server, Users, FileText, Activity, Key } from "lucide-react";
+import { Server, Users, FileText, Activity, Key, Webhook } from "lucide-react";
 import { DocsHeader } from "@/components/ui/docs-header";
 import { AlertBlock } from "@/components/ui/alert-block";
 import { JsonViewer } from "@/components/ui/json-viewer";
@@ -15,6 +15,7 @@ const iconMap = {
   Server: <Server className="h-5 w-5" />,
   FileText: <FileText className="h-5 w-5" />,
   Key: <Key className="h-5 w-5" />,
+  Webhook: <Webhook className="h-5 w-5" />,
 };
 
 export default function ApiReferencePage() {

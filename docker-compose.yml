@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  gateway:
+    build: .
+    container_name: wah4pc-gateway
+    ports:
+      - "3040:3040"
+    volumes:
+      - ./data:/app/data
+      - ./log:/app/log
+    environment:
+      - SERVER_PORT=3040
+      - LOGGING_LEVEL=info
+    restart: unless-stopped
+    networks:
+      - wah4pc-network
+
+networks:
+  wah4pc-network:
+    driver: bridge

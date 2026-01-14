@@ -53,7 +53,36 @@ func Load(path string) (*Config, error) {
 
 	setDefaults(&cfg)
 
+	loadFromEnv(&cfg)
+
 	return &cfg, nil
+}
+
+func loadFromEnv(cfg *Config) {
+	if port := os.Getenv("SERVER_PORT"); port != "" {
+		var p int
+		if _, err := fmt.Sscanf(port, "%d", &p); err == nil {
+			cfg.Server.Port = p
+		}
+	}
+	if host := os.Getenv("SERVER_HOST"); host != "" {
+		cfg.Server.Host = host
+	}
+	if baseURL := os.Getenv("SERVER_BASE_URL"); baseURL != "" {
+		cfg.Server.BaseURL = baseURL
+	}
+	if masterKey := os.Getenv("SECURITY_MASTER_KEY"); masterKey != "" {
+		cfg.Security.MasterKey = masterKey
+	}
+	if providersPath := os.Getenv("DATA_PROVIDERS_PATH"); providersPath != "" {
+		cfg.Data.ProvidersPath = providersPath
+	}
+	if txPath := os.Getenv("DATA_TRANSACTIONS_PATH"); txPath != "" {
+		cfg.Data.TransactionsPath = txPath
+	}
+	if apiKeysPath := os.Getenv("DATA_API_KEYS_PATH"); apiKeysPath != "" {
+		cfg.Data.ApiKeysPath = apiKeysPath
+	}
 }
 
 func setDefaults(cfg *Config) {
@@ -67,7 +96,7 @@ func setDefaults(cfg *Config) {
 		cfg.Server.Host = "0.0.0.0"
 	}
 	if cfg.Server.Port == 0 {
-		cfg.Server.Port = 8080
+		cfg.Server.Port = 3040
 	}
 	if cfg.Server.BaseURL == "" {
 		cfg.Server.BaseURL = fmt.Sprintf("http://%s:%d", cfg.Server.Host, cfg.Server.Port)

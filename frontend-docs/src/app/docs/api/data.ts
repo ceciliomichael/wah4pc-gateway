@@ -5,11 +5,12 @@ import { healthEndpoints } from "./endpoints/health";
 import { providersEndpoints } from "./endpoints/providers";
 import { fhirEndpoints } from "./endpoints/fhir";
 import { transactionsEndpoints } from "./endpoints/transactions";
+import { webhookEndpoints } from "./endpoints/webhooks";
 
 // Endpoint categories with their items
 export interface EndpointCategory {
   category: string;
-  iconName: "Activity" | "Users" | "Server" | "FileText";
+  iconName: "Activity" | "Users" | "Server" | "FileText" | "Webhook";
   description: string;
   items: EndpointCardProps[];
 }
@@ -38,6 +39,12 @@ export const endpoints: EndpointCategory[] = [
     iconName: "FileText",
     description: "View and track FHIR transfer transactions (access controlled by API key role)",
     items: transactionsEndpoints,
+  },
+  {
+    category: "Provider Webhooks",
+    iconName: "Webhook",
+    description: "Endpoints you must implement to receive gateway events",
+    items: webhookEndpoints,
   },
 ];
 

@@ -11,7 +11,7 @@ interface ToolRequestBody {
   params?: Record<string, string>;
 }
 
-const VALID_TOOLS: ToolName[] = ["list_pages", "analyze_page", "read_page"];
+const VALID_TOOLS: ToolName[] = ["list_pages", "analyze_page", "read_page", "search_page"];
 
 function isValidToolName(tool: string): tool is ToolName {
   return VALID_TOOLS.includes(tool as ToolName);
@@ -105,6 +105,18 @@ export async function GET(): Promise<NextResponse> {
           },
         },
         example: { tool: "read_page", params: { page: "flow", section: "json-examples" } },
+      },
+      {
+        name: "search_page",
+        description: "Searches for text across all documentation pages to find specific information quickly",
+        params: {
+          query: {
+            required: true,
+            type: "string",
+            description: "Text to search for across all documentation pages",
+          },
+        },
+        example: { tool: "search_page", params: { query: "webhook" } },
       },
     ],
   });

@@ -196,14 +196,16 @@ export default function IntegrationPage() {
             { num: "3.", color: "text-blue-600", text: "Format the data as a FHIR resource" },
             { num: "4.", color: "text-blue-600", text: <>POST the data to the <code className="bg-slate-100 px-1 rounded border border-slate-200">gatewayReturnUrl</code></> },
           ]}
-          responseCode={`POST {gatewayReturnUrl}
-Headers:
-  Content-Type: application/json
-  X-Provider-ID: your-provider-uuid
-  X-API-Key: your-api-key
-
-Body:
-{
+          responseHttpMeta={{
+            method: "POST",
+            url: "{gatewayReturnUrl}",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Provider-ID": "your-provider-uuid",
+              "X-API-Key": "your-api-key",
+            },
+          }}
+          responseCode={`{
   "transactionId": "txn-uuid-from-gateway",
   "status": "SUCCESS",
   "data": {

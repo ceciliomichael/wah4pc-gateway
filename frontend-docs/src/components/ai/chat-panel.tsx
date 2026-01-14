@@ -30,7 +30,7 @@ interface ToolApiResponse {
 // TOOL PARSING UTILITIES
 // ============================================================================
 
-const VALID_TOOLS = ["list_pages", "analyze_page", "read_page"] as const;
+const VALID_TOOLS = ["list_pages", "analyze_page", "read_page", "search_page"] as const;
 type ValidToolName = (typeof VALID_TOOLS)[number];
 
 function isValidTool(name: string): name is ValidToolName {

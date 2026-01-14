@@ -90,7 +90,7 @@ export function EndpointCard({
             <HeadersTable headers={headers} />
           )}
 
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div className={`grid gap-6 ${requestBody ? "lg:grid-cols-2" : ""}`}>
             {requestBody && (
               <CodeSection title="Request Body" code={requestBody} />
             )}

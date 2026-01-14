@@ -432,11 +432,101 @@ export function readPage(pageId: string, sectionId?: string): string | null {
   return cleanContent;
 }
 
+/**
+ * search_page - Searches for text across all documentation pages
+ * Returns matching pages with context snippets for quick navigation.
+ * 
+ * @param query - The search term to find across all pages
+ * @returns Formatted search results with page matches and context
+ */
+export function searchPage(query: string): string {
+  if (!query || query.trim().length === 0) {
+    return "Error: Search query cannot be empty.";
+  }
+
+  const normalizedQuery = query.toLowerCase().trim();
+  const results: Array<{
+    pageId: string;
+    pageTitle: string;
+    snippet: string;
+    matchCount: number;
+  }> = [];
+
+  // Search through all registered pages
+  for (const pageId of Object.keys(PAGE_REGISTRY)) {
+    const pageInfo = PAGE_REGISTRY[pageId];
+    const content = readPage(pageId);
+
+    if (!content) continue;
+
+    const lowerContent = content.toLowerCase();
+    const matchIndex = lowerContent.indexOf(normalizedQuery);
+
+    if (matchIndex !== -1) {
+      // Count total matches in page
+      let matchCount = 0;
+      let searchIndex = 0;
+      while ((searchIndex = lowerContent.indexOf(normalizedQuery, searchIndex)) !== -1) {
+        matchCount++;
+        searchIndex += normalizedQuery.length;
+      }
+
+      // Extract context snippet around first match
+      const snippetRadius = 80;
+      const snippetStart = Math.max(0, matchIndex - snippetRadius);
+      const snippetEnd = Math.min(content.length, matchIndex + normalizedQuery.length + snippetRadius);
+      
+      let snippet = content.slice(snippetStart, snippetEnd).trim();
+      
+      // Clean up snippet: replace newlines with spaces, collapse whitespace
+      snippet = snippet.replace(/\n+/g, " ").replace(/\s+/g, " ");
+      
+      // Add ellipsis if truncated
+      if (snippetStart > 0) snippet = "..." + snippet;
+      if (snippetEnd < content.length) snippet = snippet + "...";
+
+      results.push({
+        pageId,
+        pageTitle: pageInfo.title,
+        snippet,
+        matchCount,
+      });
+    }
+  }
+
+  // Format results
+  if (results.length === 0) {
+    return `# Search Results\n\nNo matches found for "${query}".\n\nTry different keywords or use \`list_pages\` to browse available documentation.`;
+  }
+
+  // Sort by match count (most relevant first)
+  results.sort((a, b) => b.matchCount - a.matchCount);
+
+  const lines = [
+    `# Search Results for "${query}"`,
+    "",
+    `Found ${results.length} page(s) containing "${query}":`,
+    "",
+  ];
+
+  for (let i = 0; i < results.length; i++) {
+    const { pageId, pageTitle, snippet, matchCount } = results[i];
+    lines.push(`${i + 1}. **${pageTitle}** (\`${pageId}\`) - ${matchCount} match(es)`);
+    lines.push(`   > "${snippet}"`);
+    lines.push("");
+  }
+
+  lines.push("---");
+  lines.push("Use `read_page` with the page ID to read the full content.");
+
+  return lines.join("\n");
+}
+
 // ============================================================================
 // TOOL DISPATCHER - Used by the API route
 // ============================================================================
 
-export type ToolName = "list_pages" | "analyze_page" | "read_page";
+export type ToolName = "list_pages" | "analyze_page" | "read_page" | "search_page";
 
 export interface ToolRequest {
   tool: ToolName;
@@ -490,6 +580,15 @@ export function executeDocsTool(request: ToolRequest): ToolResponse {
         };
       }
       // Return the clean text content directly as the result
+      return { success: true, tool, result };
+    }
+
+    case "search_page": {
+      const query = params?.query;
+      if (!query) {
+        return { success: false, tool, error: "Missing required parameter: query" };
+      }
+      const result = searchPage(query);
       return { success: true, tool, result };
     }
 

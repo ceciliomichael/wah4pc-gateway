@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Database, ArrowRight, ExternalLink, Users, Stethoscope, Syringe, Activity, Pill, Calendar } from "lucide-react";
-import { resources, pageInfo, commonCodeSystems } from "./data/index";
+import { resources, pageInfo, commonCodeSystems } from "./resources-data/index";
 import { CopyPageButton } from "@/components/ui/copy-page-button";
 
 const resourceIcons: Record<string, React.ReactNode> = {

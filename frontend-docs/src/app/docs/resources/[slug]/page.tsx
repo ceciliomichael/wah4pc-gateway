@@ -4,8 +4,8 @@ import { useState } from "react";
 import { useParams, notFound } from "next/navigation";
 import Link from "next/link";
 import { Database, Check, Minus, Copy, ChevronDown, ChevronUp, ArrowLeft, ExternalLink } from "lucide-react";
-import { getResourceBySlug, commonCodeSystems } from "../data/index";
-import type { FieldDefinition } from "../data/index";
+import { getResourceBySlug, commonCodeSystems } from "../resources-data/index";
+import type { FieldDefinition } from "../resources-data/index";
 import { CopyPageButton } from "@/components/ui/copy-page-button";
 
 function CopyButton({ text }: { text: string }) {

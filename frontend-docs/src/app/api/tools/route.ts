@@ -4,7 +4,7 @@ import {
   type ToolName,
   type ToolRequest,
   type ToolResponse,
-} from "@/lib/ai/docs-service";
+} from "@/lib/ai/docs";
 
 interface ToolRequestBody {
   tool: string;
@@ -84,10 +84,10 @@ export async function GET(): Promise<NextResponse> {
           page: {
             required: true,
             type: "string",
-            description: "Page ID (introduction, architecture, system-flow, flow, integration, api)",
+            description: "Page ID (introduction, architecture, system-flow, flow, integration, api, resources, resources/patient, resources/encounter, resources/procedure, resources/immunization, resources/observation, resources/medication)",
           },
         },
-        example: { tool: "analyze_page", params: { page: "architecture" } },
+        example: { tool: "analyze_page", params: { page: "resources/patient" } },
       },
       {
         name: "read_page",
@@ -96,7 +96,7 @@ export async function GET(): Promise<NextResponse> {
           page: {
             required: true,
             type: "string",
-            description: "Page ID (introduction, architecture, system-flow, flow, integration, api)",
+            description: "Page ID (introduction, architecture, system-flow, flow, integration, api, resources, resources/patient, resources/encounter, resources/procedure, resources/immunization, resources/observation, resources/medication)",
           },
           section: {
             required: false,
@@ -104,7 +104,7 @@ export async function GET(): Promise<NextResponse> {
             description: "Optional section ID to extract specific content",
           },
         },
-        example: { tool: "read_page", params: { page: "flow", section: "json-examples" } },
+        example: { tool: "read_page", params: { page: "resources/patient", section: "template" } },
       },
       {
         name: "search_page",
@@ -118,10 +118,10 @@ export async function GET(): Promise<NextResponse> {
           page: {
             required: false,
             type: "string",
-            description: "Optional: specific page ID to search within (introduction, architecture, system-flow, flow, integration, api). If omitted, searches all pages.",
+            description: "Optional: specific page ID to search within (introduction, architecture, system-flow, flow, integration, api, resources, resources/patient, resources/encounter, resources/procedure, resources/immunization, resources/observation, resources/medication). If omitted, searches all pages.",
           },
         },
-        example: { tool: "search_page", params: { page: "api", query: "Idempotency-Key" } },
+        example: { tool: "search_page", params: { page: "resources/patient", query: "indigenousPeople" } },
       },
     ],
   });

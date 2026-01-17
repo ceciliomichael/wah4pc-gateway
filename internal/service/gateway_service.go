@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/wah4pc/wah4pc-gateway/internal/model"
 	"github.com/wah4pc/wah4pc-gateway/internal/repository"
+	"github.com/wah4pc/wah4pc-gateway/internal/validator"
 )
 
 var (
@@ -23,6 +24,7 @@ var (
 	ErrInvalidStatus        = errors.New("transaction not in pending status")
 	ErrUnauthorizedProvider = errors.New("provider not authorized for this transaction")
 	ErrDuplicateRequest     = errors.New("duplicate request: identical request was made recently")
+	ErrSchemaValidation     = errors.New("schema validation failed")
 )
 
 // duplicateWindow defines how long to check for duplicate requests
@@ -43,6 +45,7 @@ type GatewayService struct {
 	providerService *ProviderService
 	gatewayBaseURL  string
 	httpClient      *http.Client
+	schemaValidator *validator.SchemaValidator
 }
 
 // NewGatewayService creates a new gateway service
@@ -50,6 +53,7 @@ func NewGatewayService(
 	txRepo TransactionRepository,
 	providerService *ProviderService,
 	gatewayBaseURL string,
+	schemaValidator *validator.SchemaValidator,
 ) *GatewayService {
 	return &GatewayService{
 		txRepo:          txRepo,
@@ -58,6 +62,7 @@ func NewGatewayService(
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
+		schemaValidator: schemaValidator,
 	}
 }
 
@@ -179,6 +184,20 @@ func (s *GatewayService) ProcessResponse(result IncomingResultPayload, senderPro
 	// Validate the sender is the expected target provider (security check)
 	if senderProviderID != "" && senderProviderID != tx.TargetID {
 		return ErrUnauthorizedProvider
+	}
+
+	// Validate the incoming data against the FHIR schema (strict validation)
+	// Only validate if we have a schema validator and the status is SUCCESS
+	if s.schemaValidator != nil && result.Status == string(ResultStatusSuccess) {
+		if s.schemaValidator.IsSupported(tx.ResourceType) {
+			if err := s.schemaValidator.Validate(tx.ResourceType, result.Data); err != nil {
+				// Update transaction status to REJECTED due to validation failure
+				tx.Status = model.StatusFailed
+				tx.UpdatedAt = time.Now().UTC()
+				_ = s.txRepo.Update(tx)
+				return fmt.Errorf("%w: %v", ErrSchemaValidation, err)
+			}
+		}
 	}
 
 	// Update transaction status to RECEIVED

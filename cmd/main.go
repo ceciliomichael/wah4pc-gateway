@@ -11,6 +11,7 @@ import (
 	"github.com/wah4pc/wah4pc-gateway/internal/repository"
 	"github.com/wah4pc/wah4pc-gateway/internal/router"
 	"github.com/wah4pc/wah4pc-gateway/internal/service"
+	"github.com/wah4pc/wah4pc-gateway/internal/validator"
 	"github.com/wah4pc/wah4pc-gateway/pkg/logger"
 )
 
@@ -44,9 +45,20 @@ func main() {
 		log.Fatalf("Failed to initialize API key repository: %v", err)
 	}
 
+	// Initialize schema validator for FHIR resource validation
+	resourceDir := "resources"
+	if envResourceDir := os.Getenv("RESOURCE_DIR"); envResourceDir != "" {
+		resourceDir = envResourceDir
+	}
+	schemaValidator, err := validator.NewSchemaValidator(resourceDir)
+	if err != nil {
+		log.Fatalf("Failed to initialize schema validator: %v", err)
+	}
+	log.Printf("Schema Validator: Loaded %d resource type definitions", len(schemaValidator.GetSupportedResourceTypes()))
+
 	// Initialize services
 	providerService := service.NewProviderService(providerRepo)
-	gatewayService := service.NewGatewayService(txRepo, providerService, cfg.Server.BaseURL)
+	gatewayService := service.NewGatewayService(txRepo, providerService, cfg.Server.BaseURL, schemaValidator)
 	apiKeyService := service.NewApiKeyService(apiKeyRepo, providerService)
 
 	// Initialize handlers

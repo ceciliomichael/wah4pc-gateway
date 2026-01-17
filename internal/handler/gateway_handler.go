@@ -92,6 +92,11 @@ func (h *GatewayHandler) ReceiveResult(w http.ResponseWriter, r *http.Request) {
 			respondError(w, http.StatusBadGateway, "requester unreachable")
 			return
 		}
+		if errors.Is(err, service.ErrSchemaValidation) {
+			// 422 Unprocessable Entity - resource doesn't conform to required FHIR profile
+			respondError(w, http.StatusUnprocessableEntity, "FHIR schema validation failed: "+err.Error())
+			return
+		}
 		respondError(w, http.StatusInternalServerError, "failed to process result: "+err.Error())
 		return
 	}

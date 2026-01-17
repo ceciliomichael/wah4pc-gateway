@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Workflow,
   GitMerge,
+  Database,
 } from "lucide-react";
 
 interface NavItem {
@@ -101,6 +102,21 @@ const navigationItems: NavItem[] = [
       { title: "Endpoints", href: "/docs/api#endpoints" },
       { title: "Error Responses", href: "/docs/api#errors" },
       { title: "Rate Limiting", href: "/docs/api#rate-limiting" },
+    ],
+  },
+  {
+    title: "Resources",
+    href: "/docs/resources",
+    icon: <Database className="h-4 w-4" />,
+    description: "FHIR schemas & templates",
+    items: [
+      { title: "Patient", href: "/docs/resources/patient" },
+      { title: "Encounter", href: "/docs/resources/encounter" },
+      { title: "Procedure", href: "/docs/resources/procedure" },
+      { title: "Immunization", href: "/docs/resources/immunization" },
+      { title: "Observation", href: "/docs/resources/observation" },
+      { title: "Medication", href: "/docs/resources/medication" },
+      { title: "Code Systems", href: "/docs/resources#code-systems" },
     ],
   },
 ];

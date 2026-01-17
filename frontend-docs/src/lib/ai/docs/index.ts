@@ -23,6 +23,13 @@ export {
   isValidPage,
 } from "./registry";
 
+// Utils
+export {
+  resolveDocsPath,
+  resolveDocsDir,
+  resolveResourcesDataDir,
+} from "./utils";
+
 // Resource extraction
 export {
   extractResourceContent,

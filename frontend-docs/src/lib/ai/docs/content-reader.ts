@@ -8,6 +8,7 @@ import path from "path";
 import { parsePageContent } from "../docs-parser";
 import { PAGE_REGISTRY, SECTION_REGISTRY } from "./registry";
 import { extractResourceContent, readResourceFileContent } from "./resource-extractor";
+import { resolveDocsPath, resolveDocsDir, resolveResourcesDataDir } from "./utils";
 
 /**
  * Reads the actual content of a documentation page
@@ -55,11 +56,9 @@ function readStandardPage(
   sectionId?: string,
   sections?: Array<{ id: string; name: string; description: string }>
 ): string | null {
-  const docsDir = path.join(process.cwd(), "src", "app", "docs", normalizedPageId);
-
-  // Read page.tsx
-  const pageTsxPath = path.join(docsDir, "page.tsx");
-  if (!fs.existsSync(pageTsxPath)) {
+  // Use robust path resolution
+  const pageTsxPath = resolveDocsPath(normalizedPageId, "page.tsx");
+  if (!pageTsxPath) {
     return null;
   }
 
@@ -67,8 +66,8 @@ function readStandardPage(
 
   // Read data.ts if it exists
   let dataContent: string | null = null;
-  const dataTsPath = path.join(docsDir, "data.ts");
-  if (fs.existsSync(dataTsPath)) {
+  const dataTsPath = resolveDocsPath(normalizedPageId, "data.ts");
+  if (dataTsPath) {
     dataContent = fs.readFileSync(dataTsPath, "utf-8");
   }
 
@@ -100,10 +99,10 @@ function readStandardPage(
  * Reads the resources overview page content
  */
 function readResourcesOverviewPage(): string | null {
-  const resourcesDataDir = path.join(process.cwd(), "src", "app", "docs", "resources", "data");
-  const indexPath = path.join(resourcesDataDir, "index.ts");
+  // Use robust path resolution - directory is named "resources-data"
+  const indexPath = resolveDocsPath("resources", "resources-data", "index.ts");
 
-  if (!fs.existsSync(indexPath)) {
+  if (!indexPath) {
     return null;
   }
 
@@ -168,32 +167,28 @@ export function readFullPageContent(pageId: string): string | null {
       contentParts.push(resourceContent);
     }
   } else if (normalizedPageId === "resources") {
-    // Handle resources overview page
-    const resourcesDataDir = path.join(process.cwd(), "src", "app", "docs", "resources", "data");
-    const indexPath = path.join(resourcesDataDir, "index.ts");
-    if (fs.existsSync(indexPath)) {
+    // Handle resources overview page - use robust path resolution (directory is "resources-data")
+    const indexPath = resolveDocsPath("resources", "resources-data", "index.ts");
+    if (indexPath) {
       contentParts.push(fs.readFileSync(indexPath, "utf-8"));
     }
   } else {
-    // Standard page handling
-    const docsDir = path.join(process.cwd(), "src", "app", "docs", normalizedPageId);
-
-    // Read the main page.tsx file
-    const pageTsxPath = path.join(docsDir, "page.tsx");
-    if (fs.existsSync(pageTsxPath)) {
+    // Standard page handling - use robust path resolution
+    const pageTsxPath = resolveDocsPath(normalizedPageId, "page.tsx");
+    if (pageTsxPath) {
       contentParts.push(fs.readFileSync(pageTsxPath, "utf-8"));
     }
 
     // Read the data.ts file if it exists
-    const dataTsPath = path.join(docsDir, "data.ts");
-    if (fs.existsSync(dataTsPath)) {
+    const dataTsPath = resolveDocsPath(normalizedPageId, "data.ts");
+    if (dataTsPath) {
       contentParts.push(fs.readFileSync(dataTsPath, "utf-8"));
     }
 
     // For the API page, also read all endpoint definition files
     if (normalizedPageId === "api") {
-      const endpointsDir = path.join(docsDir, "endpoints");
-      if (fs.existsSync(endpointsDir)) {
+      const endpointsDir = resolveDocsPath(normalizedPageId, "endpoints");
+      if (endpointsDir && fs.existsSync(endpointsDir)) {
         const endpointFiles = fs.readdirSync(endpointsDir);
         for (const file of endpointFiles) {
           if (file.endsWith(".ts")) {

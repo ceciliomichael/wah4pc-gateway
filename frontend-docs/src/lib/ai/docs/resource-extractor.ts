@@ -4,8 +4,8 @@
  */
 
 import fs from "fs";
-import path from "path";
 import { PAGE_REGISTRY } from "./registry";
+import { resolveDocsPath, resolveResourcesDataDir } from "./utils";
 
 /** Field definition extracted from resource data */
 interface ExtractedField {
@@ -21,13 +21,6 @@ interface ExtractedField {
 }
 
 /**
- * Gets the path to the resources data directory
- */
-function getResourcesDataDir(): string {
-  return path.join(process.cwd(), "src", "app", "docs", "resources", "data");
-}
-
-/**
  * Reads and parses a specific resource file (e.g., patient.ts, medication.ts)
  * Extracts the resource definition and formats it as clean markdown
  *
@@ -35,10 +28,10 @@ function getResourcesDataDir(): string {
  * @returns Formatted markdown content or null if not found
  */
 export function extractResourceContent(slug: string): string | null {
-  const resourcesDataDir = getResourcesDataDir();
-  const resourceFilePath = path.join(resourcesDataDir, `${slug}.ts`);
+  // Use robust path resolution - directory is named "resources-data"
+  const resourceFilePath = resolveDocsPath("resources", "resources-data", `${slug}.ts`);
 
-  if (!fs.existsSync(resourceFilePath)) {
+  if (!resourceFilePath) {
     return null;
   }
 
@@ -199,10 +192,10 @@ function extractFields(fileContent: string): ExtractedField[] {
  * @returns Raw file content or null
  */
 export function readResourceFileContent(slug: string): string | null {
-  const resourcesDataDir = getResourcesDataDir();
-  const resourceFilePath = path.join(resourcesDataDir, `${slug}.ts`);
+  // Use robust path resolution - directory is named "resources-data"
+  const resourceFilePath = resolveDocsPath("resources", "resources-data", `${slug}.ts`);
 
-  if (!fs.existsSync(resourceFilePath)) {
+  if (!resourceFilePath) {
     return null;
   }
 
@@ -213,9 +206,10 @@ export function readResourceFileContent(slug: string): string | null {
  * Gets a list of all available resource slugs by reading the data directory
  */
 export function getAvailableResourceSlugs(): string[] {
-  const resourcesDataDir = getResourcesDataDir();
+  // Use robust path resolution
+  const resourcesDataDir = resolveResourcesDataDir();
 
-  if (!fs.existsSync(resourcesDataDir)) {
+  if (!resourcesDataDir) {
     return [];
   }
 

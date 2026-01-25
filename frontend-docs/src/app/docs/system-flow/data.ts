@@ -125,6 +125,7 @@ export const exchangeFlowDiagram = `
 sequenceDiagram
     participant A as Provider A (Requester)
     participant GW as WAH4PC Gateway
+    participant V as FHIR Validator
     participant B as Provider B (Target)
 
     rect rgb(224, 231, 255)
@@ -142,8 +143,10 @@ sequenceDiagram
     end
 
     rect rgb(220, 252, 231)
-        Note over A,B: Data Delivery
+        Note over A,B: Data Delivery & Validation
         B->>GW: POST /api/v1/fhir/receive/{type}
+        GW->>V: Validate FHIR Resource
+        V-->>GW: Validation Result
         GW->>A: POST /fhir/receive-results
         A-->>GW: 200 OK
         GW-->>B: 200 OK
@@ -230,16 +233,17 @@ export const lifecyclePhases = [
     phase: 4,
     title: "Data Exchange",
     subtitle: "Request & Receive FHIR Data",
-    description: "The core functionality: request patient data from other providers and receive responses via webhooks.",
+    description: "The core functionality: request patient data from other providers and receive validated, compliant FHIR data via webhooks.",
     icon: "ArrowLeftRight",
     color: "indigo",
     steps: [
       "Initiate request via POST /api/v1/fhir/request/{resourceType}",
       "Gateway creates transaction and notifies target",
       "Target processes request and sends data to gateway",
-      "Gateway delivers data to your webhook endpoint",
+      "Gateway validates data against PH Core FHIR profiles",
+      "Valid data is delivered to your webhook endpoint",
     ],
-    keyInsight: "The gateway orchestrates but never stores FHIR data. Your data flows through, not into, the system.",
+    keyInsight: "Strict validation ensures only PH Core compliant FHIR data enters the network. Invalid resources are rejected with 422 errors.",
   },
   {
     phase: 5,

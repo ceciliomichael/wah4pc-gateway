@@ -4,6 +4,7 @@ export const systemArchitectureDiagram = `
 sequenceDiagram
     participant P1 as Hospital A (Requester)
     participant GW as WAH4PC Gateway
+    participant V as FHIR Validator
     participant P2 as Laboratory B (Target)
 
     rect rgb(240, 249, 255)
@@ -19,10 +20,16 @@ sequenceDiagram
     rect rgb(240, 253, 244)
         Note over P1,P2: Provider Response Flow
         P2->>GW: POST /api/v1/fhir/receive/Patient
-        GW->>GW: Update Transaction Status
-        GW->>P1: POST /fhir/receive-results
-        P1-->>GW: 200 OK
-        GW-->>P2: 200 OK
+        GW->>V: POST /validateResource
+        V-->>GW: Validation Result
+        alt Valid Resource
+            GW->>GW: Update Transaction Status
+            GW->>P1: POST /fhir/receive-results
+            P1-->>GW: 200 OK
+            GW-->>P2: 200 OK
+        else Invalid Resource
+            GW-->>P2: 422 Unprocessable Entity
+        end
     end
 `;
 
@@ -30,6 +37,7 @@ export const transactionFlowDiagram = `
 sequenceDiagram
     participant R as Requester (Hospital A)
     participant G as Gateway
+    participant V as Validator
     participant T as Target (Lab B)
 
     rect rgb(240, 249, 255)
@@ -51,6 +59,8 @@ sequenceDiagram
     rect rgb(240, 253, 244)
         Note over R,T: Phase 3 - Data Relay
         T->>+G: POST /api/v1/fhir/receive/Patient
+        G->>V: Validate FHIR Resource
+        V-->>G: Validation Result
         G->>G: Update Status (RECEIVED)
         G->>+R: POST /fhir/receive-results
         R-->>-G: 200 OK (Data Received)

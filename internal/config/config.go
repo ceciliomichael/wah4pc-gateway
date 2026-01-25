@@ -8,11 +8,17 @@ import (
 )
 
 type Config struct {
-	App      AppConfig      `yaml:"app"`
-	Server   ServerConfig   `yaml:"server"`
-	Security SecurityConfig `yaml:"security"`
-	Data     DataConfig     `yaml:"data"`
-	Logging  LoggingConfig  `yaml:"logging"`
+	App       AppConfig       `yaml:"app"`
+	Server    ServerConfig    `yaml:"server"`
+	Security  SecurityConfig  `yaml:"security"`
+	Data      DataConfig      `yaml:"data"`
+	Logging   LoggingConfig   `yaml:"logging"`
+	Validator ValidatorConfig `yaml:"validator"`
+}
+
+type ValidatorConfig struct {
+	URL    string `yaml:"url"`
+	APIKey string `yaml:"api_key"`
 }
 
 type AppConfig struct {
@@ -83,6 +89,12 @@ func loadFromEnv(cfg *Config) {
 	if apiKeysPath := os.Getenv("DATA_API_KEYS_PATH"); apiKeysPath != "" {
 		cfg.Data.ApiKeysPath = apiKeysPath
 	}
+	if validatorURL := os.Getenv("VALIDATOR_URL"); validatorURL != "" {
+		cfg.Validator.URL = validatorURL
+	}
+	if validatorAPIKey := os.Getenv("VALIDATOR_API_KEY"); validatorAPIKey != "" {
+		cfg.Validator.APIKey = validatorAPIKey
+	}
 }
 
 func setDefaults(cfg *Config) {
@@ -112,6 +124,9 @@ func setDefaults(cfg *Config) {
 	}
 	if cfg.Logging.Level == "" {
 		cfg.Logging.Level = "info"
+	}
+	if cfg.Validator.URL == "" {
+		cfg.Validator.URL = "http://localhost:8080"
 	}
 }
 

@@ -45,7 +45,7 @@ type GatewayService struct {
 	providerService *ProviderService
 	gatewayBaseURL  string
 	httpClient      *http.Client
-	schemaValidator *validator.SchemaValidator
+	validator       validator.Validator
 }
 
 // NewGatewayService creates a new gateway service
@@ -53,7 +53,7 @@ func NewGatewayService(
 	txRepo TransactionRepository,
 	providerService *ProviderService,
 	gatewayBaseURL string,
-	schemaValidator *validator.SchemaValidator,
+	resourceValidator validator.Validator,
 ) *GatewayService {
 	return &GatewayService{
 		txRepo:          txRepo,
@@ -62,7 +62,7 @@ func NewGatewayService(
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
-		schemaValidator: schemaValidator,
+		validator: resourceValidator,
 	}
 }
 
@@ -186,17 +186,15 @@ func (s *GatewayService) ProcessResponse(result IncomingResultPayload, senderPro
 		return ErrUnauthorizedProvider
 	}
 
-	// Validate the incoming data against the FHIR schema (strict validation)
-	// Only validate if we have a schema validator and the status is SUCCESS
-	if s.schemaValidator != nil && result.Status == string(ResultStatusSuccess) {
-		if s.schemaValidator.IsSupported(tx.ResourceType) {
-			if err := s.schemaValidator.Validate(tx.ResourceType, result.Data); err != nil {
-				// Update transaction status to REJECTED due to validation failure
-				tx.Status = model.StatusFailed
-				tx.UpdatedAt = time.Now().UTC()
-				_ = s.txRepo.Update(tx)
-				return fmt.Errorf("%w: %v", ErrSchemaValidation, err)
-			}
+	// Validate the incoming data using the remote FHIR validator
+	// Only validate if we have a validator and the status is SUCCESS
+	if s.validator != nil && result.Status == string(ResultStatusSuccess) {
+		if err := s.validator.Validate(tx.ResourceType, result.Data); err != nil {
+			// Update transaction status to REJECTED due to validation failure
+			tx.Status = model.StatusFailed
+			tx.UpdatedAt = time.Now().UTC()
+			_ = s.txRepo.Update(tx)
+			return fmt.Errorf("%w: %v", ErrSchemaValidation, err)
 		}
 	}
 

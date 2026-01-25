@@ -45,20 +45,13 @@ func main() {
 		log.Fatalf("Failed to initialize API key repository: %v", err)
 	}
 
-	// Initialize schema validator for FHIR resource validation
-	resourceDir := "resources"
-	if envResourceDir := os.Getenv("RESOURCE_DIR"); envResourceDir != "" {
-		resourceDir = envResourceDir
-	}
-	schemaValidator, err := validator.NewSchemaValidator(resourceDir)
-	if err != nil {
-		log.Fatalf("Failed to initialize schema validator: %v", err)
-	}
-	log.Printf("Schema Validator: Loaded %d resource type definitions", len(schemaValidator.GetSupportedResourceTypes()))
+	// Initialize remote FHIR validator
+	remoteValidator := validator.NewRemoteValidator(cfg.Validator.URL, cfg.Validator.APIKey)
+	log.Printf("Remote Validator: Configured to use %s", cfg.Validator.URL)
 
 	// Initialize services
 	providerService := service.NewProviderService(providerRepo)
-	gatewayService := service.NewGatewayService(txRepo, providerService, cfg.Server.BaseURL, schemaValidator)
+	gatewayService := service.NewGatewayService(txRepo, providerService, cfg.Server.BaseURL, remoteValidator)
 	apiKeyService := service.NewApiKeyService(apiKeyRepo, providerService)
 
 	// Initialize handlers

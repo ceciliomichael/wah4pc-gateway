@@ -1,6 +1,36 @@
 // FHIR Resource Schema Type Definitions for PH Core Gateway
 
-export type ResourceSlug = "patient" | "encounter" | "procedure" | "immunization" | "observation" | "medication";
+// PH Core resources (validated against Philippine Core profiles)
+export type PhCoreResourceSlug = 
+  | "patient" 
+  | "encounter" 
+  | "procedure" 
+  | "immunization" 
+  | "observation" 
+  | "medication"
+  | "location"
+  | "organization"
+  | "practitioner";
+
+// Base R4 resources (validated against standard HL7 FHIR R4)
+export type BaseR4ResourceSlug =
+  | "account"
+  | "allergy-intolerance"
+  | "charge-item"
+  | "charge-item-definition"
+  | "claim"
+  | "claim-response"
+  | "condition"
+  | "diagnostic-report"
+  | "invoice"
+  | "medication-administration"
+  | "medication-request"
+  | "nutrition-order"
+  | "payment-notice"
+  | "payment-reconciliation"
+  | "practitioner-role";
+
+export type ResourceSlug = PhCoreResourceSlug | BaseR4ResourceSlug;
 
 export interface FieldDefinition {
   name: string;

@@ -1,17 +1,63 @@
 "use client";
 
 import Link from "next/link";
-import { Database, ArrowRight, ExternalLink, Users, Stethoscope, Syringe, Activity, Pill, Calendar } from "lucide-react";
-import { resources, pageInfo, commonCodeSystems } from "./resources-data/index";
+import { 
+  Database, 
+  ArrowRight, 
+  ExternalLink, 
+  Users, 
+  Stethoscope, 
+  Syringe, 
+  Activity, 
+  Pill, 
+  Calendar,
+  MapPin,
+  Building2,
+  UserCog,
+  CreditCard,
+  Receipt,
+  FileText,
+  ClipboardList,
+  AlertTriangle,
+  HeartPulse,
+  FlaskConical,
+  PillBottle,
+  Utensils,
+  BadgeCheck,
+  Banknote,
+  FileCheck,
+} from "lucide-react";
+import { resources, pageInfo, commonCodeSystems, phCoreResources, baseR4Resources } from "./resources-data/index";
 import { CopyPageButton } from "@/components/ui/copy-page-button";
 
 const resourceIcons: Record<string, React.ReactNode> = {
+  // PH Core Resources
   patient: <Users className="h-6 w-6" />,
   encounter: <Calendar className="h-6 w-6" />,
   procedure: <Stethoscope className="h-6 w-6" />,
   immunization: <Syringe className="h-6 w-6" />,
   observation: <Activity className="h-6 w-6" />,
   medication: <Pill className="h-6 w-6" />,
+  location: <MapPin className="h-6 w-6" />,
+  organization: <Building2 className="h-6 w-6" />,
+  practitioner: <UserCog className="h-6 w-6" />,
+  // Base R4 - Financial/Administrative
+  account: <CreditCard className="h-6 w-6" />,
+  claim: <Receipt className="h-6 w-6" />,
+  "claim-response": <FileCheck className="h-6 w-6" />,
+  "charge-item": <Banknote className="h-6 w-6" />,
+  "charge-item-definition": <FileText className="h-6 w-6" />,
+  invoice: <ClipboardList className="h-6 w-6" />,
+  "payment-notice": <Receipt className="h-6 w-6" />,
+  "payment-reconciliation": <FileCheck className="h-6 w-6" />,
+  // Base R4 - Clinical/Other
+  "allergy-intolerance": <AlertTriangle className="h-6 w-6" />,
+  condition: <HeartPulse className="h-6 w-6" />,
+  "diagnostic-report": <FlaskConical className="h-6 w-6" />,
+  "medication-administration": <PillBottle className="h-6 w-6" />,
+  "medication-request": <Pill className="h-6 w-6" />,
+  "nutrition-order": <Utensils className="h-6 w-6" />,
+  "practitioner-role": <BadgeCheck className="h-6 w-6" />,
 };
 
 function ResourceCard({ resource }: { resource: typeof resources[0] }) {

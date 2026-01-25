@@ -334,4 +334,262 @@ export const SECTION_REGISTRY: Record<string, SectionInfo[]> = {
         "Complete JSON example with drug code, form, ingredient strength, and batch details",
     },
   ],
+
+  // PH Core Resources
+  "resources/location": [
+    {
+      id: "structure",
+      name: "Structure Definition",
+      description:
+        "PH Core Location with PSGC address extensions and managing organization reference",
+    },
+    {
+      id: "template",
+      name: "JSON Template",
+      description:
+        "JSON example of a hospital building location with PSGC-coded address",
+    },
+  ],
+  "resources/organization": [
+    {
+      id: "structure",
+      name: "Structure Definition",
+      description:
+        "PH Core Organization with DOH NHFR code identifier and PSGC address extensions",
+    },
+    {
+      id: "template",
+      name: "JSON Template",
+      description:
+        "JSON example of a healthcare provider organization with facility ID",
+    },
+  ],
+  "resources/practitioner": [
+    {
+      id: "structure",
+      name: "Structure Definition",
+      description:
+        "PH Core Practitioner with PRC license identifier and qualification details",
+    },
+    {
+      id: "template",
+      name: "JSON Template",
+      description:
+        "JSON example of a physician with license number and contact details",
+    },
+  ],
+
+  // Base R4 - Financial/Administrative
+  "resources/account": [
+    {
+      id: "structure",
+      name: "Structure Definition",
+      description:
+        "Standard R4 Account resource structure for tracking financial obligations",
+    },
+    {
+      id: "template",
+      name: "JSON Template",
+      description:
+        "JSON example of a patient billing account",
+    },
+  ],
+  "resources/claim": [
+    {
+      id: "structure",
+      name: "Structure Definition",
+      description:
+        "Standard R4 Claim resource with insurance details, diagnosis, and items",
+    },
+    {
+      id: "template",
+      name: "JSON Template",
+      description:
+        "JSON example of an institutional claim submission",
+    },
+  ],
+  "resources/claim-response": [
+    {
+      id: "structure",
+      name: "Structure Definition",
+      description:
+        "Standard R4 ClaimResponse with adjudication results and payment status",
+    },
+    {
+      id: "template",
+      name: "JSON Template",
+      description:
+        "JSON example of an approved claim response with payment details",
+    },
+  ],
+  "resources/charge-item": [
+    {
+      id: "structure",
+      name: "Structure Definition",
+      description:
+        "Standard R4 ChargeItem for individual billable services or products",
+    },
+    {
+      id: "template",
+      name: "JSON Template",
+      description:
+        "JSON example of a charge for a lab test",
+    },
+  ],
+  "resources/charge-item-definition": [
+    {
+      id: "structure",
+      name: "Structure Definition",
+      description:
+        "Standard R4 ChargeItemDefinition for cataloging billable items and prices",
+    },
+    {
+      id: "template",
+      name: "JSON Template",
+      description:
+        "JSON example of a price definition for a service",
+    },
+  ],
+  "resources/invoice": [
+    {
+      id: "structure",
+      name: "Structure Definition",
+      description:
+        "Standard R4 Invoice grouping charge items with total gross/net amounts",
+    },
+    {
+      id: "template",
+      name: "JSON Template",
+      description:
+        "JSON example of a patient invoice with line items",
+    },
+  ],
+  "resources/payment-notice": [
+    {
+      id: "structure",
+      name: "Structure Definition",
+      description:
+        "Standard R4 PaymentNotice indicating payment status and amount",
+    },
+    {
+      id: "template",
+      name: "JSON Template",
+      description:
+        "JSON example of a payment notification",
+    },
+  ],
+  "resources/payment-reconciliation": [
+    {
+      id: "structure",
+      name: "Structure Definition",
+      description:
+        "Standard R4 PaymentReconciliation for bulk payments and claim linkages",
+    },
+    {
+      id: "template",
+      name: "JSON Template",
+      description:
+        "JSON example of a reconciliation for a payment batch",
+    },
+  ],
+
+  // Base R4 - Clinical/Other
+  "resources/allergy-intolerance": [
+    {
+      id: "structure",
+      name: "Structure Definition",
+      description:
+        "Standard R4 AllergyIntolerance with substance code, reaction, and criticality",
+    },
+    {
+      id: "template",
+      name: "JSON Template",
+      description:
+        "JSON example of a medication allergy",
+    },
+  ],
+  "resources/condition": [
+    {
+      id: "structure",
+      name: "Structure Definition",
+      description:
+        "Standard R4 Condition with clinical status, verification status, and code",
+    },
+    {
+      id: "template",
+      name: "JSON Template",
+      description:
+        "JSON example of a clinical diagnosis",
+    },
+  ],
+  "resources/diagnostic-report": [
+    {
+      id: "structure",
+      name: "Structure Definition",
+      description:
+        "Standard R4 DiagnosticReport with status, code, and result references",
+    },
+    {
+      id: "template",
+      name: "JSON Template",
+      description:
+        "JSON example of a laboratory report with results",
+    },
+  ],
+  "resources/medication-administration": [
+    {
+      id: "structure",
+      name: "Structure Definition",
+      description:
+        "Standard R4 MedicationAdministration with medication, dosage, and time",
+    },
+    {
+      id: "template",
+      name: "JSON Template",
+      description:
+        "JSON example of a drug administration event",
+    },
+  ],
+  "resources/medication-request": [
+    {
+      id: "structure",
+      name: "Structure Definition",
+      description:
+        "Standard R4 MedicationRequest with intent, priority, and dosage instructions",
+    },
+    {
+      id: "template",
+      name: "JSON Template",
+      description:
+        "JSON example of a medication prescription",
+    },
+  ],
+  "resources/nutrition-order": [
+    {
+      id: "structure",
+      name: "Structure Definition",
+      description:
+        "Standard R4 NutritionOrder for diet, formula, or supplements",
+    },
+    {
+      id: "template",
+      name: "JSON Template",
+      description:
+        "JSON example of a dietary order",
+    },
+  ],
+  "resources/practitioner-role": [
+    {
+      id: "structure",
+      name: "Structure Definition",
+      description:
+        "Standard R4 PractitionerRole linking practitioner, organization, and location",
+    },
+    {
+      id: "template",
+      name: "JSON Template",
+      description:
+        "JSON example of a doctor's role at a hospital",
+    },
+  ],
 };

@@ -111,17 +111,34 @@ function readResourcesOverviewPage(): string | null {
   const lines: string[] = [
     "# FHIR Resources",
     "",
-    "The WAH4PC Gateway supports 6 FHIR resource types. Each resource must conform to Philippine Core (PH Core) profiles.",
+    "The WAH4PC Gateway supports 24 FHIR resource types, categorized into Philippine Core (PH Core) and Base R4 (Financial/Administrative & Clinical).",
     "",
     "## Supported Resources",
     "",
   ];
 
-  // Extract resource names from the resources array
-  const resourceNames = ["Patient", "Encounter", "Procedure", "Immunization", "Observation", "Medication"];
-  for (const name of resourceNames) {
-    const slug = name.toLowerCase();
-    lines.push(`- **${name}** (\`resources/${slug}\`) - Use \`read_page\` to see full schema`);
+  // Dynamically extract all resource pages from the registry
+  const resourcePages = Object.values(PAGE_REGISTRY).filter(
+    (page) => page.id.startsWith("resources/") && page.id !== "resources"
+  );
+
+  // Group by category based on title prefix or known IDs
+  const phCore = resourcePages.filter(p => p.title.startsWith("PH Core"));
+  const others = resourcePages.filter(p => !p.title.startsWith("PH Core"));
+
+  if (phCore.length > 0) {
+    lines.push("### PH Core Resources");
+    for (const page of phCore) {
+      lines.push(`- **${page.title}** (\`${page.id}\`) - ${page.description}`);
+    }
+    lines.push("");
+  }
+
+  if (others.length > 0) {
+    lines.push("### Base R4 Resources");
+    for (const page of others) {
+      lines.push(`- **${page.title}** (\`${page.id}\`) - ${page.description}`);
+    }
   }
 
   lines.push("");

@@ -21,7 +21,28 @@ export function listPages(): string {
     "",
   ];
 
-  for (const page of pages) {
+  // Group pages for better AI readability
+  const mainPages = pages.filter(p => !p.id.startsWith("resources/"));
+  const phCorePages = pages.filter(p => p.id.startsWith("resources/") && p.title.startsWith("PH Core"));
+  const baseR4Pages = pages.filter(p => p.id.startsWith("resources/") && !p.title.startsWith("PH Core"));
+
+  lines.push("### Main Documentation");
+  for (const page of mainPages) {
+    lines.push(`- **${page.title}** (\`${page.id}\`)`);
+    lines.push(`  ${page.description}`);
+  }
+
+  lines.push("");
+  lines.push("### PH Core Resources (Philippine Specific)");
+  for (const page of phCorePages) {
+    lines.push(`- **${page.title}** (\`${page.id}\`)`);
+    // Compact description for resources to save context window
+    lines.push(`  ${page.description}`);
+  }
+
+  lines.push("");
+  lines.push("### Base R4 Resources (Standard HL7)");
+  for (const page of baseR4Pages) {
     lines.push(`- **${page.title}** (\`${page.id}\`)`);
     lines.push(`  ${page.description}`);
   }

@@ -84,7 +84,7 @@ export async function GET(): Promise<NextResponse> {
           page: {
             required: true,
             type: "string",
-            description: "Page ID (introduction, architecture, system-flow, flow, integration, api, resources, resources/patient, resources/encounter, resources/procedure, resources/immunization, resources/observation, resources/medication)",
+            description: "Page ID (introduction, architecture, system-flow, flow, integration, api, resources, resources/patient, resources/encounter, resources/procedure, resources/immunization, resources/observation, resources/medication, resources/location, resources/organization, resources/practitioner, resources/account, resources/claim, resources/claim-response, resources/charge-item, resources/charge-item-definition, resources/invoice, resources/payment-notice, resources/payment-reconciliation, resources/allergy-intolerance, resources/condition, resources/diagnostic-report, resources/medication-administration, resources/medication-request, resources/nutrition-order, resources/practitioner-role)",
           },
         },
         example: { tool: "analyze_page", params: { page: "resources/patient" } },
@@ -96,7 +96,7 @@ export async function GET(): Promise<NextResponse> {
           page: {
             required: true,
             type: "string",
-            description: "Page ID (introduction, architecture, system-flow, flow, integration, api, resources, resources/patient, resources/encounter, resources/procedure, resources/immunization, resources/observation, resources/medication)",
+            description: "Page ID (introduction, architecture, system-flow, flow, integration, api, resources, resources/patient, resources/encounter, resources/procedure, resources/immunization, resources/observation, resources/medication, resources/location, resources/organization, resources/practitioner, resources/account, resources/claim, resources/claim-response, resources/charge-item, resources/charge-item-definition, resources/invoice, resources/payment-notice, resources/payment-reconciliation, resources/allergy-intolerance, resources/condition, resources/diagnostic-report, resources/medication-administration, resources/medication-request, resources/nutrition-order, resources/practitioner-role)",
           },
           section: {
             required: false,

@@ -1,0 +1,18 @@
+server:
+  port: "8080"
+
+java_validator:
+  port: "9090"
+  jar_path: "validator_cli.jar"
+  java_path: "java"
+  ig_path: "resources"
+
+fhir:
+  version: "4.0.1"
+
+security:
+  admin_secret: "change_me_to_a_secure_secret"
+  dev_api_key: "dev-api-key-for-frontend"
+  rate_limit:
+    requests_per_second: 20
+    burst: 20

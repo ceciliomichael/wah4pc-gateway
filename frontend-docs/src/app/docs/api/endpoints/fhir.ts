@@ -140,4 +140,73 @@ export const fhirEndpoints: EndpointCardProps[] = [
       "The gateway forwards the data to the requester's /fhir/receive-results endpoint",
     ],
   },
+  {
+    method: "POST",
+    path: "/api/v1/fhir/push/{resourceType}",
+    description: "Push a FHIR resource directly to another provider without a prior request. Useful for sending referrals, appointments, or unsolicited results.",
+    pathParams: [
+      {
+        name: "resourceType",
+        type: "string",
+        description: "FHIR resource type (e.g., Appointment, DocumentReference)",
+      },
+    ],
+    headers: [
+      {
+        name: "X-API-Key",
+        value: "wah_your-api-key",
+        required: true,
+      },
+      {
+        name: "Idempotency-Key",
+        value: "550e8400-e29b-41d4-a716-446655440000",
+        required: true,
+        description: "UUID for safe retries. Required for mutating requests.",
+      },
+    ],
+    requestBody: `{
+  "senderId": "your-provider-uuid",
+  "targetId": "target-provider-uuid",
+  "resourceType": "Appointment",
+  "data": {
+    "resourceType": "Appointment",
+    "status": "proposed",
+    "description": "Consultation",
+    "participant": [
+      {
+        "actor": {
+          "type": "Patient",
+          "identifier": {
+            "system": "http://philhealth.gov.ph",
+            "value": "12-345678901-2"
+          }
+        },
+        "status": "accepted"
+      }
+    ]
+  },
+  "reason": "New Appointment Request",
+  "notes": "Please confirm availability"
+}`,
+    responseStatus: 200,
+    responseBody: `{
+  "id": "transaction-uuid",
+  "requesterId": "your-provider-uuid",
+  "targetId": "target-provider-uuid",
+  "resourceType": "Appointment",
+  "status": "COMPLETED",
+  "metadata": {
+    "reason": "New Appointment Request",
+    "notes": "Please confirm availability"
+  },
+  "createdAt": "2024-01-15T11:00:00Z",
+  "updatedAt": "2024-01-15T11:00:00Z"
+}`,
+    notes: [
+      "Target provider must support receiving unsolicited pushes via /fhir/receive-push",
+      "Transaction status is immediately updated to COMPLETED upon successful delivery",
+      "Data must be a valid FHIR resource matching the resourceType",
+      "The senderId becomes the requesterId in the transaction record",
+    ],
+  },
 ];

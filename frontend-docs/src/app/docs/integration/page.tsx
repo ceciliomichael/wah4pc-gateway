@@ -14,7 +14,6 @@ import {
 import { DiagramContainer } from "@/components/ui/diagram-container";
 import { DocsHeader } from "@/components/ui/docs-header";
 import { StepSection } from "@/components/ui/step-section";
-import { CodeBlock } from "@/components/ui/code-block";
 import { JsonViewer } from "@/components/ui/json-viewer";
 import { AlertBlock } from "@/components/ui/alert-block";
 import { FeatureCard } from "@/components/ui/feature-card";
@@ -264,6 +263,53 @@ export default function IntegrationPage() {
           responseTitle="Your Response"
           className="mt-8"
         />
+
+        {/* Webhook 3: Receive Push */}
+        <WebhookCard
+          icon={<ArrowDownToLine className="h-6 w-6 text-amber-700" />}
+          iconBg="bg-amber-100"
+          borderColor="border-amber-200"
+          bgColor="bg-amber-50/30"
+          title="Webhook 3: Receive Push"
+          subtitle="Called when another provider pushes unsolicited data to you"
+          method="POST"
+          endpoint="{your_base_url}/fhir/receive-push"
+          requestCode={`{
+  "transactionId": "txn-uuid-from-gateway",
+  "senderId": "sender-provider-uuid",
+  "resourceType": "Appointment",
+  "data": {
+    "resourceType": "Appointment",
+    "status": "proposed",
+    "description": "Consultation",
+    "participant": [
+      {
+        "actor": {
+          "type": "Patient",
+          "identifier": {
+            "system": "http://philhealth.gov.ph",
+            "value": "12-345678901-2"
+          }
+        },
+        "status": "accepted"
+      }
+    ]
+  },
+  "reason": "New Appointment Request",
+  "notes": "Please confirm availability"
+}`}
+          requestTitle="Incoming Push from Gateway"
+          steps={[
+            { num: "1.", color: "text-amber-600", text: <>Validate the <code className="bg-slate-100 px-1 rounded border border-slate-200">X-Gateway-Auth</code> header</> },
+            { num: "2.", color: "text-amber-600", text: "Store the received unsolicited data" },
+            { num: "3.", color: "text-amber-600", text: <>Respond with <code className="bg-slate-100 px-1 rounded border border-slate-200">200 OK</code> to confirm receipt</> },
+          ]}
+          responseCode={`{
+  "message": "Data received successfully"
+}`}
+          responseTitle="Your Response"
+          className="mt-8"
+        />
       </StepSection>
 
       {/* Understanding Identifiers */}
@@ -388,6 +434,81 @@ export default function IntegrationPage() {
             the target provider. When they respond, the gateway will call your{" "}
             <code className="bg-blue-50 border border-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-mono text-sm">/fhir/receive-results</code>{" "}
             endpoint with the data.
+          </AlertBlock>
+        </div>
+      </StepSection>
+
+      {/* Step 4: Push Data */}
+      <StepSection
+        id="push"
+        stepNumber={4}
+        title="Push Data to Other Providers"
+        description="Send resources directly to another provider without a prior request. Useful for sending referrals, appointments, or unsolicited results."
+      >
+        <div className="rounded-2xl border border-slate-200 bg-white/50 backdrop-blur-sm p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-amber-100 rounded-lg">
+              <ArrowUpFromLine className="h-5 w-5 text-amber-600" />
+            </div>
+            <h3 className="font-bold text-slate-900 text-lg">Initiate a Push</h3>
+          </div>
+
+          <div className="mb-4 flex flex-wrap items-start gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <MethodBadge method="POST" className="shrink-0" />
+            <code className="text-sm font-mono text-slate-700 font-medium break-all min-w-0">{config.gatewayUrl}/api/v1/fhir/push/Appointment</code>
+          </div>
+
+          <RequestHeaders headers={fhirRequestHeaders} />
+
+          <JsonViewer
+            title="Request Body"
+            data={`{
+  "senderId": "your-provider-uuid",
+  "targetId": "target-provider-uuid",
+  "resourceType": "Appointment",
+  "data": {
+    "resourceType": "Appointment",
+    "status": "proposed",
+    "description": "Consultation",
+    "participant": [
+      {
+        "actor": {
+          "type": "Patient",
+          "identifier": {
+            "system": "http://philhealth.gov.ph",
+            "value": "12-345678901-2"
+          }
+        },
+        "status": "accepted"
+      }
+    ]
+  },
+  "reason": "New Appointment Request",
+  "notes": "Please confirm availability"
+}`}
+          />
+
+          <JsonViewer
+            title="Response (200 OK)"
+            data={`{
+  "id": "transaction-uuid",
+  "requesterId": "your-provider-uuid",
+  "targetId": "target-provider-uuid",
+  "resourceType": "Appointment",
+  "status": "COMPLETED",
+  "metadata": {
+    "reason": "New Appointment Request",
+    "notes": "Please confirm availability"
+  },
+  "createdAt": "2024-01-15T11:00:00Z",
+  "updatedAt": "2024-01-15T11:00:00Z"
+}`}
+            className="mt-6"
+          />
+
+          <AlertBlock type="success" className="mt-6">
+            <strong>Immediate Delivery:</strong> Unlike queries, push requests are delivered immediately. 
+            If the target provider accepts the data (returns 200 OK), the transaction is marked as COMPLETED instantly.
           </AlertBlock>
         </div>
       </StepSection>

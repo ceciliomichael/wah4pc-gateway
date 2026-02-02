@@ -164,6 +164,92 @@ func (s *GatewayService) InitiateQuery(req QueryRequest) (*model.Transaction, er
 	return &tx, nil
 }
 
+// InitiatePush starts a new unsolicited FHIR resource transfer
+// Flow: Sender -> Gateway -> Target
+func (s *GatewayService) InitiatePush(req PushRequest) (*model.Transaction, error) {
+	// Validate required fields
+	if req.SenderID == "" || req.TargetID == "" {
+		return nil, ErrInvalidRequest
+	}
+	if req.ResourceType == "" {
+		req.ResourceType = "Patient" // Default
+	}
+	if len(req.Data) == 0 {
+		return nil, ErrInvalidRequest
+	}
+
+	// Validate both providers exist
+	if _, err := s.providerService.GetByID(req.SenderID); err != nil {
+		return nil, fmt.Errorf("sender: %w", err)
+	}
+
+	targetProvider, err := s.providerService.GetByID(req.TargetID)
+	if err != nil {
+		return nil, fmt.Errorf("target: %w", err)
+	}
+
+	// Perform business rule validation (e.g., logical identifiers for Appointments)
+	if err := s.validatePushData(req.ResourceType, req.Data); err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrInvalidRequest, err)
+	}
+
+	// Validate the data using the remote FHIR validator
+	if s.validator != nil {
+		if err := s.validator.Validate(req.ResourceType, req.Data); err != nil {
+			return nil, fmt.Errorf("%w: %v", ErrSchemaValidation, err)
+		}
+	}
+
+	// Create transaction record
+	now := time.Now().UTC()
+	tx := model.Transaction{
+		ID:           uuid.New().String(),
+		RequesterID:  req.SenderID, // In a push, the sender is the "requester" (initiator)
+		TargetID:     req.TargetID,
+		Identifiers:  []model.Identifier{}, // Push might not have identifiers extracted yet
+		ResourceType: req.ResourceType,
+		Status:       model.StatusPending,
+		Metadata: model.TransactionMetadata{
+			Reason: req.Reason,
+			Notes:  req.Notes,
+		},
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	if err := s.txRepo.Create(tx); err != nil {
+		return nil, fmt.Errorf("failed to create transaction: %w", err)
+	}
+
+	// Forward data to target provider
+	payload := ProcessPushPayload{
+		TransactionID: tx.ID,
+		SenderID:      req.SenderID,
+		ResourceType:  req.ResourceType,
+		Data:          req.Data,
+		Reason:        req.Reason,
+		Notes:         req.Notes,
+	}
+
+	targetURL := fmt.Sprintf("%s/fhir/receive-push", targetProvider.BaseURL)
+	if err := s.forwardPushToTarget(targetURL, payload, targetProvider.GatewayAuthKey); err != nil {
+		// Update transaction status to failed
+		tx.Status = model.StatusFailed
+		tx.UpdatedAt = time.Now().UTC()
+		_ = s.txRepo.Update(tx)
+		return &tx, fmt.Errorf("failed to push to target: %w", err)
+	}
+
+	// If successful, mark as completed immediately
+	tx.Status = model.StatusCompleted
+	tx.UpdatedAt = time.Now().UTC()
+	if err := s.txRepo.Update(tx); err != nil {
+		return &tx, fmt.Errorf("failed to complete transaction: %w", err)
+	}
+
+	return &tx, nil
+}
+
 // ProcessResponse handles incoming data from a target provider
 // Flow: Target -> Gateway -> Requester
 func (s *GatewayService) ProcessResponse(result IncomingResultPayload, senderProviderID string) error {
@@ -290,6 +376,37 @@ func (s *GatewayService) GetAllTransactions(filterProviderID string) ([]model.Tr
 
 // forwardToTarget sends the query request to the target provider
 func (s *GatewayService) forwardToTarget(url string, payload ProcessQueryPayload, authKey string) error {
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal payload: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	if authKey != "" {
+		req.Header.Set("X-Gateway-Auth", authKey)
+	}
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return ErrTargetUnreachable
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		respBody, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("target returned error %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	return nil
+}
+
+// forwardPushToTarget sends the push payload to the target provider
+func (s *GatewayService) forwardPushToTarget(url string, payload ProcessPushPayload, authKey string) error {
 	body, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("failed to marshal payload: %w", err)

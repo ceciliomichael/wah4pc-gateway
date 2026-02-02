@@ -92,4 +92,53 @@ export const webhookEndpoints: EndpointCardProps[] = [
       "Validate the X-Gateway-Auth header matches your registered gatewayAuthKey",
     ],
   },
+  {
+    method: "POST",
+    path: "/fhir/receive-push",
+    description: "Endpoint you must implement to receive unsolicited data pushes from other providers (e.g., incoming referrals or appointments).",
+    headers: [
+      {
+        name: "X-Gateway-Auth",
+        value: "your-gateway-auth-key",
+        required: true,
+        description:
+          "Secret key you provided during provider registration. Validate this to ensure the request is from the gateway.",
+      },
+    ],
+    requestBody: `{
+  "transactionId": "transaction-uuid",
+  "senderId": "sender-provider-uuid",
+  "resourceType": "Appointment",
+  "data": {
+    "resourceType": "Appointment",
+    "status": "proposed",
+    "description": "Consultation",
+    "participant": [
+      {
+        "actor": {
+          "type": "Patient",
+          "identifier": {
+            "system": "http://philhealth.gov.ph",
+            "value": "12-345678901-2"
+          }
+        },
+        "status": "accepted"
+      }
+    ]
+  },
+  "reason": "New Appointment Request",
+  "notes": "Please confirm availability"
+}`,
+    responseStatus: 200,
+    responseBody: `{
+  "message": "Data received successfully"
+}`,
+    notes: [
+      "**Implement this to support receiving data you didn't explicitly request**",
+      "This is critical for receiving referrals, appointments, or unsolicited lab results",
+      "Validate the X-Gateway-Auth header",
+      "Process and store the received resource immediately",
+      "Return 200 OK to acknowledge receipt",
+    ],
+  },
 ];

@@ -53,3 +53,25 @@ const (
 	ResultStatusRejected ResultStatus = "REJECTED"
 	ResultStatusError    ResultStatus = "ERROR"
 )
+
+// PushRequest represents an unsolicited resource transfer
+// This is used when a provider sends data to another without a prior request
+type PushRequest struct {
+	SenderID     string          `json:"senderId"`
+	TargetID     string          `json:"targetId"`
+	ResourceType string          `json:"resourceType"`
+	Data         json.RawMessage `json:"data"`
+	Reason       string          `json:"reason,omitempty"`
+	Notes        string          `json:"notes,omitempty"`
+}
+
+// ProcessPushPayload is sent to the target provider for a push request
+// Contains the resource data directly
+type ProcessPushPayload struct {
+	TransactionID string          `json:"transactionId"`
+	SenderID      string          `json:"senderId"`
+	ResourceType  string          `json:"resourceType"`
+	Data          json.RawMessage `json:"data"`
+	Reason        string          `json:"reason,omitempty"`
+	Notes         string          `json:"notes,omitempty"`
+}

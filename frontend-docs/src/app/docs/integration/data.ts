@@ -55,6 +55,14 @@ sequenceDiagram
         YS->>GW: POST /api/v1/fhir/receive/Patient
         GW->>OP: POST /fhir/receive-results
     end
+
+    rect rgb(236, 253, 245)
+        Note over YS,OP: Step 4 - Push Data (Unsolicited)
+        YS->>GW: POST /api/v1/fhir/push/Appointment
+        GW->>OP: POST /fhir/receive-push
+        OP-->>GW: 200 OK
+        GW-->>YS: 200 OK (Transaction Completed)
+    end
 `;
 
 export const webhookHandlerDiagram = `
@@ -77,6 +85,14 @@ sequenceDiagram
         Note over GW,DB: Webhook 2 - Receive Results
         GW->>RR: POST with transactionId and data
         RR->>DB: Store received data
+        DB-->>RR: Saved
+        RR-->>GW: 200 OK
+    end
+
+    rect rgb(255, 251, 235)
+        Note over GW,DB: Webhook 3 - Receive Push
+        GW->>RR: POST /fhir/receive-push with data
+        RR->>DB: Store unsolicited data
         DB-->>RR: Saved
         RR-->>GW: 200 OK
     end
@@ -122,6 +138,15 @@ interface ReceiveResultsPayload {
   data: Record<string, unknown>;
 }
 
+interface ReceivePushPayload {
+  transactionId: string;
+  senderId: string;
+  resourceType: string;
+  data: Record<string, unknown>;
+  reason?: string;
+  notes?: string;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Validation Schemas (using Zod)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -145,6 +170,15 @@ const ReceiveResultsSchema = z.object({
   transactionId: z.string().uuid(),
   status: z.enum(['SUCCESS', 'REJECTED', 'ERROR']),
   data: z.record(z.unknown()).optional(),
+});
+
+const ReceivePushSchema = z.object({
+  transactionId: z.string().uuid(),
+  senderId: z.string().uuid(),
+  resourceType: z.string(),
+  data: z.record(z.unknown()),
+  reason: z.string().optional(),
+  notes: z.string().optional(),
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -345,6 +379,33 @@ app.post(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Webhook 3: Receive Push (Unsolicited Data)
+// ─────────────────────────────────────────────────────────────────────────────
+
+app.post(
+  '/fhir/receive-push',
+  validateGatewayAuth,
+  validateSchema(ReceivePushSchema),
+  async (req: Request, res: Response) => {
+    const { transactionId, senderId, resourceType, data, reason } = req.body as ReceivePushPayload;
+
+    console.log(\`[Receive Push] Transaction: \${transactionId}, From: \${senderId}, Type: \${resourceType}\`);
+    if (reason) console.log(\`[Receive Push] Reason: \${reason}\`);
+
+    try {
+      // 1. Store the unsolicited data
+      await storeReceivedData(transactionId, data);
+      
+      console.log(\`[Receive Push] Stored data for \${transactionId}\`);
+      res.status(200).json({ message: 'Data received successfully' });
+    } catch (error) {
+      console.error(\`[Receive Push] Error:\`, error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Environment Variables Required
 // ─────────────────────────────────────────────────────────────────────────────
 // WAH4PC_API_KEY=wah_your-api-key-here
@@ -394,6 +455,15 @@ type ReceiveResultsRequest struct {
 	TransactionID string                 \`json:"transactionId" validate:"required,uuid"\`
 	Status        string                 \`json:"status" validate:"required,oneof=SUCCESS REJECTED ERROR"\`
 	Data          map[string]interface{} \`json:"data"\`
+}
+
+type ReceivePushRequest struct {
+	TransactionID string                 \`json:"transactionId" validate:"required,uuid"\`
+	SenderID      string                 \`json:"senderId" validate:"required,uuid"\`
+	ResourceType  string                 \`json:"resourceType" validate:"required"\`
+	Data          map[string]interface{} \`json:"data"\`
+	Reason        string                 \`json:"reason,omitempty"\`
+	Notes         string                 \`json:"notes,omitempty"\`
 }
 
 type GatewayResponse struct {
@@ -574,6 +644,37 @@ func handleReceiveResults(w http.ResponseWriter, r *http.Request) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Webhook 3: Receive Push Handler
+// ─────────────────────────────────────────────────────────────────────────────
+
+func handleReceivePush(w http.ResponseWriter, r *http.Request) {
+	var req ReceivePushRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Printf("[Receive Push] Invalid JSON: %v", err)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	log.Printf("[Receive Push] Transaction: %s, From: %s, Type: %s", 
+		req.TransactionID, req.SenderID, req.ResourceType)
+	
+	if req.Reason != "" {
+		log.Printf("[Receive Push] Reason: %s", req.Reason)
+	}
+
+	// Store the unsolicited data
+	if err := storeReceivedData(req.TransactionID, req.Data); err != nil {
+		log.Printf("[Receive Push] Failed to store data: %v", err)
+		http.Error(w, "Failed to store data", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Data received successfully"})
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Helper: Send Response to Gateway
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -615,6 +716,7 @@ func sendToGateway(url string, payload GatewayResponse) error {
 func main() {
 	http.HandleFunc("/fhir/process-query", validateGatewayAuth(handleProcessQuery))
 	http.HandleFunc("/fhir/receive-results", validateGatewayAuth(handleReceiveResults))
+	http.HandleFunc("/fhir/receive-push", validateGatewayAuth(handleReceivePush))
 
 	log.Println("Webhook server running on :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))

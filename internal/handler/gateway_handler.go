@@ -63,6 +63,52 @@ func (h *GatewayHandler) RequestQuery(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusAccepted, tx)
 }
 
+// RequestPush handles POST /api/v1/fhir/push/{resourceType}
+// This allows providers to push data to another provider without a request
+func (h *GatewayHandler) RequestPush(w http.ResponseWriter, r *http.Request) {
+	// Extract resource type from path
+	resourceType := extractResourceType(r.URL.Path, "/api/v1/fhir/push/")
+	if resourceType == "" {
+		resourceType = "Patient" // Default
+	}
+
+	var req service.PushRequest
+	if err := decodeJSON(r, &req); err != nil {
+		respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	// Set resource type from path
+	req.ResourceType = resourceType
+
+	tx, err := h.service.InitiatePush(req)
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidRequest) {
+			// Pass through the actual validation error message
+			respondError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrTargetUnreachable) {
+			respondError(w, http.StatusBadGateway, "target provider unreachable")
+			return
+		}
+		if errors.Is(err, service.ErrSchemaValidation) {
+			respondError(w, http.StatusUnprocessableEntity, "FHIR schema validation failed: "+err.Error())
+			return
+		}
+		// Check for provider not found error which wraps the underlying error
+		if strings.Contains(err.Error(), "provider not found") {
+			respondError(w, http.StatusNotFound, err.Error())
+			return
+		}
+
+		respondError(w, http.StatusInternalServerError, "failed to push resource: "+err.Error())
+		return
+	}
+
+	respondJSON(w, http.StatusOK, tx)
+}
+
 // ReceiveResult handles POST /api/v1/fhir/receive/{resourceType}
 // This is where target providers send data back
 func (h *GatewayHandler) ReceiveResult(w http.ResponseWriter, r *http.Request) {

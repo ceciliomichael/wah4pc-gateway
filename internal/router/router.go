@@ -67,6 +67,7 @@ func (r *Router) registerRoutes() {
 
 	// FHIR Gateway routes
 	r.mux.HandleFunc("/api/v1/fhir/request/", r.handleFHIRRequest)
+	r.mux.HandleFunc("/api/v1/fhir/push/", r.handleFHIRPush)
 	r.mux.HandleFunc("/api/v1/fhir/receive/", r.handleFHIRReceive)
 
 	// Transaction routes
@@ -171,6 +172,15 @@ func (r *Router) handleFHIRRequest(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	r.gatewayHandler.RequestQuery(w, req)
+}
+
+// handleFHIRPush routes /api/v1/fhir/push/{resourceType}
+func (r *Router) handleFHIRPush(w http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	r.gatewayHandler.RequestPush(w, req)
 }
 
 // handleFHIRReceive routes /api/v1/fhir/receive/{resourceType}

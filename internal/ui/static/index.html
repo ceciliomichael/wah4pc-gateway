@@ -636,7 +636,8 @@ providers = response.json()
         const response = await fetch('/api/v1/providers');
         if (!response.ok) throw new Error('Failed to fetch');
         
-        const providers = await response.json();
+        const result = await response.json();
+        const providers = result.data || result;
         
         // Update stats
         const activeCount = providers.filter(p => p.isActive).length;

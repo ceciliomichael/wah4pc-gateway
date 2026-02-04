@@ -18,7 +18,7 @@
       --border: #e2e8f0;
       --success: #10b981;
       --error: #ef4444;
-      --radius: 16px;
+      --radius: 12px;
       --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
       --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     }
@@ -34,7 +34,7 @@
     }
 
     .container {
-      max-width: 1000px;
+      max-width: 1200px;
       margin: 0 auto;
       padding: 0 24px;
     }
@@ -97,133 +97,134 @@
     /* Hero */
     .hero {
       text-align: center;
-      padding: 80px 0 60px;
+      padding: 60px 0 40px;
     }
 
     .hero h1 {
-      font-size: 40px;
+      font-size: 36px;
       font-weight: 800;
       letter-spacing: -0.03em;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
       color: var(--text-main);
     }
 
     .hero p {
-      font-size: 18px;
+      font-size: 16px;
       color: var(--text-muted);
       max-width: 600px;
       margin: 0 auto;
     }
 
-    /* Grid */
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 24px;
-      padding-bottom: 80px;
+    /* Section */
+    section {
+      padding: 40px 0;
     }
 
-    .card {
+    .section-header {
+      margin-bottom: 24px;
+    }
+
+    .section-header h2 {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .section-header p {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    /* Table */
+    .table-container {
       background: var(--surface);
-      border-radius: var(--radius);
-      padding: 24px;
-      box-shadow: var(--shadow-sm);
       border: 1px solid var(--border);
-      transition: all 0.2s ease;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
     }
 
-    .card:hover {
-      transform: translateY(-4px);
-      box-shadow: var(--shadow-md);
-      border-color: #cbd5e1;
+    table {
+      width: 100%;
+      border-collapse: collapse;
     }
 
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
+    thead {
+      background: #f8fafc;
+      border-bottom: 1px solid var(--border);
     }
 
-    .provider-icon {
-      width: 48px;
-      height: 48px;
-      background: #f1f5f9;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    th {
+      text-align: left;
+      padding: 16px 20px;
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    td {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr:hover {
+      background: #f8fafc;
+    }
+
+    .provider-name {
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .provider-type {
+      text-transform: capitalize;
       color: var(--text-muted);
     }
 
-    .provider-icon svg {
-      width: 24px;
-      height: 24px;
+    .provider-id {
+      font-family: monospace;
+      color: var(--text-muted);
+      font-size: 13px;
     }
 
-    .active-indicator {
-      display: flex;
+    .status-indicator {
+      display: inline-flex;
       align-items: center;
       gap: 6px;
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 600;
       padding: 4px 10px;
       border-radius: 100px;
     }
 
-    .active-indicator.active {
+    .status-indicator.active {
       background: #dcfce7;
       color: #15803d;
     }
 
-    .active-indicator.inactive {
+    .status-indicator.inactive {
       background: #fee2e2;
       color: #b91c1c;
     }
 
-    .dot {
+    .status-dot {
       width: 6px;
       height: 6px;
       border-radius: 50%;
       background: currentColor;
     }
 
-    .card-body h3 {
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-
-    .card-body p {
-      font-size: 14px;
-      color: var(--text-muted);
-      text-transform: capitalize;
-    }
-
-    .card-footer {
-      margin-top: auto;
-      padding-top: 16px;
-      border-top: 1px solid #f1f5f9;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
-    .id-pill {
-      background: #f1f5f9;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-family: monospace;
-    }
-
     /* Loading & Empty States */
     .state-container {
       text-align: center;
-      padding: 60px 0;
+      padding: 60px 20px;
       color: var(--text-muted);
     }
 
@@ -239,6 +240,127 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* Developer Guide */
+    .guide-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .guide-card h3 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .guide-card p {
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+
+    .endpoint-info {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+      padding: 20px;
+      background: #f8fafc;
+      border-radius: 10px;
+    }
+
+    .endpoint-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .endpoint-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .endpoint-value {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .method-badge {
+      display: inline-block;
+      background: #dbeafe;
+      color: #1e40af;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .code-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .code-tab {
+      padding: 8px 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .code-tab.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .code-block {
+      background: #1e293b;
+      border-radius: 10px;
+      padding: 20px;
+      overflow-x: auto;
+      position: relative;
+    }
+
+    .code-block pre {
+      margin: 0;
+      font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+      font-size: 13px;
+      line-height: 1.7;
+      color: #e2e8f0;
+    }
+
+    .code-block .comment { color: #64748b; }
+    .code-block .string { color: #86efac; }
+    .code-block .keyword { color: #93c5fd; }
+
+    .copy-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(255,255,255,0.1);
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+
+    .copy-btn:hover {
+      background: rgba(255,255,255,0.2);
+      color: white;
+    }
+
     /* Footer */
     footer {
       text-align: center;
@@ -246,6 +368,16 @@
       color: var(--text-muted);
       font-size: 14px;
       border-top: 1px solid var(--border);
+      margin-top: 60px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 28px; }
+      .table-container { overflow-x: auto; }
+      table { min-width: 600px; }
+      .guide-card { padding: 20px; }
+      th, td { padding: 12px 16px; }
     }
   </style>
 </head>
@@ -269,14 +401,60 @@
     </div>
   </section>
 
-  <div class="container">
-    <div id="grid" class="grid">
-      <div class="state-container">
-        <div class="spinner"></div>
-        <p>Loading providers...</p>
+  <section>
+    <div class="container">
+      <div class="section-header">
+        <h2>Registered Providers</h2>
+        <p>List of all healthcare facilities connected to the WAH4PC Gateway.</p>
+      </div>
+      <div id="tableContainer">
+        <div class="state-container">
+          <div class="spinner"></div>
+          <p>Loading providers...</p>
+        </div>
       </div>
     </div>
-  </div>
+  </section>
+
+  <section>
+    <div class="container">
+      <div class="guide-card">
+        <h3>Developer Guide</h3>
+        <p>Integrate with the WAH4PC Gateway API to access provider information</p>
+
+        <div class="endpoint-info">
+          <div class="endpoint-item">
+            <span class="endpoint-label">Endpoint</span>
+            <span class="endpoint-value">/api/v1/providers</span>
+          </div>
+          <div class="endpoint-item">
+            <span class="endpoint-label">Method</span>
+            <span class="endpoint-value"><span class="method-badge">GET</span></span>
+          </div>
+          <div class="endpoint-item">
+            <span class="endpoint-label">Authentication</span>
+            <span class="endpoint-value">None (Public)</span>
+          </div>
+          <div class="endpoint-item">
+            <span class="endpoint-label">Response</span>
+            <span class="endpoint-value">JSON Array</span>
+          </div>
+        </div>
+
+        <div class="code-tabs">
+          <button class="code-tab active" data-tab="curl">cURL</button>
+          <button class="code-tab" data-tab="javascript">JavaScript</button>
+          <button class="code-tab" data-tab="python">Python</button>
+          <button class="code-tab" data-tab="go">Go</button>
+        </div>
+
+        <div class="code-block" id="codeBlock">
+          <button class="copy-btn" onclick="copyCode()">Copy</button>
+          <pre id="codeContent"></pre>
+        </div>
+      </div>
+    </div>
+  </section>
 </main>
 
 <footer>
@@ -286,29 +464,109 @@
 </footer>
 
 <script>
-  // Icons mapping based on provider type
-  const icons = {
-    hospital: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z" /></svg>`,
-    clinic: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75Z" /></svg>`,
-    laboratory: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 0-6.23-.693L5 14.5m14.8.8 1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0 1 12 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" /></svg>`,
-    pharmacy: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5Z" /></svg>`,
-    default: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75Z" /></svg>`
+  const codeExamples = {
+    curl: `<span class="comment"># Fetch all registered healthcare providers</span>
+curl -X GET <span class="string">"${window.location.origin}/api/v1/providers"</span> \\
+  -H <span class="string">"Content-Type: application/json"</span>`,
+
+    javascript: `<span class="comment">// Fetch providers using the Fetch API</span>
+<span class="keyword">async function</span> getProviders() {
+  <span class="keyword">const</span> response = <span class="keyword">await</span> fetch(<span class="string">'${window.location.origin}/api/v1/providers'</span>);
+  <span class="keyword">const</span> result = <span class="keyword">await</span> response.json();
+  <span class="keyword">const</span> providers = result.data || result;
+  
+  providers.forEach(provider => {
+    console.log(provider.name, provider.isActive ? <span class="string">'Active'</span> : <span class="string">'Inactive'</span>);
+  });
+  
+  <span class="keyword">return</span> providers;
+}
+
+getProviders();`,
+
+    python: `<span class="comment"># Fetch providers using requests library</span>
+<span class="keyword">import</span> requests
+
+response = requests.get(<span class="string">"${window.location.origin}/api/v1/providers"</span>)
+result = response.json()
+providers = result.get(<span class="string">"data"</span>, result)
+
+<span class="keyword">for</span> provider <span class="keyword">in</span> providers:
+    status = <span class="string">"Active"</span> <span class="keyword">if</span> provider[<span class="string">"isActive"</span>] <span class="keyword">else</span> <span class="string">"Inactive"</span>
+    print(f<span class="string">"{provider['name']}: {status}"</span>)`,
+
+    go: `<span class="comment">// Fetch providers using net/http</span>
+<span class="keyword">package</span> main
+
+<span class="keyword">import</span> (
+    <span class="string">"encoding/json"</span>
+    <span class="string">"fmt"</span>
+    <span class="string">"net/http"</span>
+)
+
+<span class="keyword">type</span> Provider <span class="keyword">struct</span> {
+    ID       <span class="keyword">string</span> \`json:<span class="string">"id"</span>\`
+    Name     <span class="keyword">string</span> \`json:<span class="string">"name"</span>\`
+    Type     <span class="keyword">string</span> \`json:<span class="string">"type"</span>\`
+    IsActive <span class="keyword">bool</span>   \`json:<span class="string">"isActive"</span>\`
+}
+
+<span class="keyword">type</span> Response <span class="keyword">struct</span> {
+    Success <span class="keyword">bool</span>       \`json:<span class="string">"success"</span>\`
+    Data    []Provider \`json:<span class="string">"data"</span>\`
+}
+
+<span class="keyword">func</span> main() {
+    resp, _ := http.Get(<span class="string">"${window.location.origin}/api/v1/providers"</span>)
+    <span class="keyword">defer</span> resp.Body.Close()
+    
+    <span class="keyword">var</span> result Response
+    json.NewDecoder(resp.Body).Decode(&result)
+    
+    <span class="keyword">for</span> _, p := <span class="keyword">range</span> result.Data {
+        fmt.Printf(<span class="string">"%s: %v\\n"</span>, p.Name, p.IsActive)
+    }
+}`
   };
 
+  let currentTab = 'curl';
+
+  function updateCodeBlock() {
+    document.getElementById('codeContent').innerHTML = codeExamples[currentTab];
+  }
+
+  function copyCode() {
+    const codeEl = document.getElementById('codeContent');
+    const text = codeEl.textContent || codeEl.innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.querySelector('.copy-btn');
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 2000);
+    });
+  }
+
+  document.querySelectorAll('.code-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.code-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentTab = tab.dataset.tab;
+      updateCodeBlock();
+    });
+  });
+
   async function fetchProviders() {
-    const grid = document.getElementById('grid');
+    const container = document.getElementById('tableContainer');
     
     try {
       const res = await fetch('/api/v1/providers');
       if (!res.ok) throw new Error('Failed');
       
       const json = await res.json();
-      // Handle the wrapped response structure (success/data) or direct array
       const providers = Array.isArray(json) ? json : (json.data || []);
 
       if (providers.length === 0) {
-        grid.innerHTML = `
-          <div class="state-container" style="grid-column: 1/-1;">
+        container.innerHTML = `
+          <div class="state-container">
             <h3>No Providers Yet</h3>
             <p>Healthcare facilities will appear here once connected.</p>
           </div>
@@ -316,34 +574,39 @@
         return;
       }
 
-      grid.innerHTML = providers.map(p => {
-        const icon = icons[p.type] || icons.default;
-        const statusClass = p.isActive ? 'active' : 'inactive';
-        const statusText = p.isActive ? 'Active' : 'Offline';
-        
-        return `
-          <div class="card">
-            <div class="card-header">
-              <div class="provider-icon">${icon}</div>
-              <div class="active-indicator ${statusClass}">
-                <div class="dot"></div>
-                ${statusText}
-              </div>
-            </div>
-            <div class="card-body">
-              <h3>${escape(p.name)}</h3>
-              <p>${escape(p.type)}</p>
-            </div>
-            <div class="card-footer">
-              <span>ID: <span class="id-pill">${escape(p.id)}</span></span>
-            </div>
-          </div>
-        `;
-      }).join('');
+      container.innerHTML = `
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Provider Name</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>ID</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${providers.map(p => `
+                <tr>
+                  <td class="provider-name">${escape(p.name)}</td>
+                  <td class="provider-type">${escape(p.type)}</td>
+                  <td>
+                    <span class="status-indicator ${p.isActive ? 'active' : 'inactive'}">
+                      <span class="status-dot"></span>
+                      ${p.isActive ? 'Active' : 'Offline'}
+                    </span>
+                  </td>
+                  <td class="provider-id">${escape(p.id)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
 
     } catch (e) {
-      grid.innerHTML = `
-        <div class="state-container" style="grid-column: 1/-1; color: var(--error);">
+      container.innerHTML = `
+        <div class="state-container" style="color: var(--error);">
           <h3>Connection Failed</h3>
           <p>Unable to load provider data.</p>
         </div>
@@ -357,6 +620,7 @@
     return div.innerHTML;
   }
 
+  updateCodeBlock();
   fetchProviders();
 </script>
 

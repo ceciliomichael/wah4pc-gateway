@@ -9,7 +9,7 @@ services:
       - "3004:3004"
     environment:
       - NODE_ENV=production
-      - BACKEND_URL=${BACKEND_URL:-http://host.docker.internal:8080}
+      - BACKEND_URL=${BACKEND_URL}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:

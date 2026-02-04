@@ -88,35 +88,105 @@ Use kebab-case for file and folder names, PascalCase for components, camelCase f
 - ALWAYS prefix unused error variables in catch blocks with an underscore (e.g., `catch (_error)`) to indicate they are intentionally unused and prevent linting warnings.
 </skills>
 
-<design_rules description="The agent should strictly adhere to these design system">
+<design_rules>
+<design_rules>
+# Flat UI Mobile-First Design System
 
-# CHECK WHETHER ITS CSS OR TAILWIND CSS OR ANY LANGUAGE APPLY AS NECCESSARY
+## Core Principles
+- Flat UI with solid colors only (no gradients, no dark mode)
+- Thin border outlines with rounded edges on all components
+- Modern, clean aesthetic with thoughtful color palette
+- Subtle depth via soft shadows for hierarchy (use sparingly)
+- Use icon libraries only (no hardcoded emojis as icons)
+- Refrain from using sparkle icon.
 
-- STRICTLY AVOID: floating elements, decorative icons, non-functional embellishments
-- SOLID COLORS ONLY FOR ALL OF THE UI COMPONENTS, STRICTLY AVOID GRADIENTS
-- NO DARK MODE
-- FLAT UI
-- BORDERS SHOULD HAVE THIN BORDER OUTLINE WITH ROUNDED EDGES
-- ADVANCED MODERN UI PRINCIPLES + WITH WELL THOUGHT COLOR PALETTE
-- ALWAYS USE ICON LIBRARIES FOR ALL ICONS (NO HARDCODED EMOJIS AS ICONS)
-- STRICTLY ADHERE TO FULL VIEW PORT HEIGHT PER SECTION (TOTAL 100VH)
-- ALWAYS ADD RESPONSIVE VERTICAL PADDING (py-12 sm:py-16 lg:py-20) TO PREVENT CONTENT FROM TOUCHING SCREEN EDGES
-- FOCUS OUTLINES/RINGS IS NOT ALLOED TO BE USED FOR SLEEK EXPERIENCE (MAINTAIN ACCESSIBILITY BEST PRACTICES)
-- SUBTLE 3D EFFECTS (SOFT SHADOWS, LAYERED SURFACES): USE SPARINGLY FOR DEPTH/HIERARCHY WITHOUT DETRACTING FROM CLARITY
-- MAINTAIN PROPER MOBILE FIRST APPROACH WITH RESPONSIVE DESIGN
-# Mobile-First Responsive Design (MANDATORY)
-- Build for mobile FIRST (320px minimum), then progressively enhance for larger screens
-- Breakpoint strategy:
-  * Mobile: 320px+ (base styles, no prefix)
-  * Tablet: 768px+ (sm: prefix)
-  * Desktop: 1024px+ (lg: prefix)
-- Use responsive Tailwind classes for typography, spacing, and layout that scale across breakpoints
-- Touch-friendly: ALL interactive elements MUST be minimum 44px height/width for mobile usability
-- Responsive grids: single column on mobile, multi-column on larger screens
-- Responsive typography: scale font sizes across breakpoints
-- Prevent horizontal overflow: position absolute elements carefully with responsive offsets
-- Test spacing: reduce spacing on mobile, ensure content fits viewport
+## Strictly Avoid
+- Floating elements and decorative non-functional embellishments
+- Focus outlines/rings (maintain accessibility via other means)
+- Horizontal overflow from absolute elements
+- Desktop-first styling patterns
+- Generic "safe" palettes (default blues, purples, tech gradients)
+- Excessive white space as a crutch for layout
+- Card-heavy layouts without visual variety
 
+## Color & Aesthetic Philosophy
+- Intentional over safe: choose colors with purpose, not defaults
+- Warmth and character: consider earthy tones, muted naturals, or bold accents
+- Contrast matters: ensure hierarchy through deliberate color relationships
+- Avoid the "startup template" look: no generic hero + 3 cards + blue CTA
+- Simple does not mean bland: minimal can still have personality
+- Let the content/brand guide palette, not statistical averages
+
+## Full Viewport (Main Sections Only)
+- Hero and primary sections should fill 100vh (min-h-screen or min-h-dvh)
+- Secondary/content sections: auto height based on content
+
+## Mobile-First Responsive (Mandatory)
+- Base: 320px+ (default styles, no prefix)
+- Tablet: 768px+ (md: prefix)
+- Desktop: 1024px+ (lg: prefix)
+
+### Layout Patterns
+- Mobile: single column, full width, px-4
+- Tablet: 2 columns where appropriate, px-6
+- Desktop: multi-column grids, max-width container, px-8
+
+### Touch Targets
+- All interactive elements: minimum 44px height and width
+- Adequate spacing between tap targets
+
+### Typography Scaling
+- Headings: smaller on mobile, scale up per breakpoint
+- Body: base size on mobile, slightly larger on desktop
+
+### Spacing Scaling
+- Reduce padding/margins on mobile
+- Increase progressively for tablet and desktop
+- Gaps in grids: tighter on mobile, wider on desktop
+
+### Absolute Elements
+- Use responsive offsets to prevent overflow
+- Test positioning at all breakpoints
+
+## Placement & Centering Rules
+- Vertical + horizontal center: use flexbox (flex + items-center + justify-center)
+- Never use absolute positioning for main content centering
+- For hero sections: flex column, center both axes, text-center on mobile
+- Stack elements vertically on mobile, horizontal on desktop
+- Images: block level, max-width 100%, auto height to prevent overflow
+
+## Container Rules
+- Always wrap page content in a max-width container on desktop
+- Container centered with auto margins
+- Fluid width on mobile (no max-width constraint)
+- Consistent horizontal padding at every breakpoint
+
+## Grid & Flex Patterns
+- Mobile: flex-col or grid-cols-1 (single column always)
+- Tablet: grid-cols-2 or flex-row with wrap
+- Desktop: grid-cols-3 or grid-cols-4 based on content
+- Gap scaling: gap-4 mobile, gap-6 tablet, gap-8 desktop
+- Flex items: use flex-1 or width percentages, never fixed pixel widths
+
+## Component Placement
+- Buttons: full width on mobile (w-full), auto width on tablet+ (md:w-auto)
+- Form inputs: always full width, stack labels above inputs
+- Cards: full width mobile, 2-up tablet, 3-up desktop
+- Navigation: hamburger menu on mobile, horizontal links on desktop
+- Modals/dialogs: nearly full screen on mobile with small margin, centered box on desktop
+
+## Image & Media Handling
+- Always responsive: w-full, h-auto
+- Object-fit cover for background-style images
+- Aspect ratio containers to prevent layout shift
+- Hide decorative images on mobile if they cause clutter
+
+## Overflow Prevention
+- Root containers: overflow-x-hidden if needed
+- No negative margins that extend beyond viewport
+- Absolute elements: inset values must be responsive (inset-4 md:inset-8)
+- Test at 320px width - nothing should cause horizontal scroll
+</design_rules>
 </design_rules>
 
 <forbidden_to_use description="The agent has a set of forbidden to use rules">

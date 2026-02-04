@@ -19,7 +19,7 @@ type ApiKeyValidator interface {
 type AuthMiddleware struct {
 	validator     ApiKeyValidator
 	masterKey     string
-	publicPaths   map[string]bool
+	publicPaths   map[string][]string // path -> allowed methods (empty slice or "*" means all methods)
 	bootstrapPath string
 }
 
@@ -28,8 +28,10 @@ func NewAuthMiddleware(validator ApiKeyValidator, masterKey string) *AuthMiddlew
 	return &AuthMiddleware{
 		validator: validator,
 		masterKey: masterKey,
-		publicPaths: map[string]bool{
-			"/health": true,
+		publicPaths: map[string][]string{
+			"/health":           {"*"},   // All methods allowed
+			"/providers":        {"GET"}, // Public providers listing page
+			"/api/v1/providers": {"GET"}, // Only GET allowed without auth
 		},
 		bootstrapPath: "/api/v1/apikeys",
 	}
@@ -39,7 +41,7 @@ func NewAuthMiddleware(validator ApiKeyValidator, masterKey string) *AuthMiddlew
 func (m *AuthMiddleware) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Allow public paths without authentication
-		if m.isPublicPath(r.URL.Path) {
+		if m.isPublicPath(r.Method, r.URL.Path) {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -113,9 +115,20 @@ func (m *AuthMiddleware) setMasterKeyContext(ctx context.Context) context.Contex
 	return ctx
 }
 
-// isPublicPath checks if the path should be accessible without authentication
-func (m *AuthMiddleware) isPublicPath(path string) bool {
-	return m.publicPaths[path]
+// isPublicPath checks if the method and path should be accessible without authentication
+func (m *AuthMiddleware) isPublicPath(method, path string) bool {
+	allowedMethods, exists := m.publicPaths[path]
+	if !exists {
+		return false
+	}
+
+	// Check if any method is allowed ("*") or if the specific method is allowed
+	for _, allowedMethod := range allowedMethods {
+		if allowedMethod == "*" || allowedMethod == method {
+			return true
+		}
+	}
+	return false
 }
 
 // isBootstrapRequest checks if this is a request to create the first API key

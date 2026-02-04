@@ -16,6 +16,7 @@ type Router struct {
 	providerHandler       *handler.ProviderHandler
 	gatewayHandler        *handler.GatewayHandler
 	apiKeyHandler         *handler.ApiKeyHandler
+	webHandler            *handler.WebHandler
 	authMiddleware        *middleware.AuthMiddleware
 	rateLimitMiddleware   *middleware.RateLimitMiddleware
 	auditMiddleware       *middleware.AuditMiddleware
@@ -37,11 +38,15 @@ func NewRouter(
 	auditMW := middleware.NewAuditMiddleware(auditLogger)
 	idempotencyMW := middleware.NewIdempotencyMiddleware()
 
+	// Create web handler for static content
+	webHandler := handler.NewWebHandler()
+
 	r := &Router{
 		mux:                   http.NewServeMux(),
 		providerHandler:       providerHandler,
 		gatewayHandler:        gatewayHandler,
 		apiKeyHandler:         apiKeyHandler,
+		webHandler:            webHandler,
 		authMiddleware:        authMW,
 		rateLimitMiddleware:   rateLimitMW,
 		auditMiddleware:       auditMW,
@@ -56,6 +61,9 @@ func NewRouter(
 func (r *Router) registerRoutes() {
 	// Health check (public - no auth required)
 	r.mux.HandleFunc("/health", r.healthCheck)
+
+	// Public web pages
+	r.mux.HandleFunc("/providers", r.webHandler.ServeProviders)
 
 	// API Key routes
 	r.mux.HandleFunc("/api/v1/apikeys", r.handleApiKeys)

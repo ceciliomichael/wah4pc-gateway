@@ -1,0 +1,20 @@
+services:
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wah4pc-dashboard
+    restart: always
+    ports:
+      - "3004:3004"
+    environment:
+      - NODE_ENV=production
+      - BACKEND_URL=${BACKEND_URL:-http://host.docker.internal:8080}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - wah4pc-network
+
+networks:
+  wah4pc-network:
+    driver: bridge

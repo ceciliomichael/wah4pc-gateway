@@ -1,9 +1,6 @@
 version: '3.8'
 
 services:
-  # ----------------------------------------------------------------
-  # 1. CORE GATEWAY (The Traffic Controller)
-  # ----------------------------------------------------------------
   gateway:
     build: .
     container_name: wah4pc-gateway
@@ -14,57 +11,8 @@ services:
       - ./log:/app/log
     environment:
       - SERVER_PORT=3040
-      - LOGGING_LEVEL=debug
-      - VALIDATOR_URL=http://validator:8080
-      - VALIDATOR_API_KEY=dev-api-key-for-frontend
-    depends_on:
-      - validator
+      - LOGGING_LEVEL=info
     restart: unless-stopped
-    networks:
-      - wah4pc-network
-
-  # ----------------------------------------------------------------
-  # 2. VALIDATOR SERVICE (Go Wrapper + Java JAR)
-  # ----------------------------------------------------------------
-  validator:
-    build: ./wah4validator
-    container_name: wah4pc-validator
-    ports:
-      - "8080:8080" # Exposed for debugging/testing directly
-    environment:
-      - SERVER_PORT=8080
-      - JAVA_INTERNAL_PORT=9090
-    restart: unless-stopped
-    networks:
-      - wah4pc-network
-
-  # ----------------------------------------------------------------
-  # 3. MOCK PROVIDER A (e.g., Hospital)
-  # ----------------------------------------------------------------
-  provider-a:
-    build: ./wah4mock
-    container_name: wah4pc-provider-a
-    ports:
-      - "3015:3015"
-    environment:
-      - PORT=3015
-      - NEXT_PUBLIC_PROVIDER_NAME="General Hospital A"
-      - NEXT_PUBLIC_PROVIDER_ID="provider-a-id"
-    networks:
-      - wah4pc-network
-
-  # ----------------------------------------------------------------
-  # 4. MOCK PROVIDER B (e.g., Clinic)
-  # ----------------------------------------------------------------
-  provider-b:
-    build: ./wah4mock
-    container_name: wah4pc-provider-b
-    ports:
-      - "3016:3015" # Map host 3016 to container 3015
-    environment:
-      - PORT=3015
-      - NEXT_PUBLIC_PROVIDER_NAME="City Clinic B"
-      - NEXT_PUBLIC_PROVIDER_ID="provider-b-id"
     networks:
       - wah4pc-network
 

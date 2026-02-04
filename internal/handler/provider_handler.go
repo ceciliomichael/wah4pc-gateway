@@ -28,6 +28,14 @@ type RegisterRequest struct {
 	GatewayAuthKey string `json:"gatewayAuthKey"`
 }
 
+// PublicProviderResponse represents the public view of a provider
+type PublicProviderResponse struct {
+	ID       string             `json:"id"`
+	Name     string             `json:"name"`
+	Type     model.ProviderType `json:"type"`
+	IsActive bool               `json:"isActive"`
+}
+
 // Register handles POST /api/v1/providers
 func (h *ProviderHandler) Register(w http.ResponseWriter, r *http.Request) {
 	// Require admin role (includes master key)
@@ -75,7 +83,18 @@ func (h *ProviderHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondJSON(w, http.StatusOK, providers)
+	// Map to public response to hide sensitive/internal fields
+	response := make([]PublicProviderResponse, len(providers))
+	for i, p := range providers {
+		response[i] = PublicProviderResponse{
+			ID:       p.ID,
+			Name:     p.Name,
+			Type:     p.Type,
+			IsActive: p.IsActive,
+		}
+	}
+
+	respondJSON(w, http.StatusOK, response)
 }
 
 // GetByID handles GET /api/v1/providers/{id}

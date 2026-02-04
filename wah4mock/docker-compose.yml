@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  wah4mock:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wah4mock
+    restart: always
+    ports:
+      - "3015:3015"
+    environment:
+      - NODE_ENV=production
+      - PORT=3015
+      - HOSTNAME=0.0.0.0
+    env_file:
+      - .env
+    networks:
+      - wah4pc-network
+
+networks:
+  wah4pc-network:
+    external: true

@@ -14,6 +14,7 @@ import {
 import { DiagramContainer } from "@/components/ui/diagram-container";
 import { DocsHeader } from "@/components/ui/docs-header";
 import { AlertBlock } from "@/components/ui/alert-block";
+import { LastUpdated } from "@/components/ui/last-updated";
 import {
   systemLifecycleDiagram,
   onboardingFlowDiagram,
@@ -290,6 +291,8 @@ export default function SystemFlowPage() {
           </div>
         </div>
       </section>
+
+      <LastUpdated className="mt-12 pt-8 border-t border-slate-200" />
     </article>
   );
 }

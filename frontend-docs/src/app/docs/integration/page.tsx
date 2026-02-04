@@ -23,6 +23,7 @@ import { PrerequisiteItem, ChecklistItem } from "@/components/ui/checklist";
 import { MethodBadge } from "@/components/ui/method-badge";
 import { WebhookCard } from "@/components/integration/webhook-card";
 import { ImplementationTabs } from "@/components/integration/implementation-tabs";
+import { LastUpdated } from "@/components/ui/last-updated";
 import {
   integrationFlowDiagram,
   webhookHandlerDiagram,
@@ -30,13 +31,11 @@ import {
   goExample,
   pythonExample,
   dartExample,
-  providerTypes,
   checklistItems,
   prerequisites,
   securityFeatures,
   bestPractices,
   commonPitfalls,
-  registrationHeaders,
   fhirRequestHeaders,
 } from "./data";
 
@@ -85,64 +84,33 @@ export default function IntegrationPage() {
         id="registration"
         stepNumber={1}
         title="Register Your Organization"
-        description="Before exchanging data, register your organization with the gateway. This creates a provider record and allows other providers to discover you."
+        description="Before exchanging data, you must register your organization with the system administrator. This process establishes your identity in the network."
       >
         <div className="rounded-2xl border border-slate-200 bg-white/50 backdrop-blur-sm p-6 mb-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-blue-100 rounded-lg">
               <Settings className="h-5 w-5 text-blue-600" />
             </div>
-            <h3 className="font-bold text-slate-900 text-lg">Registration Request</h3>
+            <h3 className="font-bold text-slate-900 text-lg">Registration Process</h3>
           </div>
 
-          <div className="mb-4 flex flex-wrap items-start gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
-            <MethodBadge method="POST" className="shrink-0" />
-            <code className="text-sm font-mono text-slate-700 font-medium break-all min-w-0">{config.gatewayUrl}/api/v1/providers</code>
-          </div>
-
-          <RequestHeaders headers={registrationHeaders} />
-
-          <JsonViewer
-            title="Request Body"
-            data={`{
-  "name": "Example Hospital",
-  "type": "hospital",
-  "baseUrl": "https://your-api.example.com"
-}`}
-          />
-
-          <div className="mt-6 mb-6">
-            <p className="text-sm font-bold text-slate-900 mb-3 uppercase tracking-wide">Supported Provider Types</p>
-            <div className="flex flex-wrap gap-2">
-              {providerTypes.map((type) => (
-                <span
-                  key={type}
-                  className="rounded-md border border-slate-200 bg-white px-3 py-1 font-mono text-xs text-slate-600 shadow-sm"
-                >
-                  {type}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <JsonViewer
-            title="Response (201 Created)"
-            data={`{
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "name": "Example Hospital",
-  "type": "hospital",
-  "baseUrl": "https://your-api.example.com",
-  "createdAt": "2024-01-15T10:30:00Z",
-  "updatedAt": "2024-01-15T10:30:00Z"
-}`}
-            className="mt-4"
-          />
-
-          <AlertBlock type="warning" className="mt-6">
-            <strong>Important:</strong> Save your{" "}
-            <code className="bg-amber-100 px-1 rounded border border-amber-200 text-amber-800">id</code> — you'll need it
-            when making requests to the gateway.
+          <AlertBlock type="info" className="mb-6">
+            <strong>Note:</strong> Provider registration is currently an administrative process. Please contact the system administrator to register your organization.
           </AlertBlock>
+          
+          <div className="space-y-4 text-slate-600">
+             <p>You will need to provide the following information:</p>
+             <ul className="list-disc pl-5 space-y-2">
+                <li>Organization Name</li>
+                <li>Provider Type (e.g., hospital, clinic)</li>
+                <li>Base URL (publicly accessible webhook endpoint)</li>
+             </ul>
+             <p>Once registered, you will receive:</p>
+             <ul className="list-disc pl-5 space-y-2">
+                <li><strong>Provider ID:</strong> Your unique identifier (UUID)</li>
+                <li><strong>API Key:</strong> Secret key for authenticating your requests</li>
+             </ul>
+          </div>
         </div>
       </StepSection>
 
@@ -590,6 +558,8 @@ export default function IntegrationPage() {
           </ul>
         </div>
       </section>
+
+      <LastUpdated className="mt-12 pt-8 border-t border-slate-200" />
     </article>
   );
 }

@@ -55,18 +55,19 @@ flowchart TB
 export const onboardingFlowDiagram = `
 sequenceDiagram
     participant P as New Provider
+    participant A as System Admin
     participant GW as WAH4PC Gateway
     participant DB as Provider Registry
 
     rect rgb(219, 234, 254)
         Note over P,DB: Registration Process
-        P->>GW: POST /api/v1/providers
-        Note right of P: {name, type, baseUrl}
-        GW->>GW: Validate Provider Data
+        P->>A: Request Registration
+        Note right of P: Provide details (name, url)
+        A->>GW: Register Provider (Admin Tool)
         GW->>DB: Store Provider Record
         DB-->>GW: Provider ID Generated
-        GW-->>P: 201 Created
-        Note left of GW: {id, name, type, baseUrl, createdAt}
+        A-->>P: Provide Credentials
+        Note left of P: Receive Provider ID & API Key
     end
 `;
 
@@ -192,9 +193,9 @@ export const lifecyclePhases = [
     icon: "UserPlus",
     color: "blue",
     steps: [
-      "Register your organization via POST /api/v1/providers",
+      "Contact Administrator to register your organization",
       "Receive your unique Provider ID (UUID)",
-      "Generate an API Key for authentication",
+      "Obtain your API Key for authentication",
       "Configure your webhook endpoints (baseUrl)",
     ],
     keyInsight: "Your Provider ID is your identity in the network. Your API Key proves you are who you claim to be.",
@@ -334,7 +335,7 @@ export const quickStartSteps = [
   {
     step: 1,
     action: "Register Provider",
-    endpoint: "POST /api/v1/providers",
+    endpoint: "Admin Process",
     result: "Provider ID",
   },
   {

@@ -5,6 +5,7 @@ interface DocsHeaderProps {
   badgeColor?: "blue" | "green" | "orange" | "purple";
   title: string;
   description: string;
+  action?: React.ReactNode;
 }
 
 const badgeStyles = {
@@ -26,6 +27,7 @@ export function DocsHeader({
   badgeColor = "blue",
   title,
   description,
+  action,
 }: DocsHeaderProps) {
   return (
     <header className="mb-8 sm:mb-12 border-b border-slate-100 pb-6 sm:pb-8">
@@ -36,7 +38,12 @@ export function DocsHeader({
           <span className={`h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full ${dotColors[badgeColor]}`} />
           {badge}
         </div>
-        <CopyPageButton pageTitle={title} />
+        <div className="flex items-center gap-2">
+          <div className="hidden sm:block">
+            {action}
+          </div>
+          <CopyPageButton pageTitle={title} />
+        </div>
       </div>
       <h1 className="mb-3 sm:mb-4 text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900">
         {title}

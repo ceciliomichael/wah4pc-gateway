@@ -6,6 +6,7 @@ import { AlertBlock } from "@/components/ui/alert-block";
 import { JsonViewer } from "@/components/ui/json-viewer";
 import { EndpointCard } from "@/components/ui/endpoint-card";
 import { ErrorTable } from "@/components/ui/data-table";
+import { LastUpdated } from "@/components/ui/last-updated";
 import { endpoints, errorData, rateLimitingGuidelines, authenticationInfo } from "./data";
 import { config } from "@/lib/config";
 
@@ -25,7 +26,7 @@ export default function ApiReferencePage() {
         badge="API Reference"
         badgeColor="orange"
         title="API Reference"
-        description="Complete documentation of all WAH4PC Gateway API endpoints. Use these endpoints to register providers, initiate FHIR transfers, and track transactions."
+        description="Complete documentation of all WAH4PC Gateway API endpoints. Use these endpoints to discover providers, initiate FHIR transfers, and track transactions."
       />
 
       {/* Base URL */}
@@ -137,6 +138,8 @@ export default function ApiReferencePage() {
           </ul>
         </div>
       </section>
+
+      <LastUpdated className="mt-12 pt-8 border-t border-slate-200" />
     </article>
   );
 }

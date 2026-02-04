@@ -3,6 +3,7 @@ import Link from "next/link";
 import { DocsHeader } from "@/components/ui/docs-header";
 import { FeatureCard } from "@/components/ui/feature-card";
 import { MermaidDiagram } from "@/components/ui/mermaid-diagram";
+import { DownloadDocsButton } from "@/components/ui/download-docs-button";
 
 const flowDiagram = `sequenceDiagram
     participant A as Provider A<br/>(Source)
@@ -34,6 +35,7 @@ export default function DocsIntroductionPage() {
         badgeColor="blue"
         title="WAH4PC Gateway"
         description="A centralized interoperability gateway enabling secure FHIR resource transfers between healthcare providers. Connect clinics, hospitals, laboratories, and pharmacies through a unified API."
+        action={<DownloadDocsButton />}
       />
 
       {/* Key Features */}

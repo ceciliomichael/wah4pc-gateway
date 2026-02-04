@@ -152,7 +152,7 @@ export const SECTION_REGISTRY: Record<string, SectionInfo[]> = {
       id: "registration",
       name: "Register Your Organization",
       description:
-        "Step 1: POST /api/v1/providers to create a provider record",
+        "Step 1: Contact Administrator to register your organization",
     },
     {
       id: "webhooks",

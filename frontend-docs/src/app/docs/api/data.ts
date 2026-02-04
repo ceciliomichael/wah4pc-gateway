@@ -25,7 +25,7 @@ export const endpoints: EndpointCategory[] = [
   {
     category: "Providers",
     iconName: "Users",
-    description: "Manage healthcare provider registrations",
+    description: "List registered healthcare providers (public endpoint)",
     items: providersEndpoints,
   },
   {

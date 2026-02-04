@@ -24,8 +24,8 @@ sequenceDiagram
 
     rect rgb(240, 249, 255)
         Note over YS,OP: Step 1 - Registration
-        YS->>GW: POST /api/v1/providers
-        GW-->>YS: 201 Created (Provider ID)
+        YS->>GW: (Admin Process) Register Organization
+        GW-->>YS: Credentials Received
     end
 
     rect rgb(240, 253, 244)

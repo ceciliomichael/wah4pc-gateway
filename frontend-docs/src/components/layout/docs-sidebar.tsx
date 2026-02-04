@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { LastUpdated } from "@/components/ui/last-updated";
 import {
   BookOpen,
   Blocks,
@@ -253,6 +254,11 @@ export function SidebarContent({ onNavigate, showSubItems = true }: SidebarConte
           })}
         </ul>
       </nav>
+      
+      {/* Footer */}
+      <div className="border-t border-slate-200 px-6 py-4">
+        <LastUpdated />
+      </div>
     </div>
   );
 }

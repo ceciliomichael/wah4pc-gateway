@@ -20,29 +20,31 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o server cmd/main.go
 # Run Stage
 FROM alpine:latest
 
-# Install ca-certificates for HTTPS and tzdata for timezones
-RUN apk add --no-cache ca-certificates tzdata
+# Install dependencies:
+# - ca-certificates: for HTTPS
+# - tzdata: for timezones
+# - su-exec: for dropping privileges in entrypoint
+RUN apk add --no-cache ca-certificates tzdata su-exec
 
 WORKDIR /app
 
 # Create a non-root user
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-# Copy binary from builder
+# Copy binary and config
 COPY --from=builder /app/server .
 COPY --from=builder /app/config.yaml .
 
-# Create necessary directories for data and logs
+# Copy entrypoint script
+COPY entrypoint.sh .
+# Fix potential Windows CRLF line endings and make executable
+RUN sed -i 's/\r$//' entrypoint.sh && chmod +x entrypoint.sh
+
+# Create necessary directories
 RUN mkdir -p data log
 
-# Set ownership to non-root user
-RUN chown -R appuser:appgroup /app
+# Entrypoint handles permission fixing and user switching
+ENTRYPOINT ["./entrypoint.sh"]
 
-# Switch to non-root user
-USER appuser
-
-# Expose the application port
-EXPOSE 3040
-
-# Run the application
+# Default command
 CMD ["./server"]

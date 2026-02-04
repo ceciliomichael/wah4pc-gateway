@@ -4,7 +4,6 @@ services:
   gateway:
     build: .
     container_name: wah4pc-gateway
-    restart: always
     ports:
       - "3040:3040"
     volumes:
@@ -13,7 +12,7 @@ services:
     environment:
       - SERVER_PORT=3040
       - LOGGING_LEVEL=info
-    restart: unless-stopped
+    restart: always
     networks:
       - wah4pc-network
 

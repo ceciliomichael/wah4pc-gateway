@@ -7,9 +7,10 @@ services:
     restart: always
     ports:
       - "3004:3004"
+    env_file:
+      - .env
     environment:
       - NODE_ENV=production
-      - BACKEND_URL=${BACKEND_URL}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:

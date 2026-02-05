@@ -371,13 +371,216 @@
       margin-top: 60px;
     }
 
+    /* Provider Cards (Mobile) */
+    .provider-cards {
+      display: none;
+    }
+
+    .provider-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .provider-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 12px;
+      gap: 12px;
+    }
+
+    .provider-card-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .provider-card-name {
+      font-weight: 600;
+      font-size: 16px;
+      color: var(--text-main);
+      margin-bottom: 4px;
+      word-wrap: break-word;
+    }
+
+    .provider-card-type {
+      font-size: 13px;
+      color: var(--text-muted);
+      text-transform: capitalize;
+    }
+
+    .provider-card-details {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .provider-card-detail {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+    }
+
+    .provider-card-detail-label {
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .provider-card-detail-value {
+      color: var(--text-main);
+      font-family: monospace;
+      text-align: right;
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
-      .hero h1 { font-size: 28px; }
-      .table-container { overflow-x: auto; }
-      table { min-width: 600px; }
-      .guide-card { padding: 20px; }
-      th, td { padding: 12px 16px; }
+      /* Container & Spacing */
+      .container {
+        padding: 0 16px;
+      }
+
+      /* Header */
+      header {
+        padding: 12px 0;
+      }
+
+      .brand-text {
+        font-size: 16px;
+      }
+
+      .brand-logo {
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+      }
+
+      .status-badge {
+        font-size: 10px;
+        padding: 3px 8px;
+      }
+
+      header .container > div:last-child {
+        gap: 8px;
+      }
+
+      header .container > div:last-child a {
+        display: none;
+      }
+
+      /* Hero */
+      .hero {
+        padding: 40px 0 30px;
+      }
+
+      .hero h1 {
+        font-size: 24px;
+      }
+
+      .hero p {
+        font-size: 14px;
+      }
+
+      /* Section */
+      section {
+        padding: 30px 0;
+      }
+
+      .section-header h2 {
+        font-size: 20px;
+      }
+
+      .section-header p {
+        font-size: 13px;
+      }
+
+      /* Provider Table/Cards */
+      .table-container {
+        display: none;
+      }
+
+      .provider-cards {
+        display: block;
+      }
+
+      /* Guide Card */
+      .guide-card {
+        padding: 20px 16px;
+      }
+
+      .guide-card h3 {
+        font-size: 18px;
+      }
+
+      .guide-card p {
+        font-size: 14px;
+      }
+
+      /* Endpoint Info */
+      .endpoint-info {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        padding: 16px;
+      }
+
+      .endpoint-item {
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .endpoint-item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+      }
+
+      /* Code Tabs */
+      .code-tabs {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 12px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        padding-bottom: 8px;
+      }
+
+      .code-tabs::-webkit-scrollbar {
+        display: none;
+      }
+
+      .code-tab {
+        padding: 10px 16px;
+        font-size: 13px;
+        white-space: nowrap;
+        flex-shrink: 0;
+        min-width: fit-content;
+      }
+
+      /* Code Block */
+      .code-block {
+        padding: 16px;
+        font-size: 12px;
+      }
+
+      .code-block pre {
+        font-size: 12px;
+      }
+
+      .copy-btn {
+        font-size: 11px;
+        padding: 6px 10px;
+      }
+
+      /* Footer */
+      footer {
+        padding: 30px 0;
+        font-size: 13px;
+      }
     }
   </style>
 </head>
@@ -608,7 +811,7 @@ Future<<span class="keyword">void</span>> getProviders() <span class="keyword">a
     const container = document.getElementById('tableContainer');
     
     try {
-      const res = await fetch('/api/v1/providers');
+      const res = await fetch('https://wah4pc.echosphere.cfd/api/v1/providers');
       if (!res.ok) throw new Error('Failed');
       
       const json = await res.json();
@@ -651,6 +854,28 @@ Future<<span class="keyword">void</span>> getProviders() <span class="keyword">a
               `).join('')}
             </tbody>
           </table>
+        </div>
+        <div class="provider-cards">
+          ${providers.map(p => `
+            <div class="provider-card">
+              <div class="provider-card-header">
+                <div class="provider-card-info">
+                  <div class="provider-card-name">${escape(p.name)}</div>
+                  <div class="provider-card-type">${escape(p.type)}</div>
+                </div>
+                <span class="status-indicator ${p.isActive ? 'active' : 'inactive'}">
+                  <span class="status-dot"></span>
+                  ${p.isActive ? 'Active' : 'Offline'}
+                </span>
+              </div>
+              <div class="provider-card-details">
+                <div class="provider-card-detail">
+                  <span class="provider-card-detail-label">Provider ID</span>
+                  <span class="provider-card-detail-value">${escape(p.id)}</span>
+                </div>
+              </div>
+            </div>
+          `).join('')}
         </div>
       `;
 

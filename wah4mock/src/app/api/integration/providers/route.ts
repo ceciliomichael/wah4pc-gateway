@@ -62,17 +62,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     const data = await response.json();
 
-    // Handle different response formats from gateway
-    // Could be { providers: [...] } or { data: [...] } or just [...]
-    let providers: Provider[] = [];
-
-    if (Array.isArray(data)) {
-      providers = data;
-    } else if (data.providers && Array.isArray(data.providers)) {
-      providers = data.providers;
-    } else if (data.data && Array.isArray(data.data)) {
-      providers = data.data;
-    }
+    // Handle response format: { success: true, data: [...] }
+    // Logic: result.data || result
+    const providers: Provider[] = (data.data && Array.isArray(data.data)) 
+      ? data.data 
+      : (Array.isArray(data) ? data : []);
 
     // Filter out ourselves from the list (can't request data from ourselves)
     const filteredProviders = providerId

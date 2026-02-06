@@ -20,4 +20,4 @@ services:
 
 networks:
   wah4pc-network:
-    external: true
+    driver: bridge

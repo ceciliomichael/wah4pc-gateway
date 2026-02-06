@@ -28,18 +28,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     console.log(`[Providers] Fetching providers from ${gatewayUrl}/api/v1/providers`);
 
-    // Build headers - include auth if configured
+    // Build headers
+    // Note: User requested to match script example which has no auth headers
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
-
-    if (apiKey) {
-      headers['X-API-Key'] = apiKey;
-    }
-
-    if (providerId) {
-      headers['X-Provider-ID'] = providerId;
-    }
 
     const response = await fetch(`${gatewayUrl}/api/v1/providers`, {
       method: 'GET',

@@ -28,11 +28,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     console.log(`[Providers] Fetching providers from ${gatewayUrl}/api/v1/providers`);
 
-    // Use exact fetch pattern from user script
-    const targetUrl = `${gatewayUrl}/api/v1/providers`;
-    console.log(`[Providers] Fetching from: ${targetUrl}`);
-
-    const response = await fetch(targetUrl);
+    // Fetch providers without authentication (public endpoint)
+    const response = await fetch(`${gatewayUrl}/api/v1/providers`);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -40,7 +37,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json(
         {
           error: 'Failed to fetch providers from gateway',
-          targetUrl, // Debug info to verify .env loading
           status: response.status,
         },
         { status: response.status }
@@ -49,11 +45,17 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     const data = await response.json();
 
-    // Handle response format: { success: true, data: [...] }
-    // Logic: result.data || result
-    const providers: Provider[] = (data.data && Array.isArray(data.data)) 
-      ? data.data 
-      : (Array.isArray(data) ? data : []);
+    // Handle different response formats from gateway
+    // Could be { providers: [...] } or { data: [...] } or just [...]
+    let providers: Provider[] = [];
+
+    if (Array.isArray(data)) {
+      providers = data;
+    } else if (data.providers && Array.isArray(data.providers)) {
+      providers = data.providers;
+    } else if (data.data && Array.isArray(data.data)) {
+      providers = data.data;
+    }
 
     // Filter out ourselves from the list (can't request data from ourselves)
     const filteredProviders = providerId

@@ -28,18 +28,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     console.log(`[Providers] Fetching providers from ${gatewayUrl}/api/v1/providers`);
 
-    // Build headers
-    // Note: User requested to match script example which has no auth headers
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
+    // Use exact fetch pattern from user script
+    const targetUrl = `${gatewayUrl}/api/v1/providers`;
+    console.log(`[Providers] Fetching from: ${targetUrl}`);
 
-    const response = await fetch(`${gatewayUrl}/api/v1/providers`, {
-      method: 'GET',
-      headers,
-      // Don't cache - we want fresh data
-      cache: 'no-store',
-    });
+    const response = await fetch(targetUrl);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -47,6 +40,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json(
         {
           error: 'Failed to fetch providers from gateway',
+          targetUrl, // Debug info to verify .env loading
           status: response.status,
         },
         { status: response.status }

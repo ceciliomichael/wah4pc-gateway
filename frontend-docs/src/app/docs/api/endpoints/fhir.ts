@@ -45,7 +45,7 @@ export const fhirEndpoints: EndpointCardProps[] = [
     responseBody: `{
   "success": true,
   "data": {
-    "id": "transaction-uuid",
+    "id": "txn_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "requesterId": "your-provider-uuid",
     "targetId": "target-provider-uuid",
     "identifiers": [
@@ -110,7 +110,7 @@ export const fhirEndpoints: EndpointCardProps[] = [
       },
     ],
     requestBody: `{
-  "transactionId": "transaction-uuid-from-request",
+  "transactionId": "txn_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "status": "SUCCESS",
   "data": {
     "resourceType": "Patient",
@@ -190,7 +190,7 @@ export const fhirEndpoints: EndpointCardProps[] = [
 }`,
     responseStatus: 200,
     responseBody: `{
-  "id": "transaction-uuid",
+  "id": "txn_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "requesterId": "your-provider-uuid",
   "targetId": "target-provider-uuid",
   "resourceType": "Appointment",

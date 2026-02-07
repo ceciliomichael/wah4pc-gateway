@@ -120,7 +120,7 @@ func (s *GatewayService) InitiateQuery(req QueryRequest) (*model.Transaction, er
 	// Create transaction record
 	now := time.Now().UTC()
 	tx := model.Transaction{
-		ID:           uuid.New().String(),
+		ID:           "txn_" + uuid.New().String(),
 		RequesterID:  req.RequesterID,
 		TargetID:     req.TargetID,
 		Identifiers:  req.Identifiers,
@@ -203,7 +203,7 @@ func (s *GatewayService) InitiatePush(req PushRequest) (*model.Transaction, erro
 	// Create transaction record
 	now := time.Now().UTC()
 	tx := model.Transaction{
-		ID:           uuid.New().String(),
+		ID:           "txn_" + uuid.New().String(),
 		RequesterID:  req.SenderID, // In a push, the sender is the "requester" (initiator)
 		TargetID:     req.TargetID,
 		Identifiers:  []model.Identifier{}, // Push might not have identifiers extracted yet

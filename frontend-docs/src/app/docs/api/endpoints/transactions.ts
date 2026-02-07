@@ -17,7 +17,7 @@ export const transactionsEndpoints: EndpointCardProps[] = [
   "success": true,
   "data": [
     {
-      "id": "transaction-uuid",
+      "id": "txn_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
       "requesterId": "provider-uuid-1",
       "targetId": "provider-uuid-2",
       "identifiers": [
@@ -61,7 +61,7 @@ export const transactionsEndpoints: EndpointCardProps[] = [
     responseBody: `{
   "success": true,
   "data": {
-    "id": "transaction-uuid",
+    "id": "txn_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "requesterId": "provider-uuid-1",
     "targetId": "provider-uuid-2",
     "identifiers": [

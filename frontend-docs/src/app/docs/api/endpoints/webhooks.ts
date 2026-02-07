@@ -16,7 +16,7 @@ export const webhookEndpoints: EndpointCardProps[] = [
       },
     ],
     requestBody: `{
-  "transactionId": "550e8400-e29b-41d4-a716-446655440000",
+  "transactionId": "txn_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "requesterId": "requester-provider-uuid",
   "identifiers": [
     {
@@ -62,7 +62,7 @@ export const webhookEndpoints: EndpointCardProps[] = [
       },
     ],
     requestBody: `{
-  "transactionId": "550e8400-e29b-41d4-a716-446655440000",
+  "transactionId": "txn_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "status": "SUCCESS",
   "data": {
     "resourceType": "Patient",
@@ -106,7 +106,7 @@ export const webhookEndpoints: EndpointCardProps[] = [
       },
     ],
     requestBody: `{
-  "transactionId": "transaction-uuid",
+  "transactionId": "txn_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "senderId": "sender-provider-uuid",
   "resourceType": "Appointment",
   "data": {

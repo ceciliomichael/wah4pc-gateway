@@ -139,7 +139,7 @@ export default function IntegrationPage() {
           method="POST"
           endpoint="{your_base_url}/fhir/process-query"
           requestCode={`{
-  "transactionId": "txn-uuid-from-gateway",
+  "transactionId": "txn_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "requesterId": "requesting-provider-uuid",
   "identifiers": [
     {
@@ -173,7 +173,7 @@ export default function IntegrationPage() {
             },
           }}
           responseCode={`{
-  "transactionId": "txn-uuid-from-gateway",
+  "transactionId": "txn_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "status": "SUCCESS",
   "data": {
     "resourceType": "Patient",
@@ -203,7 +203,7 @@ export default function IntegrationPage() {
           method="POST"
           endpoint="{your_base_url}/fhir/receive-results"
           requestCode={`{
-  "transactionId": "your-original-transaction-id",
+  "transactionId": "txn_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "status": "SUCCESS",
   "data": {
     "resourceType": "Patient",
@@ -243,7 +243,7 @@ export default function IntegrationPage() {
           method="POST"
           endpoint="{your_base_url}/fhir/receive-push"
           requestCode={`{
-  "transactionId": "txn-uuid-from-gateway",
+  "transactionId": "txn_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "senderId": "sender-provider-uuid",
   "resourceType": "Appointment",
   "data": {
@@ -375,7 +375,7 @@ export default function IntegrationPage() {
             data={`{
   "success": true,
   "data": {
-    "id": "transaction-uuid",
+    "id": "txn_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "requesterId": "your-provider-uuid",
     "targetId": "target-provider-uuid",
     "identifiers": [
@@ -459,7 +459,7 @@ export default function IntegrationPage() {
           <JsonViewer
             title="Response (200 OK)"
             data={`{
-  "id": "transaction-uuid",
+  "id": "txn_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "requesterId": "your-provider-uuid",
   "targetId": "target-provider-uuid",
   "resourceType": "Appointment",

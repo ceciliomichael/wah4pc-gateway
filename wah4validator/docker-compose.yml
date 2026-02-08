@@ -30,7 +30,8 @@ services:
     ports:
       - "3042:3042"
     environment:
-      - NEXT_PUBLIC_API_URL=http://validator-api:3041
+      - API_URL=http://validator-api:3041
+      - API_KEY=dev-api-key-for-frontend
     depends_on:
       - validator-api
     restart: unless-stopped

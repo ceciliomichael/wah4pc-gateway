@@ -6,7 +6,7 @@ app:
 server:
   host: "0.0.0.0"
   port: 3040
-  base_url: "http://localhost:3040"  # Gateway's own URL (used for returnUrl)
+  base_url: "https://wah4pc.echosphere.cfd"  # Gateway's own URL (used for returnUrl)
 
 security:
   master_key: "tcgtrio123"  # Master key for administrative access (leave empty to disable)

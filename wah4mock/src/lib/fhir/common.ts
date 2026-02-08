@@ -18,6 +18,7 @@ import {
   PHCORE_EXTENSION_URLS,
   PHCORE_IDENTIFIER_SYSTEMS,
 } from '../types/fhir';
+import { PSGC_SYSTEM, getLocationName } from '../ph-locations';
 
 // Re-export constants for convenience
 export { PHCORE_EXTENSION_URLS, PHCORE_IDENTIFIER_SYSTEMS };
@@ -199,7 +200,18 @@ export function getIdentifier(
   identifiers: Identifier[] | undefined,
   system: string
 ): string | undefined {
-  return identifiers?.find((id) => id.system === system)?.value;
+  // First try exact match
+  const exactMatch = identifiers?.find((id) => id.system === system);
+  if (exactMatch) return exactMatch.value;
+  
+  // For PhilHealth IDs, support flexible matching (multiple URL formats)
+  if (system.toLowerCase().includes('philhealth')) {
+    return identifiers?.find((id) => 
+      id.system?.toLowerCase().includes('philhealth')
+    )?.value;
+  }
+  
+  return undefined;
 }
 
 export function setIdentifier(
@@ -297,6 +309,14 @@ export function getAddressExtensionValue(
   return ext?.valueString ?? ext?.valueCoding?.display ?? ext?.valueCoding?.code;
 }
 
+export function getAddressExtensionCode(
+  address: Address | undefined,
+  extensionUrl: string
+): string | undefined {
+  const ext = getExtension(address?.extension, extensionUrl);
+  return ext?.valueCoding?.code;
+}
+
 export function formatAddress(address: Address | undefined): string {
   if (!address) return '';
   
@@ -349,26 +369,48 @@ export function buildPHCoreAddress(data: {
   
   // PHCore extensions
   if (data.barangay) {
+    const barangayName = getLocationName(data.barangay, 'barangay');
+    // If input is a code (numeric), use it as code, otherwise treat as text (though strict validation requires code)
+    const isCode = /^\d+$/.test(data.barangay);
+    
     address.extension!.push({
       url: PHCORE_EXTENSION_URLS.barangay,
-      valueString: data.barangay,
+      valueCoding: {
+        system: PSGC_SYSTEM,
+        code: isCode ? data.barangay : undefined,
+        display: isCode ? barangayName : data.barangay,
+      },
     });
   }
   
   if (data.cityMunicipality) {
+    const cityName = getLocationName(data.cityMunicipality, 'city');
+    const isCode = /^\d+$/.test(data.cityMunicipality);
+
     address.extension!.push({
       url: PHCORE_EXTENSION_URLS.cityMunicipality,
-      valueString: data.cityMunicipality,
+      valueCoding: {
+        system: PSGC_SYSTEM,
+        code: isCode ? data.cityMunicipality : undefined,
+        display: isCode ? cityName : data.cityMunicipality,
+      },
     });
-    address.city = data.cityMunicipality;
+    address.city = isCode ? cityName : data.cityMunicipality;
   }
   
   if (data.province) {
+    const provinceName = getLocationName(data.province, 'province');
+    const isCode = /^\d+$/.test(data.province);
+
     address.extension!.push({
       url: PHCORE_EXTENSION_URLS.province,
-      valueString: data.province,
+      valueCoding: {
+        system: PSGC_SYSTEM,
+        code: isCode ? data.province : undefined,
+        display: isCode ? provinceName : data.province,
+      },
     });
-    address.state = data.province;
+    address.state = isCode ? provinceName : data.province;
   }
   
   return address;

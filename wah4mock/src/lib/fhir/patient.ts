@@ -19,9 +19,11 @@ import {
   getPhone,
   getEmail,
   getAddressExtensionValue,
+  getAddressExtensionCode,
   buildPHCoreAddress,
   generatePatientNarrative,
 } from './common';
+import { OCCUPATIONS, EDUCATIONAL_ATTAINMENT, RELIGIONS } from '../terminologies';
 
 // ============================================================================
 // Patient Identifier Helpers
@@ -122,10 +124,15 @@ export function buildPatientFromFormData(data: PatientFormData): Patient {
   }
   
   if (data.religion) {
+    const religion = RELIGIONS.find(r => r.code === data.religion);
     patient.extension!.push({
       url: PHCORE_EXTENSION_URLS.religion,
       valueCodeableConcept: {
-        coding: [{ code: data.religion, display: data.religion }],
+        coding: [{ 
+          system: 'http://terminology.hl7.org/ValueSet/v3-ReligiousAffiliation',
+          code: data.religion, 
+          display: religion?.display || data.religion 
+        }],
       },
     });
   }
@@ -137,23 +144,44 @@ export function buildPatientFromFormData(data: PatientFormData): Patient {
   });
   
   if (data.indigenousPeople && data.indigenousGroup) {
+    // Note: Indigenous group might need a CodeSystem in the future, currently string/code
     patient.extension!.push({
       url: PHCORE_EXTENSION_URLS.indigenousGroup,
-      valueString: data.indigenousGroup,
+      valueCodeableConcept: {
+        coding: [{
+          system: 'urn://example.com/ph-core/fhir/CodeSystem/indigenous-groups',
+          code: data.indigenousGroup,
+          display: data.indigenousGroup // Mock display
+        }]
+      }
     });
   }
   
   if (data.occupation) {
+    const occupation = OCCUPATIONS.find(o => o.code === data.occupation);
     patient.extension!.push({
       url: PHCORE_EXTENSION_URLS.occupation,
-      valueString: data.occupation,
+      valueCodeableConcept: {
+        coding: [{
+          system: 'urn://example.com/ph-core/fhir/CodeSystem/PSOC',
+          code: data.occupation,
+          display: occupation?.display || data.occupation
+        }]
+      }
     });
   }
   
   if (data.educationalAttainment) {
+    const education = EDUCATIONAL_ATTAINMENT.find(e => e.code === data.educationalAttainment);
     patient.extension!.push({
       url: PHCORE_EXTENSION_URLS.educationalAttainment,
-      valueString: data.educationalAttainment,
+      valueCodeableConcept: {
+        coding: [{
+          system: 'urn://example.com/ph-core/fhir/CodeSystem/educational-attainment',
+          code: data.educationalAttainment,
+          display: education?.display || data.educationalAttainment
+        }]
+      }
     });
   }
   
@@ -204,9 +232,9 @@ export function extractPatientFormData(patient: Patient): PatientFormData {
     phone: getPhone(patient.telecom),
     email: getEmail(patient.telecom),
     addressLine: address?.line?.[0],
-    barangay: getAddressExtensionValue(address, PHCORE_EXTENSION_URLS.barangay),
-    cityMunicipality: getAddressExtensionValue(address, PHCORE_EXTENSION_URLS.cityMunicipality) || address?.city,
-    province: getAddressExtensionValue(address, PHCORE_EXTENSION_URLS.province) || address?.state,
+    barangay: getAddressExtensionCode(address, PHCORE_EXTENSION_URLS.barangay) || getAddressExtensionValue(address, PHCORE_EXTENSION_URLS.barangay),
+    cityMunicipality: getAddressExtensionCode(address, PHCORE_EXTENSION_URLS.cityMunicipality) || address?.city,
+    province: getAddressExtensionCode(address, PHCORE_EXTENSION_URLS.province) || address?.state,
     postalCode: address?.postalCode,
     country: address?.country,
     philHealthId: getPhilHealthId(patient),
@@ -215,10 +243,14 @@ export function extractPatientFormData(patient: Patient): PatientFormData {
       getExtension(patient.extension, PHCORE_EXTENSION_URLS.nationality)?.extension,
       'code'
     ) as string | undefined,
-    religion: getExtensionValue(patient.extension, PHCORE_EXTENSION_URLS.religion) as string | undefined,
+    religion: (getExtension(patient.extension, PHCORE_EXTENSION_URLS.religion)?.valueCodeableConcept?.coding?.[0]?.code) || 
+              (getExtensionValue(patient.extension, PHCORE_EXTENSION_URLS.religion) as string | undefined),
     indigenousPeople: getExtensionValue(patient.extension, PHCORE_EXTENSION_URLS.indigenousPeople) as boolean | undefined,
-    indigenousGroup: getExtensionValue(patient.extension, PHCORE_EXTENSION_URLS.indigenousGroup) as string | undefined,
-    occupation: getExtensionValue(patient.extension, PHCORE_EXTENSION_URLS.occupation) as string | undefined,
-    educationalAttainment: getExtensionValue(patient.extension, PHCORE_EXTENSION_URLS.educationalAttainment) as string | undefined,
+    indigenousGroup: (getExtension(patient.extension, PHCORE_EXTENSION_URLS.indigenousGroup)?.valueCodeableConcept?.coding?.[0]?.code) ||
+                     (getExtensionValue(patient.extension, PHCORE_EXTENSION_URLS.indigenousGroup) as string | undefined),
+    occupation: (getExtension(patient.extension, PHCORE_EXTENSION_URLS.occupation)?.valueCodeableConcept?.coding?.[0]?.code) ||
+                (getExtensionValue(patient.extension, PHCORE_EXTENSION_URLS.occupation) as string | undefined),
+    educationalAttainment: (getExtension(patient.extension, PHCORE_EXTENSION_URLS.educationalAttainment)?.valueCodeableConcept?.coding?.[0]?.code) ||
+                           (getExtensionValue(patient.extension, PHCORE_EXTENSION_URLS.educationalAttainment) as string | undefined),
   };
 }

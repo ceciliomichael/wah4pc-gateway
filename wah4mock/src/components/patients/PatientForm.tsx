@@ -32,15 +32,6 @@ const maritalStatusOptions = [
   { value: 'UNK', label: 'Unknown' },
 ];
 
-const educationOptions = [
-  { value: 'no-education', label: 'No Formal Education' },
-  { value: 'elementary', label: 'Elementary' },
-  { value: 'high-school', label: 'High School' },
-  { value: 'vocational', label: 'Vocational' },
-  { value: 'college', label: 'College' },
-  { value: 'post-graduate', label: 'Post Graduate' },
-];
-
 const DEFAULT_FORM_DATA: PatientFormData = {
   familyName: '',
   givenName: '',
@@ -52,6 +43,7 @@ const DEFAULT_FORM_DATA: PatientFormData = {
   phone: '',
   email: '',
   addressLine: '',
+  region: '',
   barangay: '',
   cityMunicipality: '',
   province: '',
@@ -66,6 +58,11 @@ const DEFAULT_FORM_DATA: PatientFormData = {
   occupation: '',
   educationalAttainment: '',
 };
+
+interface Option {
+  value: string;
+  label: string;
+}
 
 interface PatientFormProps {
   defaultValues?: Partial<PatientFormData>;
@@ -88,6 +85,17 @@ export function PatientForm({
   });
   const [error, setError] = useState<string | null>(null);
 
+  // Terminology State
+  const [regions, setRegions] = useState<Option[]>([]);
+  const [provinces, setProvinces] = useState<Option[]>([]);
+  const [cities, setCities] = useState<Option[]>([]);
+  const [barangays, setBarangays] = useState<Option[]>([]);
+  
+  const [religions, setReligions] = useState<Option[]>([]);
+  const [educationalAttainments, setEducationalAttainments] = useState<Option[]>([]);
+  const [indigenousGroups, setIndigenousGroups] = useState<Option[]>([]);
+  const [occupations, setOccupations] = useState<Option[]>([]);
+
   // Update form when defaultValues change (for edit mode)
   useEffect(() => {
     if (defaultValues) {
@@ -95,16 +103,112 @@ export function PatientForm({
     }
   }, [defaultValues]);
 
+  // Load Initial Terminologies
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        // Regions
+        const regRes = await fetch('/api/terminologies/psgc?level=region');
+        if (regRes.ok) {
+          const data = await regRes.json();
+          setRegions(data.map((i: any) => ({ value: i.code, label: i.name })));
+        }
+
+        // Religions
+        const relRes = await fetch('/api/terminologies/religion');
+        if (relRes.ok) {
+          const data = await relRes.json();
+          setReligions(data.map((i: any) => ({ value: i.code, label: i.display })));
+        }
+
+        // Education
+        const eduRes = await fetch('/api/terminologies/educational-attainment');
+        if (eduRes.ok) {
+          const data = await eduRes.json();
+          setEducationalAttainments(data.map((i: any) => ({ value: i.code, label: i.display })));
+        }
+
+        // Indigenous Groups
+        const ipRes = await fetch('/api/terminologies/indigenous-groups');
+        if (ipRes.ok) {
+          const data = await ipRes.json();
+          setIndigenousGroups(data.map((i: any) => ({ value: i.code, label: i.display })));
+        }
+        
+        // Occupations (Major Groups)
+        const occRes = await fetch('/api/terminologies/psoc');
+        if (occRes.ok) {
+           const data = await occRes.json();
+           setOccupations(data.map((i: any) => ({ value: i.code, label: i.display })));
+        }
+
+      } catch (e) {
+        console.error('Failed to load initial terminologies', e);
+      }
+    };
+    fetchInitialData();
+  }, []);
+
+  // Cascade: Region -> Province
+  useEffect(() => {
+    if (!formData.region) {
+      setProvinces([]);
+      return;
+    }
+    fetch(`/api/terminologies/psgc?level=province&parent=${formData.region}`)
+      .then(res => res.json())
+      .then(data => setProvinces(data.map((i: any) => ({ value: i.code, label: i.name }))))
+      .catch(console.error);
+  }, [formData.region]);
+
+  // Cascade: Province -> City/Municipality
+  useEffect(() => {
+    if (!formData.province) {
+      setCities([]);
+      return;
+    }
+    // Note: PSGC API handles finding children of province
+    fetch(`/api/terminologies/psgc?parent=${formData.province}`)
+      .then(res => res.json())
+      .then(data => setCities(data.map((i: any) => ({ value: i.code, label: i.name }))))
+      .catch(console.error);
+  }, [formData.province]);
+
+  // Cascade: City -> Barangay
+  useEffect(() => {
+    if (!formData.cityMunicipality) {
+      setBarangays([]);
+      return;
+    }
+    fetch(`/api/terminologies/psgc?parent=${formData.cityMunicipality}`)
+      .then(res => res.json())
+      .then(data => setBarangays(data.map((i: any) => ({ value: i.code, label: i.name }))))
+      .catch(console.error);
+  }, [formData.cityMunicipality]);
+
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
 
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
+    setFormData((prev) => {
+      const updates: any = { [name]: type === 'checkbox' ? checked : value };
+      
+      // Clear dependent fields when parent changes
+      if (name === 'region') {
+        updates.province = '';
+        updates.cityMunicipality = '';
+        updates.barangay = '';
+      } else if (name === 'province') {
+        updates.cityMunicipality = '';
+        updates.barangay = '';
+      } else if (name === 'cityMunicipality') {
+        updates.barangay = '';
+      }
+      
+      return { ...prev, ...updates };
+    });
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -224,7 +328,7 @@ export function PatientForm({
         <Card>
           <CardHeader>
             <CardTitle>Address</CardTitle>
-            <CardDescription>PHCore-compliant Philippine address format</CardDescription>
+            <CardDescription>PHCore-compliant Philippine address format (PSGC)</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -236,27 +340,46 @@ export function PatientForm({
                   onChange={handleChange}
                 />
               </div>
-              <Input
-                label="Barangay"
-                name="barangay"
-                value={formData.barangay}
+              
+              <Select
+                label="Region"
+                name="region"
+                value={formData.region || ''}
                 onChange={handleChange}
-                hint="PHCore extension field"
+                options={regions}
+                placeholder="Select Region"
               />
-              <Input
-                label="City / Municipality"
-                name="cityMunicipality"
-                value={formData.cityMunicipality}
-                onChange={handleChange}
-                hint="PHCore extension field"
-              />
-              <Input
+
+              <Select
                 label="Province"
                 name="province"
-                value={formData.province}
+                value={formData.province || ''}
                 onChange={handleChange}
-                hint="PHCore extension field"
+                options={provinces}
+                placeholder="Select Province"
+                disabled={!formData.region}
               />
+
+              <Select
+                label="City / Municipality"
+                name="cityMunicipality"
+                value={formData.cityMunicipality || ''}
+                onChange={handleChange}
+                options={cities}
+                placeholder="Select City/Municipality"
+                disabled={!formData.province}
+              />
+
+              <Select
+                label="Barangay"
+                name="barangay"
+                value={formData.barangay || ''}
+                onChange={handleChange}
+                options={barangays}
+                placeholder="Select Barangay"
+                disabled={!formData.cityMunicipality}
+              />
+
               <Input
                 label="Postal Code"
                 name="postalCode"
@@ -268,6 +391,7 @@ export function PatientForm({
                 name="country"
                 value={formData.country}
                 onChange={handleChange}
+                disabled
               />
             </div>
           </CardContent>
@@ -307,26 +431,33 @@ export function PatientForm({
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <Input
+              <Select
                 label="Religion"
                 name="religion"
-                value={formData.religion}
+                value={formData.religion || ''}
                 onChange={handleChange}
+                options={religions}
+                placeholder="Select Religion"
               />
-              <Input
+              
+              <Select
                 label="Occupation"
                 name="occupation"
-                value={formData.occupation}
+                value={formData.occupation || ''}
                 onChange={handleChange}
+                options={occupations}
+                placeholder="Select Major Occupation Group"
               />
+              
               <Select
                 label="Educational Attainment"
                 name="educationalAttainment"
                 value={formData.educationalAttainment || ''}
                 onChange={handleChange}
-                options={educationOptions}
+                options={educationalAttainments}
                 placeholder="Select education level"
               />
+              
               <div className="md:col-span-2 lg:col-span-3 pt-2">
                 <Checkbox
                   name="indigenousPeople"
@@ -335,14 +466,16 @@ export function PatientForm({
                   label="Belongs to an Indigenous People (IP) group"
                 />
               </div>
+              
               {formData.indigenousPeople && (
                 <div className="md:col-span-2 lg:col-span-3">
-                  <Input
+                   <Select
                     label="Indigenous Group"
                     name="indigenousGroup"
-                    value={formData.indigenousGroup}
+                    value={formData.indigenousGroup || ''}
                     onChange={handleChange}
-                    placeholder="e.g., Igorot, Lumad, Mangyan"
+                    options={indigenousGroups}
+                    placeholder="Select Indigenous Group"
                   />
                 </div>
               )}

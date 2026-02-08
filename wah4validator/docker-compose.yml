@@ -10,7 +10,7 @@ services:
       - "8080:8080"
     environment:
       # Override config.yaml settings via environment variables if needed
-      - SERVER_PORT=8080
+      - SERVER_PORT=3041
       - JAVA_VALIDATOR_PORT=9090
       - FHIR_VERSION=4.0.1
     volumes:

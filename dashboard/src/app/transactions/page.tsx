@@ -13,7 +13,7 @@ import {
   TransactionFilters,
   type StatusFilterValue,
 } from "@/components/transactions/transaction-filters";
-import { TransactionsTable } from "@/components/transactions/transactions-table";
+import { TransactionsList } from "@/components/transactions/transactions-list";
 
 // Helper to search within identifiers array
 function identifiersMatchSearch(identifiers: Identifier[], query: string): boolean {
@@ -141,8 +141,8 @@ function TransactionsContent() {
         </div>
       )}
 
-      {/* Transactions Table */}
-      <TransactionsTable
+      {/* Transactions List */}
+      <TransactionsList
         transactions={filteredTransactions}
         providers={providers}
         hasFilters={hasActiveFilters}

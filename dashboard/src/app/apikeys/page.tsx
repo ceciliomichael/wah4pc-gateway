@@ -5,28 +5,11 @@ import { AuthGuard } from "@/components/auth-guard";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { apiKeyApi, providerApi } from "@/lib/api";
 import type { ApiKey, Provider } from "@/types";
-import {
-  LuPlus,
-  LuTrash2,
-  LuLoaderCircle,
-  LuCircleAlert,
-  LuKey,
-  LuCopy,
-  LuCheck,
-  LuShieldOff,
-  LuEllipsisVertical,
-} from "react-icons/lu";
+import { LuPlus, LuLoaderCircle, LuCircleAlert } from "react-icons/lu";
 import { CreateApiKeyDialog } from "@/components/apikeys/create-key-dialog";
+import { ApiKeyList } from "@/components/apikeys/apikey-list";
 import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  Dropdown,
-  DropdownMenu,
-  DropdownItem,
-  DropdownSeparator,
-} from "@/components/ui/dropdown";
 
 function ApiKeysContent() {
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
@@ -164,142 +147,16 @@ function ApiKeysContent() {
         </div>
       )}
 
-      {/* API Keys Table */}
-      <Card padding="none">
-        {apiKeys.length === 0 ? (
-          <div className="p-12 text-center">
-            <div className="inline-flex items-center justify-center w-12 h-12 bg-slate-100 rounded-lg mb-4">
-              <LuKey className="w-6 h-6 text-slate-400" />
-            </div>
-            <p className="text-slate-500">No API keys created yet</p>
-            <button
-              type="button"
-              onClick={() => setCreateDialogOpen(true)}
-              className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
-            >
-              Generate your first key
-            </button>
-          </div>
-        ) : (
-          <div className="overflow-visible">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Key
-                  </th>
-                  <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Owner
-                  </th>
-                  <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Role
-                  </th>
-                  <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Provider
-                  </th>
-                  <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Created
-                  </th>
-                  <th className="px-5 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {apiKeys.map((key) => (
-                  <tr key={key.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-2">
-                        <code className="text-sm font-mono text-slate-700 bg-slate-100 px-2 py-1 rounded">
-                          {key.prefix}...
-                        </code>
-                        <button
-                          type="button"
-                          onClick={() => handleCopyPrefix(key.prefix, key.id)}
-                          className="p-1 text-slate-400 hover:text-slate-600 transition-colors"
-                          title="Copy prefix"
-                        >
-                          {copiedId === key.id ? (
-                            <LuCheck className="w-4 h-4 text-green-600" />
-                          ) : (
-                            <LuCopy className="w-4 h-4" />
-                          )}
-                        </button>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4">
-                      <span className="text-sm text-slate-800">{key.owner}</span>
-                    </td>
-                    <td className="px-5 py-4">
-                      <Badge variant={key.role === "admin" ? "primary" : "info"}>
-                        {key.role}
-                      </Badge>
-                    </td>
-                    <td className="px-5 py-4">
-                      <span className="text-sm text-slate-600">
-                        {getProviderName(key.providerId)}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4">
-                      <Badge variant={key.isActive ? "success" : "error"}>
-                        {key.isActive ? "Active" : "Revoked"}
-                      </Badge>
-                    </td>
-                    <td className="px-5 py-4">
-                      <span className="text-sm text-slate-500">
-                        {formatDate(key.createdAt)}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4">
-                      <div className="flex items-center justify-end">
-                        <Dropdown
-                          trigger={
-                            <button
-                              type="button"
-                              className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-                            >
-                              <LuEllipsisVertical className="w-4 h-4" />
-                            </button>
-                          }
-                          align="end"
-                        >
-                          <DropdownMenu>
-                            <DropdownItem
-                              icon={<LuCopy className="w-4 h-4" />}
-                              onClick={() => handleCopyPrefix(key.prefix, key.id)}
-                            >
-                              Copy Prefix
-                            </DropdownItem>
-                            {key.isActive && (
-                              <DropdownItem
-                                icon={<LuShieldOff className="w-4 h-4" />}
-                                onClick={() => handleRevokeClick(key)}
-                              >
-                                Revoke Key
-                              </DropdownItem>
-                            )}
-                            <DropdownSeparator />
-                            <DropdownItem
-                              icon={<LuTrash2 className="w-4 h-4" />}
-                              variant="destructive"
-                              onClick={() => handleDeleteClick(key)}
-                            >
-                              Delete Key
-                            </DropdownItem>
-                          </DropdownMenu>
-                        </Dropdown>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
+      {/* API Keys List */}
+      <ApiKeyList
+        apiKeys={apiKeys}
+        providers={providers}
+        copiedId={copiedId}
+        onCopy={handleCopyPrefix}
+        onRevoke={handleRevokeClick}
+        onDelete={handleDeleteClick}
+        onCreate={() => setCreateDialogOpen(true)}
+      />
 
       {/* Summary */}
       {apiKeys.length > 0 && (

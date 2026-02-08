@@ -5,30 +5,11 @@ import { AuthGuard } from "@/components/auth-guard";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { providerApi } from "@/lib/api";
 import type { Provider } from "@/types";
-import {
-  LuPlus,
-  LuPencil,
-  LuTrash2,
-  LuLoaderCircle,
-  LuCircleAlert,
-  LuBuilding2,
-  LuExternalLink,
-  LuEllipsisVertical,
-  LuPower,
-  LuPowerOff,
-} from "react-icons/lu";
+import { LuPlus, LuLoaderCircle, LuCircleAlert } from "react-icons/lu";
 import { ProviderDialog } from "@/components/providers/provider-dialog";
+import { ProviderList } from "@/components/providers/provider-list";
 import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { ProviderTypeBadge, Badge } from "@/components/ui/badge";
-import { CopyButton } from "@/components/ui/copy-button";
-import {
-  Dropdown,
-  DropdownMenu,
-  DropdownItem,
-  DropdownSeparator,
-} from "@/components/ui/dropdown";
 
 function ProvidersContent() {
   const [providers, setProviders] = useState<Provider[]>([]);
@@ -139,132 +120,14 @@ function ProvidersContent() {
         </div>
       )}
 
-      {/* Providers Table */}
-      <Card padding="none">
-        {providers.length === 0 ? (
-          <div className="p-12 text-center">
-            <div className="inline-flex items-center justify-center w-12 h-12 bg-slate-100 rounded-lg mb-4">
-              <LuBuilding2 className="w-6 h-6 text-slate-400" />
-            </div>
-            <p className="text-slate-500">No providers registered yet</p>
-            <button
-              type="button"
-              onClick={handleCreate}
-              className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
-            >
-              Add your first provider
-            </button>
-          </div>
-        ) : (
-          <div className="overflow-visible">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Provider
-                  </th>
-                  <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Base URL
-                  </th>
-                  <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-5 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {providers.map((provider) => (
-                  <tr key={provider.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-5 py-4">
-                      <div>
-                        <p className="font-medium text-slate-800">{provider.name}</p>
-                        <CopyButton value={provider.id} label="Provider ID" />
-                      </div>
-                    </td>
-                    <td className="px-5 py-4">
-                      <ProviderTypeBadge type={provider.type} />
-                    </td>
-                    <td className="px-5 py-4">
-                      <a
-                        href={provider.baseUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
-                      >
-                        <span className="truncate max-w-xs">{provider.baseUrl}</span>
-                        <LuExternalLink className="w-3 h-3 flex-shrink-0" />
-                      </a>
-                    </td>
-                    <td className="px-5 py-4">
-                      <button
-                        type="button"
-                        onClick={() => handleToggleActive(provider)}
-                        title={provider.isActive ? "Click to deactivate" : "Click to activate"}
-                      >
-                        <Badge
-                          variant={provider.isActive ? "success" : "default"}
-                          className="cursor-pointer hover:opacity-80 transition-opacity"
-                        >
-                          {provider.isActive ? "Active" : "Inactive"}
-                        </Badge>
-                      </button>
-                    </td>
-                    <td className="px-5 py-4">
-                      <div className="flex items-center justify-end">
-                        <Dropdown
-                          trigger={
-                            <button
-                              type="button"
-                              className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-                            >
-                              <LuEllipsisVertical className="w-4 h-4" />
-                            </button>
-                          }
-                          align="end"
-                        >
-                          <DropdownMenu>
-                            <DropdownItem
-                              icon={<LuPencil className="w-4 h-4" />}
-                              onClick={() => handleEdit(provider)}
-                            >
-                              Edit Provider
-                            </DropdownItem>
-                            <DropdownItem
-                              icon={
-                                provider.isActive ? (
-                                  <LuPowerOff className="w-4 h-4" />
-                                ) : (
-                                  <LuPower className="w-4 h-4" />
-                                )
-                              }
-                              onClick={() => handleToggleActive(provider)}
-                            >
-                              {provider.isActive ? "Deactivate" : "Activate"}
-                            </DropdownItem>
-                            <DropdownSeparator />
-                            <DropdownItem
-                              icon={<LuTrash2 className="w-4 h-4" />}
-                              variant="destructive"
-                              onClick={() => handleDeleteClick(provider)}
-                            >
-                              Delete Provider
-                            </DropdownItem>
-                          </DropdownMenu>
-                        </Dropdown>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
+      {/* Providers List */}
+      <ProviderList
+        providers={providers}
+        onEdit={handleEdit}
+        onDelete={handleDeleteClick}
+        onToggleActive={handleToggleActive}
+        onCreate={handleCreate}
+      />
 
       {/* Summary */}
       {providers.length > 0 && (

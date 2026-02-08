@@ -447,6 +447,7 @@ export interface PatientFormData {
   indigenousGroup?: string;
   occupation?: string;
   educationalAttainment?: string;
+  race?: string;
 }
 
 export interface PractitionerFormData {
@@ -498,5 +499,259 @@ export interface OrganizationFormData {
 // Resource Type Union
 // ============================================================================
 
-export type FHIRResource = Patient | Practitioner | Organization | Encounter;
-export type FHIRResourceType = 'Patient' | 'Practitioner' | 'Organization' | 'Encounter';
+// ============================================================================
+// Condition Resource
+// ============================================================================
+
+export interface Condition extends DomainResource {
+  resourceType: 'Condition';
+  identifier?: Identifier[];
+  clinicalStatus?: CodeableConcept;
+  verificationStatus?: CodeableConcept;
+  category?: CodeableConcept[];
+  severity?: CodeableConcept;
+  code?: CodeableConcept;
+  bodySite?: CodeableConcept[];
+  subject: Reference;
+  encounter?: Reference;
+  onsetDateTime?: string;
+  onsetAge?: { value?: number; unit?: string; system?: string; code?: string };
+  onsetPeriod?: Period;
+  onsetRange?: { low?: { value?: number; unit?: string }; high?: { value?: number; unit?: string } };
+  onsetString?: string;
+  abatementDateTime?: string;
+  abatementAge?: { value?: number; unit?: string; system?: string; code?: string };
+  abatementPeriod?: Period;
+  abatementRange?: { low?: { value?: number; unit?: string }; high?: { value?: number; unit?: string } };
+  abatementString?: string;
+  recordedDate?: string;
+  recorder?: Reference;
+  asserter?: Reference;
+  stage?: {
+    summary?: CodeableConcept;
+    assessment?: Reference[];
+    type?: CodeableConcept;
+  }[];
+  evidence?: {
+    code?: CodeableConcept[];
+    detail?: Reference[];
+  }[];
+  note?: { text: string; authorReference?: Reference; time?: string }[];
+}
+
+// ============================================================================
+// Observation Resource
+// ============================================================================
+
+export interface ObservationComponent {
+  code: CodeableConcept;
+  valueQuantity?: { value?: number; unit?: string; system?: string; code?: string };
+  valueCodeableConcept?: CodeableConcept;
+  valueString?: string;
+  valueBoolean?: boolean;
+  valueInteger?: number;
+  valueRange?: { low?: { value?: number; unit?: string }; high?: { value?: number; unit?: string } };
+  valueRatio?: { numerator?: { value?: number; unit?: string }; denominator?: { value?: number; unit?: string } };
+  valueSampledData?: Record<string, unknown>;
+  valueTime?: string;
+  valueDateTime?: string;
+  valuePeriod?: Period;
+  dataAbsentReason?: CodeableConcept;
+  interpretation?: CodeableConcept[];
+  referenceRange?: {
+    low?: { value?: number; unit?: string; system?: string; code?: string };
+    high?: { value?: number; unit?: string; system?: string; code?: string };
+    type?: CodeableConcept;
+    appliesTo?: CodeableConcept[];
+    age?: { low?: { value?: number; unit?: string }; high?: { value?: number; unit?: string } };
+    text?: string;
+  }[];
+}
+
+export interface Observation extends DomainResource {
+  resourceType: 'Observation';
+  identifier?: Identifier[];
+  basedOn?: Reference[];
+  partOf?: Reference[];
+  status: 'registered' | 'preliminary' | 'final' | 'amended' | 'corrected' | 'cancelled' | 'entered-in-error' | 'unknown';
+  category?: CodeableConcept[];
+  code: CodeableConcept;
+  subject?: Reference;
+  focus?: Reference[];
+  encounter?: Reference;
+  effectiveDateTime?: string;
+  effectivePeriod?: Period;
+  effectiveTiming?: Record<string, unknown>;
+  effectiveInstant?: string;
+  issued?: string;
+  performer?: Reference[];
+  valueQuantity?: { value?: number; unit?: string; system?: string; code?: string };
+  valueCodeableConcept?: CodeableConcept;
+  valueString?: string;
+  valueBoolean?: boolean;
+  valueInteger?: number;
+  valueRange?: { low?: { value?: number; unit?: string }; high?: { value?: number; unit?: string } };
+  valueRatio?: { numerator?: { value?: number; unit?: string }; denominator?: { value?: number; unit?: string } };
+  valueSampledData?: Record<string, unknown>;
+  valueTime?: string;
+  valueDateTime?: string;
+  valuePeriod?: Period;
+  dataAbsentReason?: CodeableConcept;
+  interpretation?: CodeableConcept[];
+  note?: { text: string; authorReference?: Reference; time?: string }[];
+  bodySite?: CodeableConcept;
+  method?: CodeableConcept;
+  specimen?: Reference;
+  device?: Reference;
+  referenceRange?: {
+    low?: { value?: number; unit?: string; system?: string; code?: string };
+    high?: { value?: number; unit?: string; system?: string; code?: string };
+    type?: CodeableConcept;
+    appliesTo?: CodeableConcept[];
+    age?: { low?: { value?: number; unit?: string }; high?: { value?: number; unit?: string } };
+    text?: string;
+  }[];
+  hasMember?: Reference[];
+  derivedFrom?: Reference[];
+  component?: ObservationComponent[];
+}
+
+// ============================================================================
+// AllergyIntolerance Resource
+// ============================================================================
+
+export interface AllergyIntoleranceReaction {
+  substance?: CodeableConcept;
+  manifestation: CodeableConcept[];
+  description?: string;
+  onset?: string;
+  severity?: 'mild' | 'moderate' | 'severe';
+  exposureRoute?: CodeableConcept;
+  note?: { text: string; authorReference?: Reference; time?: string }[];
+}
+
+export interface AllergyIntolerance extends DomainResource {
+  resourceType: 'AllergyIntolerance';
+  identifier?: Identifier[];
+  clinicalStatus?: CodeableConcept;
+  verificationStatus?: CodeableConcept;
+  type?: 'allergy' | 'intolerance';
+  category?: ('food' | 'medication' | 'environment' | 'biologic')[];
+  criticality?: 'low' | 'high' | 'unable-to-assess';
+  code?: CodeableConcept;
+  patient: Reference;
+  encounter?: Reference;
+  onsetDateTime?: string;
+  onsetAge?: { value?: number; unit?: string; system?: string; code?: string };
+  onsetPeriod?: Period;
+  onsetRange?: { low?: { value?: number; unit?: string }; high?: { value?: number; unit?: string } };
+  onsetString?: string;
+  recordedDate?: string;
+  recorder?: Reference;
+  asserter?: Reference;
+  lastOccurrence?: string;
+  note?: { text: string; authorReference?: Reference; time?: string }[];
+  reaction?: AllergyIntoleranceReaction[];
+}
+
+// ============================================================================
+// Medication Resource
+// ============================================================================
+
+export interface MedicationIngredient {
+  itemCodeableConcept?: CodeableConcept;
+  itemReference?: Reference;
+  isActive?: boolean;
+  strength?: {
+    numerator?: { value?: number; unit?: string; system?: string; code?: string };
+    denominator?: { value?: number; unit?: string; system?: string; code?: string };
+  };
+}
+
+export interface MedicationBatch {
+  lotNumber?: string;
+  expirationDate?: string;
+}
+
+export interface Medication extends DomainResource {
+  resourceType: 'Medication';
+  identifier?: Identifier[];
+  code?: CodeableConcept;
+  status?: 'active' | 'inactive' | 'entered-in-error';
+  manufacturer?: Reference;
+  form?: CodeableConcept;
+  amount?: {
+    numerator?: { value?: number; unit?: string; system?: string; code?: string };
+    denominator?: { value?: number; unit?: string; system?: string; code?: string };
+  };
+  ingredient?: MedicationIngredient[];
+  batch?: MedicationBatch;
+}
+
+// ============================================================================
+// Immunization Resource
+// ============================================================================
+
+export interface ImmunizationPerformer {
+  function?: CodeableConcept;
+  actor: Reference;
+}
+
+export interface ImmunizationProtocolApplied {
+  series?: string;
+  authority?: Reference;
+  targetDisease?: CodeableConcept[];
+  doseNumberPositiveInt?: number;
+  doseNumberString?: string;
+  seriesDosesPositiveInt?: number;
+  seriesDosesString?: string;
+}
+
+export interface Immunization extends DomainResource {
+  resourceType: 'Immunization';
+  identifier?: Identifier[];
+  status: 'completed' | 'entered-in-error' | 'not-done';
+  statusReason?: CodeableConcept;
+  vaccineCode: CodeableConcept;
+  patient: Reference;
+  encounter?: Reference;
+  occurrenceDateTime?: string;
+  occurrenceString?: string;
+  recorded?: string;
+  primarySource?: boolean;
+  reportOrigin?: CodeableConcept;
+  location?: Reference;
+  manufacturer?: Reference;
+  lotNumber?: string;
+  expirationDate?: string;
+  site?: CodeableConcept;
+  route?: CodeableConcept;
+  doseQuantity?: { value?: number; unit?: string; system?: string; code?: string };
+  performer?: ImmunizationPerformer[];
+  note?: { text: string; authorReference?: Reference; time?: string }[];
+  reasonCode?: CodeableConcept[];
+  reasonReference?: Reference[];
+  isSubpotent?: boolean;
+  subpotentReason?: CodeableConcept[];
+  education?: {
+    documentType?: string;
+    reference?: string;
+    publicationDate?: string;
+    presentationDate?: string;
+  }[];
+  programEligibility?: CodeableConcept[];
+  fundingSource?: CodeableConcept;
+  reaction?: {
+    date?: string;
+    detail?: Reference;
+    reported?: boolean;
+  }[];
+  protocolApplied?: ImmunizationProtocolApplied[];
+}
+
+// ============================================================================
+// Resource Type Union
+// ============================================================================
+
+export type FHIRResource = Patient | Practitioner | Organization | Encounter | Condition | Observation | AllergyIntolerance | Medication | Immunization;
+export type FHIRResourceType = 'Patient' | 'Practitioner' | 'Organization' | 'Encounter' | 'Condition' | 'Observation' | 'AllergyIntolerance' | 'Medication' | 'Immunization';

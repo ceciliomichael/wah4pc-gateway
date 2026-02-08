@@ -160,16 +160,6 @@
         "mustSupport": true
       },
       {
-        "id": "Patient.identifier:PHCorePhilHealthID.type.coding.system",
-        "path": "Patient.identifier.type.coding.system",
-        "fixedUri": "http://terminology.hl7.org/CodeSystem/v2-0203"
-      },
-      {
-        "id": "Patient.identifier:PHCorePhilHealthID.type.coding.code",
-        "path": "Patient.identifier.type.coding.code",
-        "fixedCode": "NH"
-      },
-      {
         "id": "Patient.identifier:PHCorePhilHealthID.system",
         "path": "Patient.identifier.system",
         "min": 1,
@@ -184,16 +174,6 @@
         "min": 0,
         "max": "*",
         "mustSupport": true
-      },
-      {
-        "id": "Patient.identifier:PHCorePddRegistration.type.coding.system",
-        "path": "Patient.identifier.type.coding.system",
-        "fixedUri": "http://terminology.hl7.org/CodeSystem/v2-0203"
-      },
-      {
-        "id": "Patient.identifier:PHCorePddRegistration.type.coding.code",
-        "path": "Patient.identifier.type.coding.code",
-        "fixedCode": "NH"
       },
       {
         "id": "Patient.identifier:PHCorePddRegistration.system",

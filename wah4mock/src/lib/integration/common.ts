@@ -92,26 +92,44 @@ export async function findPatientByFHIRIdentifiers(
 
 /**
  * Convert internal Patient to FHIR-compliant format for gateway response
+ * Returns the FULL Patient resource as per PH Core documentation requirements
+ * including all extensions, meta, text narrative, and other fields
  */
 export function formatPatientForGateway(
   patient: Patient,
-  matchedIdentifiers: Identifier[]
+  _matchedIdentifiers: Identifier[]
 ): Record<string, unknown> {
+  // Return the complete Patient resource to comply with PH Core format
+  // The wah4pc documentation requires the full resource including:
+  // - meta with profile
+  // - text narrative
+  // - all extensions (nationality, religion, indigenousPeople, indigenousGroup, race, etc.)
+  // - full address with PSGC extensions
+  // - all identifiers
   return {
-    resourceType: 'Patient',
+    resourceType: patient.resourceType,
     id: patient.id,
-    identifier: patient.identifier?.filter((id) =>
-      matchedIdentifiers.some(
-        (mi) =>
-          mi.system.toLowerCase() === id.system?.toLowerCase() ||
-          mi.value === id.value
-      )
-    ) || [],
+    meta: patient.meta,
+    text: patient.text,
+    identifier: patient.identifier,
+    active: patient.active,
     name: patient.name,
-    birthDate: patient.birthDate,
-    gender: patient.gender,
     telecom: patient.telecom,
+    gender: patient.gender,
+    birthDate: patient.birthDate,
+    deceasedBoolean: patient.deceasedBoolean,
+    deceasedDateTime: patient.deceasedDateTime,
     address: patient.address,
+    maritalStatus: patient.maritalStatus,
+    multipleBirthBoolean: patient.multipleBirthBoolean,
+    multipleBirthInteger: patient.multipleBirthInteger,
+    photo: patient.photo,
+    contact: patient.contact,
+    communication: patient.communication,
+    generalPractitioner: patient.generalPractitioner,
+    managingOrganization: patient.managingOrganization,
+    link: patient.link,
+    extension: patient.extension,
   };
 }
 

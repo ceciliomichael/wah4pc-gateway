@@ -46,7 +46,7 @@
         ],
         "binding": {
           "strength": "required",
-          "valueSet": "http://terminology.hl7.org/ValueSet/v3-Race"
+          "valueSet": "urn://example.com/ph-core/fhir/ValueSet/race"
         }
       }
     ]

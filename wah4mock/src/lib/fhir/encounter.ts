@@ -13,7 +13,7 @@ import type {
 } from '../types/fhir';
 import { PHCORE_PROFILE_URLS } from '../types/fhir';
 import { v4 as uuidv4 } from 'uuid';
-import { getDisplayName } from './common';
+import { getDisplayName, generateEncounterNarrative } from './common';
 
 // ============================================================================
 // Status Transition Validation
@@ -208,6 +208,13 @@ export function buildEncounterFromFormData(
       },
     ];
   }
+  
+  // Generate narrative text
+  encounter.text = generateEncounterNarrative({
+    patientName: getDisplayName(patient),
+    status: data.status,
+    classDisplay: data.classDisplay,
+  });
   
   return encounter;
 }

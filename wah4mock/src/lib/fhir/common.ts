@@ -12,6 +12,7 @@ import type {
   Coding,
   Patient,
   Practitioner,
+  Narrative,
 } from '../types/fhir';
 import {
   PHCORE_EXTENSION_URLS,
@@ -20,6 +21,89 @@ import {
 
 // Re-export constants for convenience
 export { PHCORE_EXTENSION_URLS, PHCORE_IDENTIFIER_SYSTEMS };
+
+// ============================================================================
+// Narrative Generation Helpers
+// ============================================================================
+
+/**
+ * Generate a FHIR Narrative (text) element for a Patient resource
+ */
+export function generatePatientNarrative(data: {
+  givenName: string;
+  familyName: string;
+  gender?: string;
+  birthDate?: string;
+  city?: string;
+  province?: string;
+  country?: string;
+}): Narrative {
+  const fullName = `${data.givenName} ${data.familyName}`;
+  const genderText = data.gender || 'unknown gender';
+  const birthText = data.birthDate ? `born on ${data.birthDate}` : '';
+  const locationParts = [data.city, data.province, data.country].filter(Boolean);
+  const locationText = locationParts.length > 0 ? `residing in ${locationParts.join(', ')}` : '';
+  
+  const parts = [`${fullName} is a ${genderText} patient`];
+  if (birthText) parts.push(birthText);
+  if (locationText) parts.push(locationText);
+  
+  return {
+    status: 'generated',
+    div: `<div xmlns="http://www.w3.org/1999/xhtml">${parts.join(', ')}.</div>`,
+  };
+}
+
+/**
+ * Generate a FHIR Narrative (text) element for a Practitioner resource
+ */
+export function generatePractitionerNarrative(data: {
+  givenName: string;
+  familyName: string;
+  gender?: string;
+  birthDate?: string;
+  phone?: string;
+  email?: string;
+  city?: string;
+  province?: string;
+}): Narrative {
+  const fullName = `Dr. ${data.givenName} ${data.familyName}`;
+  const genderText = data.gender ? `${data.gender}` : '';
+  const birthText = data.birthDate ? `born on ${data.birthDate}` : '';
+  const locationParts = [data.city, data.province].filter(Boolean);
+  const locationText = locationParts.length > 0 ? `resides at ${locationParts.join(', ')}` : '';
+  const contactParts: string[] = [];
+  if (data.phone) contactParts.push(`mobile at ${data.phone}`);
+  if (data.email) contactParts.push(`email at ${data.email}`);
+  const contactText = contactParts.length > 0 ? `Can be contacted via ${contactParts.join(' or ')}` : '';
+  
+  const parts = [`${fullName} is a ${genderText} practitioner`];
+  if (birthText) parts.push(birthText);
+  if (locationText) parts.push(locationText);
+  
+  let narrative = parts.join(', ') + '.';
+  if (contactText) narrative += ` ${contactText}.`;
+  
+  return {
+    status: 'generated',
+    div: `<div xmlns="http://www.w3.org/1999/xhtml">${narrative}</div>`,
+  };
+}
+
+/**
+ * Generate a FHIR Narrative (text) element for an Encounter resource
+ */
+export function generateEncounterNarrative(data: {
+  patientName: string;
+  status: string;
+  classDisplay: string;
+}): Narrative {
+  const statusText = data.status === 'finished' ? 'has been completed' : `is ${data.status}`;
+  return {
+    status: 'generated',
+    div: `<div xmlns="http://www.w3.org/1999/xhtml">A ${data.classDisplay.toLowerCase()} encounter for ${data.patientName} that ${statusText}.</div>`,
+  };
+}
 
 // ============================================================================
 // Extension Helpers

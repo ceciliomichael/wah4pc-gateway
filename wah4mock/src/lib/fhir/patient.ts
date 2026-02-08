@@ -20,6 +20,7 @@ import {
   getEmail,
   getAddressExtensionValue,
   buildPHCoreAddress,
+  generatePatientNarrative,
 } from './common';
 
 // ============================================================================
@@ -155,6 +156,31 @@ export function buildPatientFromFormData(data: PatientFormData): Patient {
       valueString: data.educationalAttainment,
     });
   }
+  
+  // Race extension (PH Core)
+  if (data.race) {
+    patient.extension!.push({
+      url: PHCORE_EXTENSION_URLS.race,
+      valueCodeableConcept: {
+        coding: [{
+          code: data.race,
+          system: 'http://terminology.hl7.org/CodeSystem/v3-Race',
+          display: data.race,
+        }],
+      },
+    });
+  }
+  
+  // Generate narrative text
+  patient.text = generatePatientNarrative({
+    givenName: data.givenName,
+    familyName: data.familyName,
+    gender: data.gender,
+    birthDate: data.birthDate,
+    city: data.cityMunicipality,
+    province: data.province,
+    country: data.country || 'PH',
+  });
   
   return patient;
 }

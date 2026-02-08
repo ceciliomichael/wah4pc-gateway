@@ -14,6 +14,11 @@ const VALID_RESOURCE_TYPES: FHIRResourceType[] = [
   'Practitioner',
   'Organization',
   'Encounter',
+  'Condition',
+  'Observation',
+  'AllergyIntolerance',
+  'Medication',
+  'Immunization',
 ];
 
 function isValidResourceType(type: string): type is FHIRResourceType {

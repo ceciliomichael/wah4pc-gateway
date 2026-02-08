@@ -12,6 +12,7 @@ import {
   getEmail,
   getAddressExtensionValue,
   buildPHCoreAddress,
+  generatePractitionerNarrative,
 } from './common';
 
 // ============================================================================
@@ -85,6 +86,18 @@ export function buildPractitionerFromFormData(data: PractitionerFormData): Pract
       })
     );
   }
+  
+  // Generate narrative text
+  practitioner.text = generatePractitionerNarrative({
+    givenName: data.givenName,
+    familyName: data.familyName,
+    gender: data.gender,
+    birthDate: data.birthDate,
+    phone: data.phone,
+    email: data.email,
+    city: data.cityMunicipality,
+    province: data.province,
+  });
   
   return practitioner;
 }

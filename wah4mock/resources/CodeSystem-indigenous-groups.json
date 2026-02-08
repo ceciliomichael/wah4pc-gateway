@@ -49,6 +49,10 @@
       "display": "Igorot"
     },
     {
+      "code": "igorot",
+      "display": "Igorot"
+    },
+    {
       "code": "Ilongots",
       "display": "Ilongots"
     },
@@ -143,5 +147,5 @@
   ],
   "experimental": true,
   "caseSensitive": true,
-  "count": 33
+  "count": 34
 }

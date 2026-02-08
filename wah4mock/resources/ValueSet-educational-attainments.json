@@ -6,5 +6,12 @@
   "title": "Educational Attainments",
   "description": "All categories of educational programs, courses, and attainment levels in the Philippines, based on the Philippine Standard Classification of Education (PSCED) published by the Philippine Statistics Authority (PSA)",
   "url": "urn://example.com/ph-core/fhir/ValueSet/educational-attainments",
-  "experimental": true
+  "experimental": true,
+  "compose": {
+    "include": [
+      {
+        "system": "urn://example.com/ph-core/fhir/CodeSystem/educational-attainment"
+      }
+    ]
+  }
 }

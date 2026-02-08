@@ -73,8 +73,8 @@
       "valueCodeableConcept": {
         "coding": [
           {
-            "code": "2036-2",
-            "system": "http://terminology.hl7.org/CodeSystem/v3-Race",
+            "code": "filipino",
+            "system": "urn://example.com/ph-core/fhir/CodeSystem/race",
             "display": "Filipino"
           }
         ]
@@ -97,7 +97,7 @@
         {
           "url": "urn://example.com/ph-core/fhir/StructureDefinition/city-municipality",
           "valueCoding": {
-            "code": "1380200000",
+            "code": "137601000",
             "system": "urn://example.com/ph-core/fhir/CodeSystem/PSGC",
             "display": "City of Las Piñas"
           }
@@ -105,7 +105,7 @@
         {
           "url": "urn://example.com/ph-core/fhir/StructureDefinition/city-municipality",
           "valueCoding": {
-            "code": "1380100000",
+            "code": "137501000",
             "system": "urn://example.com/ph-core/fhir/CodeSystem/PSGC",
             "display": "City of Caloocan"
           }
@@ -113,7 +113,7 @@
         {
           "url": "urn://example.com/ph-core/fhir/StructureDefinition/province",
           "valueCoding": {
-            "code": "0402100000",
+            "code": "042100000",
             "system": "urn://example.com/ph-core/fhir/CodeSystem/PSGC",
             "display": "Cavite"
           }
@@ -121,7 +121,7 @@
         {
           "url": "urn://example.com/ph-core/fhir/StructureDefinition/province",
           "valueCoding": {
-            "code": "0403400000",
+            "code": "043400000",
             "system": "urn://example.com/ph-core/fhir/CodeSystem/PSGC",
             "display": "Laguna"
           }
@@ -129,7 +129,7 @@
         {
           "url": "urn://example.com/ph-core/fhir/StructureDefinition/province",
           "valueCoding": {
-            "code": "0405800000",
+            "code": "045800000",
             "system": "urn://example.com/ph-core/fhir/CodeSystem/PSGC",
             "display": "Rizal"
           }
@@ -137,7 +137,7 @@
         {
           "url": "urn://example.com/ph-core/fhir/StructureDefinition/province",
           "valueCoding": {
-            "code": "1704000000",
+            "code": "174000000",
             "system": "urn://example.com/ph-core/fhir/CodeSystem/PSGC",
             "display": "Marinduque"
           }
@@ -145,7 +145,7 @@
         {
           "url": "urn://example.com/ph-core/fhir/StructureDefinition/province",
           "valueCoding": {
-            "code": "0402100000",
+            "code": "042100000",
             "system": "urn://example.com/ph-core/fhir/CodeSystem/PSGC",
             "display": "Cavite"
           }
@@ -153,7 +153,7 @@
         {
           "url": "urn://example.com/ph-core/fhir/StructureDefinition/province",
           "valueCoding": {
-            "code": "1705100000",
+            "code": "175100000",
             "system": "urn://example.com/ph-core/fhir/CodeSystem/PSGC",
             "display": "Occidental Mindoro"
           }

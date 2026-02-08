@@ -9,6 +9,7 @@ services:
       - ./log:/app/log
     environment:
       - SERVER_PORT=3040
+      - SERVER_BASE_URL=https://wah4pc.echosphere.cfd
       - LOGGING_LEVEL=info
     restart: always
     networks:

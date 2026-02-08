@@ -6,6 +6,32 @@
 import { z } from 'zod';
 
 // ============================================================================
+// Custom Validators
+// ============================================================================
+
+/**
+ * Validates transaction IDs which can be either:
+ * - Pure UUID: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ * - Prefixed UUID: "txn_a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+ */
+const transactionIdValidator = z.string().refine(
+  (val) => {
+    // Check if it's a pure UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (uuidRegex.test(val)) return true;
+    
+    // Check if it's a prefixed UUID (txn_...)
+    if (val.startsWith('txn_')) {
+      const withoutPrefix = val.slice(4);
+      return uuidRegex.test(withoutPrefix);
+    }
+    
+    return false;
+  },
+  { message: 'Invalid transaction ID format (expected UUID or txn_UUID)' }
+);
+
+// ============================================================================
 // Identifier Schema (FHIR-compatible)
 // ============================================================================
 
@@ -22,7 +48,7 @@ export type Identifier = z.infer<typeof IdentifierSchema>;
 // ============================================================================
 
 export const ProcessQueryPayloadSchema = z.object({
-  transactionId: z.string().uuid(),
+  transactionId: transactionIdValidator,
   requesterId: z.string().uuid(),
   identifiers: z.array(IdentifierSchema).min(1),
   resourceType: z.string(),
@@ -51,7 +77,7 @@ export const TransactionStatusSchema = z.enum([
 export type TransactionStatus = z.infer<typeof TransactionStatusSchema>;
 
 export const ReceiveResultsPayloadSchema = z.object({
-  transactionId: z.string().uuid(),
+  transactionId: transactionIdValidator,
   status: TransactionStatusSchema,
   data: z.record(z.string(), z.unknown()).optional(),
 });
@@ -63,7 +89,7 @@ export type ReceiveResultsPayload = z.infer<typeof ReceiveResultsPayloadSchema>;
 // ============================================================================
 
 export const GatewayResponseSchema = z.object({
-  transactionId: z.string().uuid(),
+  transactionId: transactionIdValidator,
   status: TransactionStatusSchema,
   data: z.record(z.string(), z.unknown()).optional(),
 });

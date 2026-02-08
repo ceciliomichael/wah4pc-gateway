@@ -20,6 +20,7 @@ type ServerConfig struct {
 }
 
 type JavaValidatorConfig struct {
+	Host     string `yaml:"host"`
 	Port     string `yaml:"port"`
 	JarPath  string `yaml:"jar_path"`
 	JavaPath string `yaml:"java_path"`
@@ -48,6 +49,7 @@ func Load() *Config {
 			Port: "8080",
 		},
 		JavaValidator: JavaValidatorConfig{
+			Host:     "localhost",
 			Port:     "9090",
 			JarPath:  "validator_cli.jar",
 			JavaPath: "java",
@@ -101,7 +103,7 @@ func (c *Config) GetServerAddr() string {
 }
 
 func (c *Config) GetJavaInternalAddr() string {
-	return "http://localhost:" + c.JavaValidator.Port
+	return "http://" + c.JavaValidator.Host + ":" + c.JavaValidator.Port
 }
 
 func (c *Config) GetJavaInternalPortInt() int {

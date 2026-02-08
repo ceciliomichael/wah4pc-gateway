@@ -6,6 +6,7 @@ server:
 
 # Java Validator Settings
 java_validator:
+  host: "localhost"      # Host for the Java validator (localhost for Docker, or external URL)
   port: "9090"           # Internal port for the Java validator process
   jar_path: "validator_cli.jar"  # Path to the FHIR validator JAR file
   java_path: "java"      # Java executable (use full path if not in PATH)

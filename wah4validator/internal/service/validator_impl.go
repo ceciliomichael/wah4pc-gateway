@@ -31,7 +31,7 @@ func NewValidatorService(cfg *config.Config, log *logger.Logger) ValidatorServic
 func (s *validatorServiceImpl) Start(ctx context.Context) error {
 	args := []string{
 		"-jar", s.cfg.JavaValidator.JarPath,
-		"-server", s.cfg.JavaValidator.Port,
+		"server", s.cfg.JavaValidator.Port,
 		"-version", s.cfg.Fhir.Version,
 	}
 
@@ -39,6 +39,10 @@ func (s *validatorServiceImpl) Start(ctx context.Context) error {
 	if s.cfg.JavaValidator.IgPath != "" {
 		args = append(args, "-ig", s.cfg.JavaValidator.IgPath)
 	}
+
+	// Add offline mode to prevent downloading packages during startup
+	// The validator will use only the packages already installed in the cache
+	args = append(args, "-tx", "n/a")
 
 	s.cmd = exec.CommandContext(ctx, s.cfg.JavaValidator.JavaPath, args...)
 

@@ -43,8 +43,9 @@ COPY --from=builder /app/public ./public
 RUN mkdir .next
 RUN chown nextjs:nodejs .next
 
-# Copy data directory (with permissions) to persist seed data
-COPY --from=builder --chown=nextjs:nodejs /app/data ./data
+# Create data directory with proper permissions
+# Volume mount will override this, but ensures directory exists
+RUN mkdir -p data && chown nextjs:nodejs data
 
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing

@@ -13,8 +13,15 @@ const DATA_DIR = path.join(process.cwd(), 'data');
 async function ensureDataDir(): Promise<void> {
   try {
     await fs.access(DATA_DIR);
-  } catch {
-    await fs.mkdir(DATA_DIR, { recursive: true });
+  } catch (error) {
+    console.log(`[DB] Creating data directory: ${DATA_DIR}`);
+    try {
+      await fs.mkdir(DATA_DIR, { recursive: true });
+      console.log(`[DB] Data directory created successfully`);
+    } catch (mkdirError) {
+      console.error(`[DB] Failed to create data directory:`, mkdirError);
+      throw mkdirError;
+    }
   }
 }
 

@@ -154,7 +154,10 @@ export async function POST(
       },
     });
   } catch (error) {
-    console.error('FHIR POST error:', error);
+    console.error('[FHIR POST] Error creating resource:', error);
+    console.error('[FHIR POST] Error stack:', error instanceof Error ? error.stack : 'N/A');
+    console.error('[FHIR POST] Error message:', error instanceof Error ? error.message : String(error));
+    
     return NextResponse.json(
       {
         resourceType: 'OperationOutcome',
@@ -162,7 +165,7 @@ export async function POST(
           {
             severity: 'error',
             code: 'exception',
-            diagnostics: 'Internal server error',
+            diagnostics: error instanceof Error ? error.message : 'Internal server error',
           },
         ],
       },

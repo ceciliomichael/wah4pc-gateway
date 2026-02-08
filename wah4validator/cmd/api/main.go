@@ -63,16 +63,11 @@ func main() {
 
 	// 4. Setup Handlers & Middleware
 	proxyHandler := handler.NewProxyHandler(validator)
-	frontendHandler := handler.NewFrontendHandler("public", proxyHandler)
 	authHandler := handler.NewAuthHandler(authService, cfg)
 	authMiddleware := middleware.NewAuthMiddleware(authService)
 
 	// 5. Setup Router
 	mux := http.NewServeMux()
-
-	// Frontend & Public API (Proxied)
-	// This handles static files and /api/validate
-	mux.Handle("/", frontendHandler)
 
 	// Protected Routes
 	mux.Handle("/validateResource", authMiddleware.RequireApiKey(proxyHandler))

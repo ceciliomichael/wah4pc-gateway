@@ -2,7 +2,7 @@
 
 # HTTP Server Settings
 server:
-  port: "8080"  # Port for the combined Go API + Frontend server
+  port: "3041"  # Port for the Go API server
 
 # Java Validator Settings
 java_validator:

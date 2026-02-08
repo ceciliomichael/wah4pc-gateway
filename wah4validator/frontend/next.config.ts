@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: 'export',
+  // Remove static export - we'll run as a standalone Next.js server
   images: { unoptimized: true },
 };
 

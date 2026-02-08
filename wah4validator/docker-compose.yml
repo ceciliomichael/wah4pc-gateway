@@ -1,27 +1,42 @@
 version: '3.8'
 
 services:
-  wah4validator:
+  validator-api:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: wah4validator
+    container_name: wah4validator-api
     ports:
       - "3041:3041"
     environment:
-      # Override config.yaml settings via environment variables if needed
       - SERVER_PORT=3041
       - JAVA_VALIDATOR_PORT=9090
       - FHIR_VERSION=4.0.1
     volumes:
-      # Mount config for easy editing without rebuild
       - ./config.yaml:/app/config.yaml:ro
-      # Optionally mount resources if they change frequently
-      # - ./resources:/app/resources:ro
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3041/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
+
+  validator-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: wah4validator-frontend
+    ports:
+      - "3042:3042"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://validator-api:3041
+    depends_on:
+      - validator-api
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3042"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s

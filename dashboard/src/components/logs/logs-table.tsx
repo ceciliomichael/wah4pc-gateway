@@ -41,15 +41,14 @@ export function LogsTable({
   onSelectLog,
   loading = false,
 }: LogsTableProps) {
-  // Format time (HH:mm:ss.ms)
+  // Format time (e.g., "11:34 AM")
   const formatTime = (dateString: string): string => {
     const date = new Date(dateString);
     return date.toLocaleTimeString("en-US", {
-      hour12: false,
-      hour: "2-digit",
+      hour12: true,
+      hour: "numeric",
       minute: "2-digit",
-      second: "2-digit",
-    }) + "." + date.getMilliseconds().toString().padStart(3, "0");
+    });
   };
 
   // Empty state
@@ -69,60 +68,60 @@ export function LogsTable({
 
   return (
     <Card padding="none" className="h-full flex flex-col overflow-hidden">
-      <div className="overflow-auto flex-1">
-        <table className="w-full text-sm">
-          <thead className="sticky top-0 bg-slate-50 border-b border-slate-200 z-10">
-            <tr>
-              <th className="px-4 py-3 text-left font-medium text-slate-500 w-24">Time</th>
-              <th className="px-4 py-3 text-left font-medium text-slate-500 w-20">Method</th>
-              <th className="px-4 py-3 text-left font-medium text-slate-500">Path</th>
-              <th className="px-4 py-3 text-left font-medium text-slate-500 w-24">Status</th>
-              <th className="px-4 py-3 text-right font-medium text-slate-500 w-20">Dur.</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {logs.map((log) => (
-              <tr
-                key={log.id}
-                onClick={() => onSelectLog(log)}
-                className={clsx(
-                  "cursor-pointer transition-colors hover:bg-slate-50",
-                  selectedId === log.id ? "bg-primary-50 hover:bg-primary-50" : ""
-                )}
-              >
-                <td className="px-4 py-3 whitespace-nowrap text-slate-600 font-mono text-xs">
-                  {formatTime(log.timestamp)}
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap">
-                  <span className={clsx(
-                    "px-1.5 py-0.5 rounded text-[10px] font-bold",
-                    getMethodColor(log.method)
-                  )}>
-                    {formatMethod(log.method)}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-slate-700 truncate max-w-[200px]" title={log.url}>
-                  {log.url}
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap">
-                  <Badge variant={getStatusVariant(log.statusCode)} size="sm">
-                    {log.statusCode}
-                  </Badge>
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap text-right text-slate-500 text-xs">
-                  {log.durationMs}ms
-                </td>
-              </tr>
-            ))}
-            {loading && (
-              <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-slate-400">
-                  Loading logs...
-                </td>
-              </tr>
+      {/* Fixed Header */}
+      <div className="shrink-0 bg-slate-50 border-b border-slate-200">
+        <div className="grid grid-cols-[80px_70px_1fr_60px_70px] text-sm">
+          <div className="px-3 py-3 font-medium text-slate-500">Time</div>
+          <div className="px-3 py-3 font-medium text-slate-500">Method</div>
+          <div className="px-3 py-3 font-medium text-slate-500">Path</div>
+          <div className="px-3 py-3 font-medium text-slate-500">Status</div>
+          <div className="px-3 py-3 font-medium text-slate-500 text-right">Duration</div>
+        </div>
+      </div>
+      
+      {/* Scrollable Body */}
+      <div className="flex-1 overflow-y-auto min-h-0">
+        {logs.map((log) => (
+          <div
+            key={log.id}
+            onClick={() => onSelectLog(log)}
+            onKeyDown={(e) => e.key === "Enter" && onSelectLog(log)}
+            role="button"
+            tabIndex={0}
+            className={clsx(
+              "grid grid-cols-[80px_70px_1fr_60px_70px] text-sm cursor-pointer transition-colors hover:bg-slate-50 border-b border-slate-100",
+              selectedId === log.id ? "bg-primary-50 hover:bg-primary-50" : ""
             )}
-          </tbody>
-        </table>
+          >
+            <div className="px-3 py-2.5 whitespace-nowrap text-slate-600 font-mono text-xs">
+              {formatTime(log.timestamp)}
+            </div>
+            <div className="px-3 py-2.5 whitespace-nowrap">
+              <span className={clsx(
+                "px-1.5 py-0.5 rounded text-[10px] font-bold",
+                getMethodColor(log.method)
+              )}>
+                {formatMethod(log.method)}
+              </span>
+            </div>
+            <div className="px-3 py-2.5 text-slate-700 truncate" title={log.url}>
+              {log.url}
+            </div>
+            <div className="px-3 py-2.5 whitespace-nowrap">
+              <Badge variant={getStatusVariant(log.statusCode)} size="sm">
+                {log.statusCode}
+              </Badge>
+            </div>
+            <div className="px-3 py-2.5 whitespace-nowrap text-right text-slate-500 text-xs">
+              {log.durationMs}ms
+            </div>
+          </div>
+        ))}
+        {loading && (
+          <div className="px-4 py-8 text-center text-slate-400">
+            Loading logs...
+          </div>
+        )}
       </div>
     </Card>
   );

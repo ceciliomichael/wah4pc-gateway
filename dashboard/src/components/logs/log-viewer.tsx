@@ -68,48 +68,55 @@ export function LogViewer({ summary, date, onClose }: LogViewerProps) {
 
   return (
     <Card className="h-full flex flex-col overflow-hidden shadow-lg border-slate-200">
-      <CardHeader className="bg-slate-50 py-3 px-4 border-b border-slate-200">
-        <div className="flex items-center justify-between w-full">
-          <div className="flex items-center gap-3 overflow-hidden">
+      {/* Header with close button on top-right */}
+      <div className="bg-slate-50 py-3 px-4 border-b border-slate-200">
+        {/* Top row: Title and action buttons */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
             <Badge variant="default" className="font-mono text-xs shrink-0">
               {summary.id.slice(0, 8)}
             </Badge>
-            <div className="flex flex-col min-w-0">
-              <span className="font-medium text-sm text-slate-800 truncate" title={summary.url}>
-                {summary.method} {summary.url}
-              </span>
-              <span className="text-xs text-slate-500">
-                {new Date(summary.timestamp).toLocaleString()} • {summary.clientIp}
-              </span>
-            </div>
+            <span className="font-medium text-sm text-slate-800 truncate" title={summary.url}>
+              {summary.method} {summary.url}
+            </span>
           </div>
-          <div className="flex items-center gap-1 shrink-0 ml-2">
+          
+          {/* Action buttons - right aligned */}
+          <div className="flex items-center gap-1 shrink-0">
             <button
+              type="button"
               onClick={handleCopy}
               disabled={!detail}
-              className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-200 rounded-lg transition-colors"
+              className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50"
               title="Copy to clipboard"
             >
               {copied ? <LuCheck className="w-4 h-4 text-emerald-600" /> : <LuCopy className="w-4 h-4" />}
             </button>
             <button
+              type="button"
               onClick={handleDownload}
               disabled={!detail}
-              className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-200 rounded-lg transition-colors"
+              className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50"
               title="Download log file"
             >
               <LuDownload className="w-4 h-4" />
             </button>
             <button
+              type="button"
               onClick={onClose}
-              className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-200 rounded-lg transition-colors"
+              className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
               title="Close details"
             >
               <LuX className="w-4 h-4" />
             </button>
           </div>
         </div>
-      </CardHeader>
+        
+        {/* Meta info row */}
+        <p className="text-xs text-slate-500 mt-1.5 pl-0.5">
+          {new Date(summary.timestamp).toLocaleString()} • {summary.clientIp}
+        </p>
+      </div>
       
       <div className="flex-1 overflow-auto bg-slate-900 p-4 relative">
         {loading && (

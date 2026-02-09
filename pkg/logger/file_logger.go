@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -42,6 +43,18 @@ type DetailedLogEntry struct {
 	KeyID      string
 	Role       string
 	ProviderID string
+}
+
+// LogIndexEntry represents a summary of the log entry for indexing (JSONL)
+type LogIndexEntry struct {
+	ID         string    `json:"id"`
+	Timestamp  time.Time `json:"timestamp"`
+	Method     string    `json:"method"`
+	URL        string    `json:"url"`
+	StatusCode int       `json:"statusCode"`
+	DurationMs int64     `json:"durationMs"`
+	ClientIP   string    `json:"clientIp"`
+	KeyID      string    `json:"keyId,omitempty"`
 }
 
 // FileLogger handles asynchronous file-based logging with individual files per request
@@ -138,6 +151,33 @@ func (l *FileLogger) writeEntry(entry DetailedLogEntry) {
 	content := l.formatEntry(entry)
 	if _, err := file.WriteString(content); err != nil {
 		fmt.Fprintf(os.Stderr, "[AUDIT ERROR] Failed to write to %s: %v\n", filePath, err)
+	}
+
+	// Write to index.jsonl
+	indexEntry := LogIndexEntry{
+		ID:         entry.ID,
+		Timestamp:  entry.Timestamp,
+		Method:     entry.Method,
+		URL:        entry.URL,
+		StatusCode: entry.StatusCode,
+		DurationMs: entry.Duration.Milliseconds(),
+		ClientIP:   entry.RemoteAddr,
+		KeyID:      entry.KeyID,
+	}
+
+	indexBytes, err := json.Marshal(indexEntry)
+	if err == nil {
+		indexFilePath := filepath.Join(dirPath, "index.jsonl")
+		// Append to index file
+		f, err := os.OpenFile(indexFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "[AUDIT ERROR] Failed to open index file %s: %v\n", indexFilePath, err)
+		} else {
+			defer f.Close()
+			if _, err := f.Write(append(indexBytes, '\n')); err != nil {
+				fmt.Fprintf(os.Stderr, "[AUDIT ERROR] Failed to write to index file %s: %v\n", indexFilePath, err)
+			}
+		}
 	}
 }
 

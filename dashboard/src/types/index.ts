@@ -110,3 +110,27 @@ export interface DashboardStats {
   completedTransactions: number;
   failedTransactions: number;
 }
+
+// Log types matching Go backend
+export interface LogDate {
+  date: string;
+  count: number;
+  sizeBytes: number;
+}
+
+export interface LogSummary {
+  id: string;
+  timestamp: string;
+  method: string;
+  url: string;
+  statusCode: number;
+  durationMs: number;
+  clientIp: string;
+  keyId?: string;
+}
+
+export interface LogDetail {
+  id: string;
+  timestamp: string;
+  content: string;
+}

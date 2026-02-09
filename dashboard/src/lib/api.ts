@@ -7,6 +7,9 @@ import type {
   Transaction,
   ApiError,
   ApiResponse,
+  LogDate,
+  LogSummary,
+  LogDetail,
 } from "@/types";
 
 // Use Next.js API routes (relative path)
@@ -144,6 +147,13 @@ export const transactionApi = {
 
   getById: (id: string) =>
     fetchWithAuth<Transaction>(`/transactions/${id}`),
+};
+
+// Logs API - routes through Next.js API
+export const logsApi = {
+  getDates: async () => ensureArray(await fetchWithAuth<LogDate[]>("/logs/dates")),
+  getLogs: async (date: string) => ensureArray(await fetchWithAuth<LogSummary[]>(`/logs/${date}`)),
+  getLogDetail: (date: string, id: string) => fetchWithAuth<LogDetail>(`/logs/${date}/${id}`),
 };
 
 // Auth validation - test if key is valid via Next.js API route

@@ -49,22 +49,25 @@ func main() {
 	remoteValidator := validator.NewRemoteValidator(cfg.Validator.URL, cfg.Validator.APIKey)
 	log.Printf("Remote Validator: Configured to use %s", cfg.Validator.URL)
 
+	// Initialize audit logger (writes to log/YYYY-MM-DD/audit.log)
+	logBaseDir := "log"
+	auditLogger := logger.NewFileLogger(logBaseDir)
+	defer auditLogger.Close()
+
 	// Initialize services
 	providerService := service.NewProviderService(providerRepo)
 	gatewayService := service.NewGatewayService(txRepo, providerService, cfg.Server.BaseURL, remoteValidator)
 	apiKeyService := service.NewApiKeyService(apiKeyRepo, providerService)
+	logService := service.NewLogService(logBaseDir)
 
 	// Initialize handlers
 	providerHandler := handler.NewProviderHandler(providerService)
 	gatewayHandler := handler.NewGatewayHandler(gatewayService)
 	apiKeyHandler := handler.NewApiKeyHandler(apiKeyService)
-
-	// Initialize audit logger (writes to log/YYYY-MM-DD/audit.log)
-	auditLogger := logger.NewFileLogger("log")
-	defer auditLogger.Close()
+	logHandler := handler.NewLogHandler(logService)
 
 	// Initialize router with middleware
-	r := router.NewRouter(providerHandler, gatewayHandler, apiKeyHandler, apiKeyService, cfg.Security.MasterKey, auditLogger)
+	r := router.NewRouter(providerHandler, gatewayHandler, apiKeyHandler, logHandler, apiKeyService, cfg.Security.MasterKey, auditLogger)
 
 	// Start server
 	addr := cfg.Address()

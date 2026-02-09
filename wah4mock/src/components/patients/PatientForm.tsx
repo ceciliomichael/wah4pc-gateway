@@ -90,6 +90,7 @@ export function PatientForm({
   const [provinces, setProvinces] = useState<Option[]>([]);
   const [cities, setCities] = useState<Option[]>([]);
   const [barangays, setBarangays] = useState<Option[]>([]);
+  const [postalCodes, setPostalCodes] = useState<Option[]>([]);
   
   const [religions, setReligions] = useState<Option[]>([]);
   const [educationalAttainments, setEducationalAttainments] = useState<Option[]>([]);
@@ -186,6 +187,18 @@ export function PatientForm({
       .catch(console.error);
   }, [formData.cityMunicipality]);
 
+  // Cascade: City -> Postal Code
+  useEffect(() => {
+    if (!formData.cityMunicipality) {
+      setPostalCodes([]);
+      return;
+    }
+    fetch(`/api/terminologies/zip-codes?city=${formData.cityMunicipality}`)
+      .then(res => res.json())
+      .then(data => setPostalCodes(data.map((i: any) => ({ value: i.code, label: i.name }))))
+      .catch(console.error);
+  }, [formData.cityMunicipality]);
+
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) {
@@ -205,6 +218,7 @@ export function PatientForm({
         updates.barangay = '';
       } else if (name === 'cityMunicipality') {
         updates.barangay = '';
+        updates.postalCode = '';
       }
       
       return { ...prev, ...updates };
@@ -380,11 +394,14 @@ export function PatientForm({
                 disabled={!formData.cityMunicipality}
               />
 
-              <Input
+              <Select
                 label="Postal Code"
                 name="postalCode"
                 value={formData.postalCode}
                 onChange={handleChange}
+                options={postalCodes}
+                placeholder="Select Postal Code"
+                disabled={!formData.cityMunicipality}
               />
               <Input
                 label="Country"

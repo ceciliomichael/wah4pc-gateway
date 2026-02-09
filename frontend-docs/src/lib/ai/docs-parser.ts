@@ -143,16 +143,24 @@ export function extractJsxSection(pageContent: string, sectionId?: string): stri
     return null;
   }
 
-  // No section specified - try to get the first section
-  const firstSectionMatch = pageContent.match(/<section[^>]*>([\s\S]*?)<\/section>/);
-  if (firstSectionMatch) {
-    return firstSectionMatch[0];
+  // No section specified - we want the full content.
+
+  // 1. Try <article> (standard wrapper for our docs)
+  const articleMatch = pageContent.match(/<article[^>]*>([\s\S]*?)<\/article>/);
+  if (articleMatch) {
+    return articleMatch[0];
   }
 
-  // No sections found - extract content inside the main return statement
+  // 2. Fallback to return statement (full component content)
   const returnMatch = pageContent.match(/return\s*\(\s*([\s\S]*?)\s*\);?\s*\}/);
   if (returnMatch) {
     return returnMatch[1];
+  }
+
+  // 3. Last resort: try to find the first section
+  const firstSectionMatch = pageContent.match(/<section[^>]*>([\s\S]*?)<\/section>/);
+  if (firstSectionMatch) {
+    return firstSectionMatch[0];
   }
 
   return null;

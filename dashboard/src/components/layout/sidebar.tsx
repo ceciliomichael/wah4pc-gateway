@@ -7,6 +7,7 @@ import {
   LuBuilding2,
   LuKeyRound,
   LuArrowLeftRight,
+  LuFileText,
   LuLogOut,
   LuChevronLeft,
   LuX,
@@ -29,6 +30,7 @@ const navItems: NavItem[] = [
   { href: "/providers", label: "Providers", icon: LuBuilding2, description: "Healthcare providers" },
   { href: "/apikeys", label: "API Keys", icon: LuKeyRound, description: "Access credentials" },
   { href: "/transactions", label: "Transactions", icon: LuArrowLeftRight, description: "FHIR transfers" },
+  { href: "/logs", label: "System Logs", icon: LuFileText, description: "Audit trail" },
 ];
 
 interface SidebarProps {

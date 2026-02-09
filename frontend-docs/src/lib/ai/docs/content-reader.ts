@@ -161,7 +161,7 @@ function readResourcesOverviewPage(): string | null {
 
 /**
  * Reads the FULL content of a documentation page including ALL sections and data files.
- * This is used for comprehensive searching - it reads everything, not just one section.
+ * This returns CLEAN TEXT (Markdown), not raw code.
  *
  * @param pageId - The page identifier
  * @returns Complete page content including all sections and data file content
@@ -174,54 +174,72 @@ export function readFullPageContent(pageId: string): string | null {
     return null;
   }
 
-  const contentParts: string[] = [];
-
-  // Handle resources/[slug] pages - read directly from the individual resource file
+  // 1. Resources Sub-pages (already returns Markdown)
   if (normalizedPageId.startsWith("resources/")) {
     const slug = normalizedPageId.replace("resources/", "");
-    const resourceContent = readResourceFileContent(slug);
-    if (resourceContent) {
-      contentParts.push(resourceContent);
-    }
-  } else if (normalizedPageId === "resources") {
-    // Handle resources overview page - use robust path resolution (directory is "resources-data")
-    const indexPath = resolveDocsPath("resources", "resources-data", "index.ts");
-    if (indexPath) {
-      contentParts.push(fs.readFileSync(indexPath, "utf-8"));
-    }
-  } else {
-    // Standard page handling - use robust path resolution
-    const pageTsxPath = resolveDocsPath(normalizedPageId, "page.tsx");
-    if (pageTsxPath) {
-      contentParts.push(fs.readFileSync(pageTsxPath, "utf-8"));
-    }
+    return extractResourceContent(slug);
+  }
 
-    // Read the data.ts file if it exists
-    const dataTsPath = resolveDocsPath(normalizedPageId, "data.ts");
-    if (dataTsPath) {
-      contentParts.push(fs.readFileSync(dataTsPath, "utf-8"));
-    }
+  // 2. Resources Overview (already returns Markdown)
+  if (normalizedPageId === "resources") {
+    return readResourcesOverviewPage();
+  }
 
-    // For the API page, also read all endpoint definition files
-    if (normalizedPageId === "api") {
-      const endpointsDir = resolveDocsPath(normalizedPageId, "endpoints");
-      if (endpointsDir && fs.existsSync(endpointsDir)) {
-        const endpointFiles = fs.readdirSync(endpointsDir);
-        for (const file of endpointFiles) {
-          if (file.endsWith(".ts")) {
-            const filePath = path.join(endpointsDir, file);
-            contentParts.push(fs.readFileSync(filePath, "utf-8"));
+  // 3. Standard Pages (Architecture, Flow, API, etc.)
+  const pageTsxPath = resolveDocsPath(normalizedPageId, "page.tsx");
+  if (!pageTsxPath) {
+    return null;
+  }
+
+  const pageContent = fs.readFileSync(pageTsxPath, "utf-8");
+
+  // Read data.ts if it exists
+  let dataContent: string | null = null;
+  const dataTsPath = resolveDocsPath(normalizedPageId, "data.ts");
+  if (dataTsPath) {
+    dataContent = fs.readFileSync(dataTsPath, "utf-8");
+  }
+
+  // Parse the main page content (JSX -> Markdown)
+  // Passing undefined for sectionId to extract full content
+  let content = parsePageContent(pageContent, dataContent, undefined, true);
+
+  // 4. API Page Special Handling
+  // Extract endpoint information from the endpoints directory to append to the docs
+  if (normalizedPageId === "api") {
+    const endpointsDir = resolveDocsPath(normalizedPageId, "endpoints");
+    if (endpointsDir && fs.existsSync(endpointsDir)) {
+      const endpointFiles = fs.readdirSync(endpointsDir);
+      const endpointTexts: string[] = [];
+
+      for (const file of endpointFiles) {
+        if (file.endsWith(".ts")) {
+          const filePath = path.join(endpointsDir, file);
+          const fileContent = fs.readFileSync(filePath, "utf-8");
+          
+          // Simple extraction of endpoint definitions to avoid raw code
+          // Look for: { method: "...", path: "...", description: "..." }
+          const objectRegex = /\{\s*method:\s*["']([^"']+)["'][\s\S]*?path:\s*["']([^"']+)["'][\s\S]*?description:\s*["']([^"']+)["']/g;
+          
+          let match: RegExpExecArray | null;
+          while ((match = objectRegex.exec(fileContent)) !== null) {
+            const [, method, path, description] = match;
+            endpointTexts.push(`### ${method} ${path}\n\n${description.replace(/\\n/g, " ")}`);
           }
         }
+      }
+
+      if (endpointTexts.length > 0) {
+        content += "\n\n## Endpoints\n\n" + endpointTexts.join("\n\n");
       }
     }
   }
 
-  if (contentParts.length === 0) {
+  if (!content || content.trim().length === 0) {
     return null;
   }
 
-  return contentParts.join("\n\n");
+  return content;
 }
 
 /**

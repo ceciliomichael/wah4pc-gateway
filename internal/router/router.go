@@ -16,6 +16,7 @@ type Router struct {
 	providerHandler       *handler.ProviderHandler
 	gatewayHandler        *handler.GatewayHandler
 	apiKeyHandler         *handler.ApiKeyHandler
+	logHandler            *handler.LogHandler
 	webHandler            *handler.WebHandler
 	authMiddleware        *middleware.AuthMiddleware
 	rateLimitMiddleware   *middleware.RateLimitMiddleware
@@ -28,6 +29,7 @@ func NewRouter(
 	providerHandler *handler.ProviderHandler,
 	gatewayHandler *handler.GatewayHandler,
 	apiKeyHandler *handler.ApiKeyHandler,
+	logHandler *handler.LogHandler,
 	apiKeyService *service.ApiKeyService,
 	masterKey string,
 	auditLogger *logger.FileLogger,
@@ -46,6 +48,7 @@ func NewRouter(
 		providerHandler:       providerHandler,
 		gatewayHandler:        gatewayHandler,
 		apiKeyHandler:         apiKeyHandler,
+		logHandler:            logHandler,
 		webHandler:            webHandler,
 		authMiddleware:        authMW,
 		rateLimitMiddleware:   rateLimitMW,
@@ -81,6 +84,10 @@ func (r *Router) registerRoutes() {
 	// Transaction routes
 	r.mux.HandleFunc("/api/v1/transactions", r.handleTransactions)
 	r.mux.HandleFunc("/api/v1/transactions/", r.handleTransactionByID)
+
+	// Log routes
+	r.mux.HandleFunc("/api/v1/logs/dates", r.handleLogDates)
+	r.mux.HandleFunc("/api/v1/logs/", r.handleLogs)
 }
 
 // Handler returns the HTTP handler with middleware chain
@@ -216,6 +223,44 @@ func (r *Router) handleTransactionByID(w http.ResponseWriter, req *http.Request)
 		return
 	}
 	r.gatewayHandler.GetTransaction(w, req)
+}
+
+// handleLogDates routes /api/v1/logs/dates
+func (r *Router) handleLogDates(w http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	// Verify admin role (logs contain sensitive info)
+	if middleware.GetRoleFromContext(req.Context()) != "admin" {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
+	r.logHandler.GetDates(w, req)
+}
+
+// handleLogs routes /api/v1/logs/{date} and /api/v1/logs/{date}/{id}
+func (r *Router) handleLogs(w http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	// Verify admin role
+	if middleware.GetRoleFromContext(req.Context()) != "admin" {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
+
+	parts := strings.Split(req.URL.Path, "/")
+	// Expected: /api/v1/logs/{date} (len 5) or /api/v1/logs/{date}/{id} (len 6)
+	
+	if len(parts) == 5 {
+		r.logHandler.GetLogs(w, req)
+	} else if len(parts) == 6 {
+		r.logHandler.GetLogDetail(w, req)
+	} else {
+		http.NotFound(w, req)
+	}
 }
 
 // corsMiddleware adds CORS headers for development

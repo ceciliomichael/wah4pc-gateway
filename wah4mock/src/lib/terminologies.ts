@@ -31,32 +31,39 @@ export const OCCUPATIONS: CodingOption[] = [
 // ============================================================================
 // Educational Attainment
 // urn://example.com/ph-core/fhir/CodeSystem/educational-attainment
+// Codes must match CodeSystem-educational-attainment.json
 // ============================================================================
 export const EDUCATIONAL_ATTAINMENT: CodingOption[] = [
-  { code: '0', display: 'No Grade Completed' },
-  { code: '1', display: 'Preschool' },
-  { code: '2', display: 'Elementary' },
-  { code: '3', display: 'High School (Old Curriculum)' },
-  { code: '4', display: 'Junior High School (K-12)' },
-  { code: '5', display: 'Senior High School (K-12)' },
-  { code: '6', display: 'Post-Secondary Non-Tertiary' },
-  { code: '7', display: 'College Undergraduate' },
-  { code: '8', display: 'Academic Degree Holder' },
-  { code: '9', display: 'Post-Baccalaureate' },
+  { code: 'no-grade', display: 'No Grade Completed' },
+  { code: 'elementary-undergraduate', display: 'Elementary Undergraduate' },
+  { code: 'elementary-graduate', display: 'Elementary Graduate' },
+  { code: 'highschool-undergraduate', display: 'High School Undergraduate' },
+  { code: 'highschool-graduate', display: 'High School Graduate' },
+  { code: 'vocational', display: 'Vocational/Technical' },
+  { code: 'college-undergraduate', display: 'College Undergraduate' },
+  { code: 'college-graduate', display: 'College Graduate' },
+  { code: 'postgraduate', display: 'Post Graduate' },
+  { code: 'masters', display: "Master's Degree" },
+  { code: 'doctoral', display: 'Doctoral Degree' },
+  { code: 'other', display: 'Other' },
 ];
 
 // ============================================================================
 // Religious Affiliation
-// http://terminology.hl7.org/ValueSet/v3-ReligiousAffiliation
+// http://terminology.hl7.org/CodeSystem/v3-ReligiousAffiliation
+// Display values must match CodeSystem-religion.json
 // ============================================================================
 export const RELIGIONS: CodingOption[] = [
-  { code: '1013', display: 'Roman Catholic Church' },
+  { code: '1013', display: 'Roman Catholic' },
   { code: '1020', display: 'Iglesia ni Cristo' },
   { code: '1023', display: 'Islam' },
   { code: '1014', display: 'Seventh Day Adventist' },
   { code: '1011', display: 'Born Again Christian' },
   { code: '1006', display: 'Baptist' },
   { code: '1027', display: 'Jehovah\'s Witness' },
+  { code: '1036', display: 'Methodist' },
+  { code: '1003', display: 'Aglipayan' },
+  { code: '1019', display: 'Evangelical' },
   { code: '0000', display: 'None / Atheist' },
 ];
 

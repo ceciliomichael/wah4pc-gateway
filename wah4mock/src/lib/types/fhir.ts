@@ -430,8 +430,11 @@ export interface PatientFormData {
   // Address (PHCore)
   addressLine?: string;
   barangay?: string;
+  barangayName?: string;
   cityMunicipality?: string;
+  cityMunicipalityName?: string;
   province?: string;
+  provinceName?: string;
   region?: string;
   postalCode?: string;
   country?: string;

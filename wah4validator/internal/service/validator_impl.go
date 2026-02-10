@@ -31,7 +31,7 @@ func NewValidatorService(cfg *config.Config, log *logger.Logger) ValidatorServic
 func (s *validatorServiceImpl) Start(ctx context.Context) error {
 	args := []string{
 		"-jar", s.cfg.JavaValidator.JarPath,
-		"server", s.cfg.JavaValidator.Port,
+		"-server", s.cfg.JavaValidator.Port,
 		"-version", s.cfg.Fhir.Version,
 	}
 

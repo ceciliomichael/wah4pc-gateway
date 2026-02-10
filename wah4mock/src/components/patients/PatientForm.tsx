@@ -90,7 +90,8 @@ export function PatientForm({
   const [provinces, setProvinces] = useState<Option[]>([]);
   const [cities, setCities] = useState<Option[]>([]);
   const [barangays, setBarangays] = useState<Option[]>([]);
-  const [postalCodes, setPostalCodes] = useState<Option[]>([]);
+  // Tracks when the selected "province" is actually a city (e.g. NCR cities)
+  const [provinceIsCity, setProvinceIsCity] = useState(false);
   
   const [religions, setReligions] = useState<Option[]>([]);
   const [educationalAttainments, setEducationalAttainments] = useState<Option[]>([]);
@@ -150,30 +151,52 @@ export function PatientForm({
     fetchInitialData();
   }, []);
 
-  // Cascade: Region -> Province
+  // Cascade: Region -> Province (or City for NCR-style regions)
   useEffect(() => {
     if (!formData.region) {
       setProvinces([]);
+      setProvinceIsCity(false);
       return;
     }
     fetch(`/api/terminologies/psgc?level=province&parent=${formData.region}`)
       .then(res => res.json())
-      .then(data => setProvinces(data.map((i: any) => ({ value: i.code, label: i.name }))))
+      .then((data: Array<{ code: string; name: string; level?: string }>) => {
+        // Detect if the API returned cities instead of provinces (e.g. NCR)
+        const hasOnlyCities = data.length > 0 && data.every(i => i.level === 'city');
+        setProvinceIsCity(hasOnlyCities);
+        setProvinces(data.map(i => ({ value: i.code, label: i.name })));
+      })
       .catch(console.error);
   }, [formData.region]);
 
   // Cascade: Province -> City/Municipality
+  // When provinceIsCity (NCR-style), the selected "province" IS the city,
+  // so auto-set cityMunicipality and load barangays directly.
   useEffect(() => {
     if (!formData.province) {
       setCities([]);
       return;
     }
-    // Note: PSGC API handles finding children of province
+
+    if (provinceIsCity) {
+      // The "province" is actually a city — auto-fill city with same value
+      const selectedLabel = provinces.find(p => p.value === formData.province)?.label || '';
+      setCities([{ value: formData.province, label: selectedLabel }]);
+      setFormData(prev => ({ 
+        ...prev, 
+        cityMunicipality: formData.province,
+        cityMunicipalityName: selectedLabel 
+      }));
+      return;
+    }
+
     fetch(`/api/terminologies/psgc?parent=${formData.province}`)
       .then(res => res.json())
-      .then(data => setCities(data.map((i: any) => ({ value: i.code, label: i.name }))))
+      .then((data: Array<{ code: string; name: string }>) =>
+        setCities(data.map(i => ({ value: i.code, label: i.name })))
+      )
       .catch(console.error);
-  }, [formData.province]);
+  }, [formData.province, provinceIsCity]);
 
   // Cascade: City -> Barangay
   useEffect(() => {
@@ -183,21 +206,13 @@ export function PatientForm({
     }
     fetch(`/api/terminologies/psgc?parent=${formData.cityMunicipality}`)
       .then(res => res.json())
-      .then(data => setBarangays(data.map((i: any) => ({ value: i.code, label: i.name }))))
+      .then((data: Array<{ code: string; name: string }>) =>
+        setBarangays(data.map(i => ({ value: i.code, label: i.name })))
+      )
       .catch(console.error);
   }, [formData.cityMunicipality]);
 
-  // Cascade: City -> Postal Code
-  useEffect(() => {
-    if (!formData.cityMunicipality) {
-      setPostalCodes([]);
-      return;
-    }
-    fetch(`/api/terminologies/zip-codes?city=${formData.cityMunicipality}`)
-      .then(res => res.json())
-      .then(data => setPostalCodes(data.map((i: any) => ({ value: i.code, label: i.name }))))
-      .catch(console.error);
-  }, [formData.cityMunicipality]);
+
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -208,17 +223,31 @@ export function PatientForm({
     setFormData((prev) => {
       const updates: any = { [name]: type === 'checkbox' ? checked : value };
       
+      // Look up display names for address fields
+      if (name === 'province') {
+        updates.provinceName = provinces.find(o => o.value === value)?.label;
+      } else if (name === 'cityMunicipality') {
+        updates.cityMunicipalityName = cities.find(o => o.value === value)?.label;
+      } else if (name === 'barangay') {
+        updates.barangayName = barangays.find(o => o.value === value)?.label;
+      }
+      
       // Clear dependent fields when parent changes
       if (name === 'region') {
         updates.province = '';
+        updates.provinceName = '';
         updates.cityMunicipality = '';
+        updates.cityMunicipalityName = '';
         updates.barangay = '';
+        updates.barangayName = '';
       } else if (name === 'province') {
         updates.cityMunicipality = '';
+        updates.cityMunicipalityName = '';
         updates.barangay = '';
+        updates.barangayName = '';
       } else if (name === 'cityMunicipality') {
         updates.barangay = '';
-        updates.postalCode = '';
+        updates.barangayName = '';
       }
       
       return { ...prev, ...updates };
@@ -381,7 +410,7 @@ export function PatientForm({
                 onChange={handleChange}
                 options={cities}
                 placeholder="Select City/Municipality"
-                disabled={!formData.province}
+                disabled={!formData.province || provinceIsCity}
               />
 
               <Select
@@ -394,14 +423,12 @@ export function PatientForm({
                 disabled={!formData.cityMunicipality}
               />
 
-              <Select
+              <Input
                 label="Postal Code"
                 name="postalCode"
                 value={formData.postalCode}
                 onChange={handleChange}
-                options={postalCodes}
-                placeholder="Select Postal Code"
-                disabled={!formData.cityMunicipality}
+                placeholder="Enter Postal Code"
               />
               <Input
                 label="Country"

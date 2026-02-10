@@ -25,6 +25,21 @@ import {
 } from './common';
 import { OCCUPATIONS, EDUCATIONAL_ATTAINMENT, RELIGIONS } from '../terminologies';
 
+// Marital status code → display mapping (v3-MaritalStatus CodeSystem)
+const MARITAL_STATUS_DISPLAY: Record<string, string> = {
+  A: 'Annulled',
+  D: 'Divorced',
+  I: 'Interlocutory',
+  L: 'Legally Separated',
+  M: 'Married',
+  P: 'Polygamous',
+  S: 'Never Married',
+  T: 'Domestic Partner',
+  U: 'Unmarried',
+  W: 'Widowed',
+  UNK: 'Unknown',
+};
+
 // ============================================================================
 // Patient Identifier Helpers
 // ============================================================================
@@ -80,8 +95,11 @@ export function buildPatientFromFormData(data: PatientFormData): Patient {
       buildPHCoreAddress({
         line: data.addressLine,
         barangay: data.barangay,
+        barangayName: data.barangayName,
         cityMunicipality: data.cityMunicipality,
+        cityMunicipalityName: data.cityMunicipalityName,
         province: data.province,
+        provinceName: data.provinceName,
         postalCode: data.postalCode,
         country: data.country || 'PH',
       })
@@ -93,8 +111,9 @@ export function buildPatientFromFormData(data: PatientFormData): Patient {
     patient.maritalStatus = {
       coding: [
         {
-          system: 'http://hl7.org/fhir/ValueSet/marital-status',
+          system: 'http://terminology.hl7.org/CodeSystem/v3-MaritalStatus',
           code: data.maritalStatus,
+          display: MARITAL_STATUS_DISPLAY[data.maritalStatus] || data.maritalStatus,
         },
       ],
     };
@@ -129,7 +148,7 @@ export function buildPatientFromFormData(data: PatientFormData): Patient {
       url: PHCORE_EXTENSION_URLS.religion,
       valueCodeableConcept: {
         coding: [{ 
-          system: 'http://terminology.hl7.org/ValueSet/v3-ReligiousAffiliation',
+          system: 'http://terminology.hl7.org/CodeSystem/v3-ReligiousAffiliation',
           code: data.religion, 
           display: religion?.display || data.religion 
         }],

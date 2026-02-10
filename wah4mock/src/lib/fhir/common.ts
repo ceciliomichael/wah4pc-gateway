@@ -344,8 +344,11 @@ export function formatAddress(address: Address | undefined): string {
 export function buildPHCoreAddress(data: {
   line?: string;
   barangay?: string;
+  barangayName?: string;
   cityMunicipality?: string;
+  cityMunicipalityName?: string;
   province?: string;
+  provinceName?: string;
   postalCode?: string;
   country?: string;
 }): Address {
@@ -369,8 +372,8 @@ export function buildPHCoreAddress(data: {
   
   // PHCore extensions
   if (data.barangay) {
-    const barangayName = getLocationName(data.barangay, 'barangay');
-    // If input is a code (numeric), use it as code, otherwise treat as text (though strict validation requires code)
+    // Use provided display name or fallback to lookup/code
+    const barangayName = data.barangayName || getLocationName(data.barangay, 'barangay');
     const isCode = /^\d+$/.test(data.barangay);
     
     address.extension!.push({
@@ -384,7 +387,7 @@ export function buildPHCoreAddress(data: {
   }
   
   if (data.cityMunicipality) {
-    const cityName = getLocationName(data.cityMunicipality, 'city');
+    const cityName = data.cityMunicipalityName || getLocationName(data.cityMunicipality, 'city');
     const isCode = /^\d+$/.test(data.cityMunicipality);
 
     address.extension!.push({
@@ -399,7 +402,7 @@ export function buildPHCoreAddress(data: {
   }
   
   if (data.province) {
-    const provinceName = getLocationName(data.province, 'province');
+    const provinceName = data.provinceName || getLocationName(data.province, 'province');
     const isCode = /^\d+$/.test(data.province);
 
     address.extension!.push({

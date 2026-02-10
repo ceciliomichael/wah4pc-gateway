@@ -1,7 +1,7 @@
 {
   "resourceType": "CodeSystem",
   "id": "religion",
-  "url": "http://terminology.hl7.org/CodeSystem/v3-ReligiousAffiliation",
+  "url": "urn://example.com/ph-core/fhir/CodeSystem/religion",
   "name": "ReligiousAffiliation",
   "title": "Religious Affiliation",
   "status": "active",

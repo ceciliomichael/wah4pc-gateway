@@ -37,7 +37,14 @@ ENV NEXT_TELEMETRY_DISABLED 1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
+# Install su-exec
+RUN apk add --no-cache su-exec
+
 COPY --from=builder /app/public ./public
+
+# Copy and setup entrypoint
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Set the correct permission for prerender cache
 RUN mkdir .next
@@ -52,7 +59,8 @@ RUN mkdir -p data && chown nextjs:nodejs data
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-USER nextjs
+# User switch handled by entrypoint
+ENTRYPOINT ["docker-entrypoint.sh"]
 
 EXPOSE 3015
 

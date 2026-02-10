@@ -1,181 +1,41 @@
-import type { ResourceDefinition } from "./types";
+# PH Core Patient
 
-export const patientResource: ResourceDefinition = {
-  id: "patient",
-  name: "Patient",
-  title: "PH Core Patient",
-  description:
-    "Captures key demographic and administrative information about individuals receiving care or other health-related services. This profile extends the base FHIR Patient resource with Philippine-specific extensions for indigenous peoples, nationality, religion, occupation, race, and educational attainment.",
-  profileUrl: "urn://example.com/ph-core/fhir/StructureDefinition/ph-core-patient",
-  fhirVersion: "4.0.1",
-  baseDefinition: "http://hl7.org/fhir/StructureDefinition/Patient",
-  fields: [
-    {
-      name: "meta.profile",
-      path: "Patient.meta.profile",
-      type: "canonical[]",
-      description: "Must include the PH Core Patient profile URL",
-      required: true,
-    },
-    {
-      name: "extension:indigenousPeople",
-      path: "Patient.extension",
-      type: "Extension",
-      description: "Indicates whether the patient is an indigenous person (boolean value)",
-      required: true,
-      pattern: "urn://example.com/ph-core/fhir/StructureDefinition/indigenous-people",
-    },
-    {
-      name: "extension:nationality",
-      path: "Patient.extension",
-      type: "Extension",
-      description: "Patient's nationality using ISO 3166 country codes",
-      required: false,
-      pattern: "http://hl7.org/fhir/StructureDefinition/patient-nationality",
-    },
-    {
-      name: "extension:religion",
-      path: "Patient.extension",
-      type: "Extension",
-      description: "Patient's religious affiliation",
-      required: false,
-      pattern: "http://hl7.org/fhir/StructureDefinition/patient-religion",
-    },
-    {
-      name: "extension:indigenousGroup",
-      path: "Patient.extension",
-      type: "Extension",
-      description: "Specific indigenous group if patient is indigenous",
-      required: false,
-      pattern: "urn://example.com/ph-core/fhir/StructureDefinition/indigenous-group",
-      binding: {
-        strength: "extensible",
-        valueSet: "urn://example.com/ph-core/fhir/CodeSystem/indigenous-groups",
-        displayName: "Indigenous Groups CodeSystem",
-      },
-    },
-    {
-      name: "extension:occupation",
-      path: "Patient.extension",
-      type: "Extension",
-      description: "Patient's occupation using PSOC codes",
-      required: false,
-      pattern: "urn://example.com/ph-core/fhir/StructureDefinition/occupation",
-      binding: {
-        strength: "extensible",
-        valueSet: "urn://example.com/ph-core/fhir/ValueSet/occupational-classifications",
-        displayName: "PSOC Occupational Classifications",
-      },
-    },
-    {
-      name: "extension:race",
-      path: "Patient.extension",
-      type: "Extension",
-      description: "Patient's race",
-      required: false,
-      pattern: "urn://example.com/ph-core/fhir/StructureDefinition/race",
-      binding: {
-        strength: "extensible",
-        valueSet: "urn://example.com/ph-core/fhir/CodeSystem/race",
-        displayName: "Race CodeSystem",
-      },
-    },
-    {
-      name: "extension:educationalAttainment",
-      path: "Patient.extension",
-      type: "Extension",
-      description: "Patient's highest educational attainment using PSCED codes",
-      required: false,
-      pattern: "urn://example.com/ph-core/fhir/StructureDefinition/educational-attainment",
-      binding: {
-        strength: "extensible",
-        valueSet: "urn://example.com/ph-core/fhir/ValueSet/educational-attainments",
-        displayName: "PSCED Educational Attainments",
-      },
-    },
-    {
-      name: "identifier:PHCorePhilHealthID",
-      path: "Patient.identifier",
-      type: "Identifier",
-      description: "PhilHealth ID - system must match the pattern when provided",
-      required: false,
-      pattern: "http://philhealth.gov.ph/fhir/Identifier/philhealth-id",
-    },
-    {
-      name: "identifier:PHCorePddRegistration",
-      path: "Patient.identifier",
-      type: "Identifier",
-      description: "PhilHealth Dialysis Database Registration Number",
-      required: false,
-      pattern: "http://doh.gov.ph/fhir/Identifier/pdd-registration",
-    },
-    {
-      name: "address",
-      path: "Patient.address",
-      type: "Address",
-      description: "Patient address using PH Core Address profile with PSGC extensions",
-      required: false,
-      referenceTarget: ["urn://example.com/ph-core/fhir/StructureDefinition/ph-core-address"],
-    },
-    {
-      name: "maritalStatus",
-      path: "Patient.maritalStatus",
-      type: "CodeableConcept",
-      description: "Patient's marital status",
-      required: false,
-      binding: {
-        strength: "required",
-        valueSet: "http://hl7.org/fhir/ValueSet/marital-status",
-        displayName: "Marital Status Codes",
-      },
-    },
-    {
-      name: "contact.relationship",
-      path: "Patient.contact.relationship",
-      type: "CodeableConcept",
-      description: "Relationship of contact to patient",
-      required: false,
-      binding: {
-        strength: "required",
-        valueSet: "http://hl7.org/fhir/ValueSet/relatedperson-relationshiptype",
-        displayName: "Related Person Relationship Type",
-      },
-    },
-    {
-      name: "name",
-      path: "Patient.name",
-      type: "HumanName[]",
-      description: "Patient's name(s) - given and family names",
-      required: false,
-    },
-    {
-      name: "gender",
-      path: "Patient.gender",
-      type: "code",
-      description: "Patient's administrative gender (male | female | other | unknown)",
-      required: false,
-      binding: {
-        strength: "required",
-        valueSet: "http://hl7.org/fhir/ValueSet/administrative-gender",
-        displayName: "Administrative Gender",
-      },
-    },
-    {
-      name: "birthDate",
-      path: "Patient.birthDate",
-      type: "date",
-      description: "Patient's date of birth (YYYY-MM-DD format)",
-      required: false,
-    },
-    {
-      name: "active",
-      path: "Patient.active",
-      type: "boolean",
-      description: "Whether the patient record is active",
-      required: false,
-    },
-  ],
-  jsonTemplate: `{
+Patient resource schema with required extensions (indigenousPeople), PH Core Address profile, PhilHealth ID identifiers, and complete JSON template
+
+## Profile URL
+
+**Required in `meta.profile`:**
+`urn://example.com/ph-core/fhir/StructureDefinition/ph-core-patient`
+
+## Required Fields
+
+- **`meta.profile`** (canonical[]): Must include the PH Core Patient profile URL
+- **`extension:indigenousPeople`** (Extension): Indicates whether the patient is an indigenous person (boolean value)
+
+## Optional Fields
+
+- **`extension:nationality`** (Extension): Patient
+- **`extension:religion`** (Extension): Patient
+- **`extension:indigenousGroup`** (Extension): Specific indigenous group if patient is indigenous
+- **`extension:occupation`** (Extension): Patient
+- **`extension:race`** (Extension): Patient
+- **`extension:educationalAttainment`** (Extension): Patient
+- **`identifier:PHCorePhilHealthID`** (Identifier): PhilHealth ID - system must match the pattern when provided
+- **`identifier:PHCorePddRegistration`** (Identifier): PhilHealth Dialysis Database Registration Number
+- **`address`** (Address): Patient address using PH Core Address profile with PSGC extensions
+- **`maritalStatus`** (CodeableConcept): Patient
+- **`contact.relationship`** (CodeableConcept): Relationship of contact to patient
+- **`name`** (HumanName[]): Patient
+- **`gender`** (code): Patient
+- **`birthDate`** (date): Patient
+- **`active`** (boolean): Whether the patient record is active
+
+## JSON Template
+
+Use this as a starting point for creating valid resources:
+
+```json
+{
   "resourceType": "Patient",
   "id": "example-patient",
   "meta": {
@@ -296,5 +156,9 @@ export const patientResource: ResourceDefinition = {
       }
     ]
   }
-}`,
-};
+}
+```
+
+## Validation
+
+This resource must include the profile URL in `meta.profile`. Resources that do not conform will be rejected with HTTP 422 (Unprocessable Entity).

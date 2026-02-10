@@ -227,6 +227,51 @@ export interface IncomingRequest {
 }
 
 // ============================================================================
+// Webhook 3: Receive Push (incoming unsolicited data from gateway)
+// Called when another provider pushes data to us without prior request
+// ============================================================================
+
+export const ReceivePushPayloadSchema = z.object({
+  transactionId: transactionIdValidator,
+  senderId: z.string().uuid(),
+  resourceType: z.string(),
+  data: z.record(z.string(), z.unknown()),
+  reason: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+export type ReceivePushPayload = z.infer<typeof ReceivePushPayloadSchema>;
+
+// ============================================================================
+// Initiate Push (push data to another provider)
+// ============================================================================
+
+export const InitiatePushRequestSchema = z.object({
+  targetId: z.string().uuid(),
+  resourceType: z.string(),
+  data: z.record(z.string(), z.unknown()),
+  reason: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+export type InitiatePushRequest = z.infer<typeof InitiatePushRequestSchema>;
+
+// ============================================================================
+// Internal: Incoming Push Storage (unsolicited data FROM other providers)
+// ============================================================================
+
+export interface IncomingPush {
+  id: string;
+  transactionId: string;
+  senderId: string;
+  resourceType: string;
+  data: Record<string, unknown>;
+  reason?: string;
+  notes?: string;
+  receivedAt: string;
+}
+
+// ============================================================================
 // Common Identifier Systems (from docs)
 // ============================================================================
 

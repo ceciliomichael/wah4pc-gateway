@@ -1,124 +1,36 @@
-import type { ResourceDefinition } from "./types";
+# Claim
 
-export const claimResource: ResourceDefinition = {
-  id: "claim",
-  name: "Claim",
-  title: "Claim",
-  description:
-    "A provider issued list of professional services and products which have been provided, or are to be provided, to a patient which is sent to an insurer for reimbursement. This resource uses standard HL7 FHIR R4 validation.",
-  profileUrl: "http://hl7.org/fhir/StructureDefinition/Claim",
-  fhirVersion: "4.0.1",
-  baseDefinition: "http://hl7.org/fhir/StructureDefinition/Claim",
-  fields: [
-    {
-      name: "identifier",
-      path: "Claim.identifier",
-      type: "Identifier[]",
-      description: "Business identifier for the claim",
-      required: false,
-    },
-    {
-      name: "status",
-      path: "Claim.status",
-      type: "code",
-      description: "The status of the claim (active | cancelled | draft | entered-in-error)",
-      required: true,
-      binding: {
-        strength: "required",
-        valueSet: "http://hl7.org/fhir/ValueSet/fm-status",
-        displayName: "Financial Resource Status",
-      },
-    },
-    {
-      name: "type",
-      path: "Claim.type",
-      type: "CodeableConcept",
-      description: "Category of claim (institutional | oral | pharmacy | professional | vision)",
-      required: true,
-      binding: {
-        strength: "extensible",
-        valueSet: "http://hl7.org/fhir/ValueSet/claim-type",
-        displayName: "Claim Type",
-      },
-    },
-    {
-      name: "use",
-      path: "Claim.use",
-      type: "code",
-      description: "Purpose of the claim (claim | preauthorization | predetermination)",
-      required: true,
-      binding: {
-        strength: "required",
-        valueSet: "http://hl7.org/fhir/ValueSet/claim-use",
-        displayName: "Claim Use",
-      },
-    },
-    {
-      name: "patient",
-      path: "Claim.patient",
-      type: "Reference",
-      description: "The recipient of the products and services",
-      required: true,
-      referenceTarget: ["Patient"],
-    },
-    {
-      name: "created",
-      path: "Claim.created",
-      type: "dateTime",
-      description: "Resource creation date",
-      required: true,
-    },
-    {
-      name: "insurer",
-      path: "Claim.insurer",
-      type: "Reference",
-      description: "Target payor (e.g., PhilHealth)",
-      required: false,
-      referenceTarget: ["Organization"],
-    },
-    {
-      name: "provider",
-      path: "Claim.provider",
-      type: "Reference",
-      description: "Party responsible for the claim",
-      required: true,
-      referenceTarget: ["Practitioner", "PractitionerRole", "Organization"],
-    },
-    {
-      name: "priority",
-      path: "Claim.priority",
-      type: "CodeableConcept",
-      description: "Desired processing priority",
-      required: true,
-      binding: {
-        strength: "example",
-        valueSet: "http://hl7.org/fhir/ValueSet/process-priority",
-        displayName: "Process Priority",
-      },
-    },
-    {
-      name: "diagnosis",
-      path: "Claim.diagnosis",
-      type: "BackboneElement[]",
-      description: "Pertinent diagnosis information",
-      required: false,
-    },
-    {
-      name: "item",
-      path: "Claim.item",
-      type: "BackboneElement[]",
-      description: "Product or service provided",
-      required: false,
-    },
-    {
-      name: "total",
-      path: "Claim.total",
-      type: "Money",
-      description: "Total claim cost",
-      required: false,
-    },
-  ],
-  jsonTemplate: `{
+Provider-issued list of services and products for insurance reimbursement (e.g., PhilHealth)
+
+## Profile URL
+
+**Required in `meta.profile`:**
+`http://hl7.org/fhir/StructureDefinition/Claim`
+
+## Required Fields
+
+- **`status`** (code): The status of the claim (active | cancelled | draft | entered-in-error)
+- **`type`** (CodeableConcept): Category of claim (institutional | oral | pharmacy | professional | vision)
+- **`use`** (code): Purpose of the claim (claim | preauthorization | predetermination)
+- **`patient`** (Reference): The recipient of the products and services
+- **`created`** (dateTime): Resource creation date
+- **`provider`** (Reference): Party responsible for the claim
+- **`priority`** (CodeableConcept): Desired processing priority
+
+## Optional Fields
+
+- **`identifier`** (Identifier[]): Business identifier for the claim
+- **`insurer`** (Reference): Target payor (e.g., PhilHealth)
+- **`diagnosis`** (BackboneElement[]): Pertinent diagnosis information
+- **`item`** (BackboneElement[]): Product or service provided
+- **`total`** (Money): Total claim cost
+
+## JSON Template
+
+Use this as a starting point for creating valid resources:
+
+```json
+{
   "resourceType": "Claim",
   "id": "example-claim",
   "status": "active",
@@ -172,5 +84,9 @@ export const claimResource: ResourceDefinition = {
     "value": 50000.00,
     "currency": "PHP"
   }
-}`,
-};
+}
+```
+
+## Validation
+
+This resource must include the profile URL in `meta.profile`. Resources that do not conform will be rejected with HTTP 422 (Unprocessable Entity).

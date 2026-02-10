@@ -7,6 +7,7 @@ import {
   LuUsers,
   LuUserCog,
   LuCalendarClock,
+  LuCalendarCheck,
   LuHeart,
   LuMenu,
   LuX,
@@ -43,6 +44,11 @@ const navItems: NavItem[] = [
     href: '/encounters',
     label: 'Encounters',
     icon: <LuCalendarClock className="w-5 h-5" />,
+  },
+  {
+    href: '/appointments',
+    label: 'Appointments',
+    icon: <LuCalendarCheck className="w-5 h-5" />,
   },
   {
     href: '/integration',

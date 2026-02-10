@@ -323,3 +323,73 @@ export async function initiatePatientQuery(params: {
 
   return { ...result, idempotencyKey };
 }
+
+// ============================================================================
+// Outbound Push (Unsolicited Data)
+// ============================================================================
+
+/**
+ * Push a FHIR resource directly to another provider via the gateway
+ * Unlike queries, push requests are delivered immediately.
+ * If the target provider accepts (returns 200 OK), the transaction is COMPLETED instantly.
+ *
+ * @param params.targetId - The provider ID to push data to
+ * @param params.resourceType - FHIR resource type (e.g., 'Appointment')
+ * @param params.data - The FHIR resource data to push
+ * @param params.reason - Optional reason for the push
+ * @param params.notes - Optional notes for the target provider
+ */
+export async function initiatePush(params: {
+  targetId: string;
+  resourceType: string;
+  data: Record<string, unknown>;
+  reason?: string;
+  notes?: string;
+}): Promise<{ success: boolean; message: string; transactionId?: string }> {
+  const { targetId, resourceType, data, reason, notes } = params;
+
+  // Validate configuration
+  const configCheck = validateIntegrationConfig();
+  if (!configCheck.valid) {
+    throw new Error(
+      `Integration not configured. Missing: ${configCheck.missing.join(', ')}`
+    );
+  }
+
+  const { gatewayUrl, providerId, apiKey } = config.integration;
+
+  console.log(`[Integration] Initiating push of ${resourceType} to provider ${targetId}`);
+
+  const requestBody = {
+    targetId,
+    data,
+    reason,
+    notes,
+  };
+
+  const response = await fetch(`${gatewayUrl}/api/v1/fhir/push/${resourceType}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-API-Key': apiKey,
+      'X-Provider-ID': providerId,
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`[Integration] Push failed: ${response.status} - ${errorText}`);
+    throw new Error(`Push request failed: ${response.status} - ${errorText}`);
+  }
+
+  const result = await response.json();
+
+  console.log(`[Integration] Push completed successfully for ${resourceType}`);
+
+  return {
+    success: true,
+    message: 'Push delivered successfully',
+    transactionId: result?.data?.id || result?.transactionId,
+  };
+}

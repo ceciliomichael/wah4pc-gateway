@@ -1,127 +1,38 @@
-import type { ResourceDefinition } from "./types";
+# PH Core Immunization
 
-export const immunizationResource: ResourceDefinition = {
-  id: "immunization",
-  name: "Immunization",
-  title: "PH Core Immunization",
-  description:
-    "Describes the event of a patient being administered a vaccine or a record of an immunization as reported by a patient, a clinician or another party. This profile constrains patient and encounter references to use PH Core profiles.",
-  profileUrl: "urn://example.com/ph-core/fhir/StructureDefinition/ph-core-immunization",
-  fhirVersion: "4.0.1",
-  baseDefinition: "http://hl7.org/fhir/StructureDefinition/Immunization",
-  fields: [
-    {
-      name: "meta.profile",
-      path: "Immunization.meta.profile",
-      type: "canonical[]",
-      description: "Must include the PH Core Immunization profile URL",
-      required: true,
-    },
-    {
-      name: "status",
-      path: "Immunization.status",
-      type: "code",
-      description: "Current status (completed | entered-in-error | not-done)",
-      required: true,
-      binding: {
-        strength: "required",
-        valueSet: "http://hl7.org/fhir/ValueSet/immunization-status",
-        displayName: "Immunization Status",
-      },
-    },
-    {
-      name: "vaccineCode",
-      path: "Immunization.vaccineCode",
-      type: "CodeableConcept",
-      description: "Vaccine product administered - CVX codes recommended",
-      required: true,
-      binding: {
-        strength: "example",
-        valueSet: "http://hl7.org/fhir/ValueSet/vaccine-code",
-        displayName: "Vaccine Administered Value Set",
-      },
-    },
-    {
-      name: "patient",
-      path: "Immunization.patient",
-      type: "Reference",
-      description: "The patient who received the immunization - must conform to PH Core Patient",
-      required: true,
-      referenceTarget: ["urn://example.com/ph-core/fhir/StructureDefinition/ph-core-patient"],
-    },
-    {
-      name: "encounter",
-      path: "Immunization.encounter",
-      type: "Reference",
-      description: "The encounter during which immunization was given - must conform to PH Core Encounter",
-      required: false,
-      referenceTarget: ["urn://example.com/ph-core/fhir/StructureDefinition/ph-core-encounter"],
-    },
-    {
-      name: "occurrenceDateTime",
-      path: "Immunization.occurrence[x]",
-      type: "dateTime | string",
-      description: "When the vaccine was administered",
-      required: true,
-    },
-    {
-      name: "primarySource",
-      path: "Immunization.primarySource",
-      type: "boolean",
-      description: "Indicates if this is from the source who administered the vaccine",
-      required: false,
-    },
-    {
-      name: "lotNumber",
-      path: "Immunization.lotNumber",
-      type: "string",
-      description: "Vaccine lot number",
-      required: false,
-    },
-    {
-      name: "expirationDate",
-      path: "Immunization.expirationDate",
-      type: "date",
-      description: "Vaccine expiration date",
-      required: false,
-    },
-    {
-      name: "site",
-      path: "Immunization.site",
-      type: "CodeableConcept",
-      description: "Body site where vaccine was administered",
-      required: false,
-    },
-    {
-      name: "route",
-      path: "Immunization.route",
-      type: "CodeableConcept",
-      description: "Route of administration (e.g., IM, SC)",
-      required: false,
-    },
-    {
-      name: "doseQuantity",
-      path: "Immunization.doseQuantity",
-      type: "Quantity",
-      description: "Amount of vaccine administered",
-      required: false,
-    },
-    {
-      name: "performer",
-      path: "Immunization.performer",
-      type: "BackboneElement[]",
-      description: "Who performed the immunization",
-      required: false,
-    },
-    {
-      name: "fundingSource",
-      path: "Immunization.fundingSource",
-      type: "CodeableConcept",
-      description: "Funding source (public | private)",
-      required: false,
-    },
-  ],
-  jsonTemplate: `{
+Immunization resource schema with CVX vaccine codes, patient/encounter references, dose quantity, lot number, and funding source
+
+## Profile URL
+
+**Required in `meta.profile`:**
+`urn://example.com/ph-core/fhir/StructureDefinition/ph-core-immunization`
+
+## Required Fields
+
+- **`meta.profile`** (canonical[]): Must include the PH Core Immunization profile URL
+- **`status`** (code): Current status (completed | entered-in-error | not-done)
+- **`vaccineCode`** (CodeableConcept): Vaccine product administered - CVX codes recommended
+- **`patient`** (Reference): The patient who received the immunization - must conform to PH Core Patient
+- **`occurrenceDateTime`** (dateTime | string): When the vaccine was administered
+
+## Optional Fields
+
+- **`encounter`** (Reference): The encounter during which immunization was given - must conform to PH Core Encounter
+- **`primarySource`** (boolean): Indicates if this is from the source who administered the vaccine
+- **`lotNumber`** (string): Vaccine lot number
+- **`expirationDate`** (date): Vaccine expiration date
+- **`site`** (CodeableConcept): Body site where vaccine was administered
+- **`route`** (CodeableConcept): Route of administration (e.g., IM, SC)
+- **`doseQuantity`** (Quantity): Amount of vaccine administered
+- **`performer`** (BackboneElement[]): Who performed the immunization
+- **`fundingSource`** (CodeableConcept): Funding source (public | private)
+
+## JSON Template
+
+Use this as a starting point for creating valid resources:
+
+```json
+{
   "resourceType": "Immunization",
   "id": "example-immunization",
   "meta": {
@@ -214,5 +125,9 @@ export const immunizationResource: ResourceDefinition = {
       "text": "Patient tolerated the vaccine well with no immediate adverse reactions."
     }
   ]
-}`,
-};
+}
+```
+
+## Validation
+
+This resource must include the profile URL in `meta.profile`. Resources that do not conform will be rejected with HTTP 422 (Unprocessable Entity).

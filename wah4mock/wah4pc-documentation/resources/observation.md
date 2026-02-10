@@ -1,123 +1,36 @@
-import type { ResourceDefinition } from "./types";
+# PH Core Observation
 
-export const observationResource: ResourceDefinition = {
-  id: "observation",
-  name: "Observation",
-  title: "PH Core Observation",
-  description:
-    "Measurements and simple assertions made about a patient, device or other subject. This profile constrains subject and encounter references to use PH Core profiles. Commonly used for vital signs, laboratory results, and clinical findings.",
-  profileUrl: "urn://example.com/ph-core/fhir/StructureDefinition/ph-core-observation",
-  fhirVersion: "4.0.1",
-  baseDefinition: "http://hl7.org/fhir/StructureDefinition/Observation",
-  fields: [
-    {
-      name: "meta.profile",
-      path: "Observation.meta.profile",
-      type: "canonical[]",
-      description: "Must include the PH Core Observation profile URL",
-      required: true,
-    },
-    {
-      name: "status",
-      path: "Observation.status",
-      type: "code",
-      description: "Current status (registered | preliminary | final | amended | corrected | cancelled | entered-in-error | unknown)",
-      required: true,
-      binding: {
-        strength: "required",
-        valueSet: "http://hl7.org/fhir/ValueSet/observation-status",
-        displayName: "Observation Status",
-      },
-    },
-    {
-      name: "category",
-      path: "Observation.category",
-      type: "CodeableConcept[]",
-      description: "Classification of observation type (e.g., vital-signs, laboratory)",
-      required: false,
-      binding: {
-        strength: "preferred",
-        valueSet: "http://hl7.org/fhir/ValueSet/observation-category",
-        displayName: "Observation Category Codes",
-      },
-    },
-    {
-      name: "code",
-      path: "Observation.code",
-      type: "CodeableConcept",
-      description: "Type of observation - LOINC codes recommended",
-      required: true,
-      binding: {
-        strength: "example",
-        valueSet: "http://hl7.org/fhir/ValueSet/observation-codes",
-        displayName: "LOINC Codes",
-      },
-    },
-    {
-      name: "subject",
-      path: "Observation.subject",
-      type: "Reference",
-      description: "The patient observed - must conform to PH Core Patient",
-      required: true,
-      referenceTarget: ["urn://example.com/ph-core/fhir/StructureDefinition/ph-core-patient"],
-    },
-    {
-      name: "encounter",
-      path: "Observation.encounter",
-      type: "Reference",
-      description: "The encounter context - must conform to PH Core Encounter",
-      required: false,
-      referenceTarget: ["urn://example.com/ph-core/fhir/StructureDefinition/ph-core-encounter"],
-    },
-    {
-      name: "effectiveDateTime",
-      path: "Observation.effective[x]",
-      type: "dateTime | Period | Timing | instant",
-      description: "When the observation was made",
-      required: false,
-    },
-    {
-      name: "value[x]",
-      path: "Observation.value[x]",
-      type: "Quantity | CodeableConcept | string | boolean | integer | Range | Ratio | SampledData | time | dateTime | Period",
-      description: "Actual result value",
-      required: false,
-    },
-    {
-      name: "interpretation",
-      path: "Observation.interpretation",
-      type: "CodeableConcept[]",
-      description: "High, low, normal, etc.",
-      required: false,
-      binding: {
-        strength: "extensible",
-        valueSet: "http://hl7.org/fhir/ValueSet/observation-interpretation",
-        displayName: "Observation Interpretation Codes",
-      },
-    },
-    {
-      name: "bodySite",
-      path: "Observation.bodySite",
-      type: "CodeableConcept",
-      description: "Observed body part - SNOMED CT codes",
-      required: false,
-    },
-    {
-      name: "component",
-      path: "Observation.component",
-      type: "BackboneElement[]",
-      description: "Component results (e.g., systolic/diastolic for BP)",
-      required: false,
-    },
-    {
-      name: "performer",
-      path: "Observation.performer",
-      type: "Reference[]",
-      description: "Who is responsible for the observation",
-      required: false,
-    },
-  ],
-  jsonTemplate: `{
+Observation resource schema with LOINC codes for vital signs/labs, subject/encounter references, component values (e.g., blood pressure systolic/diastolic)
+
+## Profile URL
+
+**Required in `meta.profile`:**
+`urn://example.com/ph-core/fhir/StructureDefinition/ph-core-observation`
+
+## Required Fields
+
+- **`meta.profile`** (canonical[]): Must include the PH Core Observation profile URL
+- **`status`** (code): Current status (registered | preliminary | final | amended | corrected | cancelled | entered-in-error | unknown)
+- **`code`** (CodeableConcept): Type of observation - LOINC codes recommended
+- **`subject`** (Reference): The patient observed - must conform to PH Core Patient
+
+## Optional Fields
+
+- **`category`** (CodeableConcept[]): Classification of observation type (e.g., vital-signs, laboratory)
+- **`encounter`** (Reference): The encounter context - must conform to PH Core Encounter
+- **`effectiveDateTime`** (dateTime | Period | Timing | instant): When the observation was made
+- **`value[x]`** (Quantity | CodeableConcept | string | boolean | integer | Range | Ratio | SampledData | time | dateTime | Period): Actual result value
+- **`interpretation`** (CodeableConcept[]): High, low, normal, etc.
+- **`bodySite`** (CodeableConcept): Observed body part - SNOMED CT codes
+- **`component`** (BackboneElement[]): Component results (e.g., systolic/diastolic for BP)
+- **`performer`** (Reference[]): Who is responsible for the observation
+
+## JSON Template
+
+Use this as a starting point for creating valid resources:
+
+```json
+{
   "resourceType": "Observation",
   "id": "blood-pressure-example",
   "meta": {
@@ -236,5 +149,9 @@ export const observationResource: ResourceDefinition = {
       ]
     }
   ]
-}`,
-};
+}
+```
+
+## Validation
+
+This resource must include the profile URL in `meta.profile`. Resources that do not conform will be rejected with HTTP 422 (Unprocessable Entity).

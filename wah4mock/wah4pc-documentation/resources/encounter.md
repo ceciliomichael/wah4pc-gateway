@@ -1,90 +1,32 @@
-import type { ResourceDefinition } from "./types";
+# PH Core Encounter
 
-export const encounterResource: ResourceDefinition = {
-  id: "encounter",
-  name: "Encounter",
-  title: "PH Core Encounter",
-  description:
-    "This profile sets minimum expectations for an Encounter resource to record, search, and fetch basic encounter information for a patient. It is based on the FHIR R4 Encounter resource and identifies the additional mandatory core elements, extensions, vocabularies and value sets that SHALL be present when conforming to this profile.",
-  profileUrl: "urn://example.com/ph-core/fhir/StructureDefinition/ph-core-encounter",
-  fhirVersion: "4.0.1",
-  baseDefinition: "http://hl7.org/fhir/StructureDefinition/Encounter",
-  fields: [
-    {
-      name: "meta.profile",
-      path: "Encounter.meta.profile",
-      type: "canonical[]",
-      description: "Must include the PH Core Encounter profile URL",
-      required: true,
-    },
-    {
-      name: "status",
-      path: "Encounter.status",
-      type: "code",
-      description: "Current status of the encounter (planned | arrived | triaged | in-progress | onleave | finished | cancelled | entered-in-error | unknown)",
-      required: true,
-      binding: {
-        strength: "required",
-        valueSet: "http://hl7.org/fhir/ValueSet/encounter-status",
-        displayName: "Encounter Status",
-      },
-    },
-    {
-      name: "class",
-      path: "Encounter.class",
-      type: "Coding",
-      description: "Classification of the encounter (e.g., AMB for ambulatory, IMP for inpatient)",
-      required: true,
-      binding: {
-        strength: "extensible",
-        valueSet: "http://terminology.hl7.org/ValueSet/v3-ActEncounterCode",
-        displayName: "Act Encounter Code",
-      },
-    },
-    {
-      name: "subject",
-      path: "Encounter.subject",
-      type: "Reference",
-      description: "Reference to the patient - must conform to PH Core Patient profile",
-      required: true,
-      referenceTarget: ["urn://example.com/ph-core/fhir/StructureDefinition/ph-core-patient"],
-    },
-    {
-      name: "participant.individual",
-      path: "Encounter.participant.individual",
-      type: "Reference",
-      description: "Healthcare provider involved - must reference PH Core Practitioner, PractitionerRole, or PH Core RelatedPerson",
-      required: false,
-      referenceTarget: [
-        "urn://example.com/ph-core/fhir/StructureDefinition/ph-core-practitioner",
-        "http://hl7.org/fhir/StructureDefinition/PractitionerRole",
-        "urn://example.com/ph-core/fhir/StructureDefinition/ph-core-relatedperson",
-      ],
-    },
-    {
-      name: "period",
-      path: "Encounter.period",
-      type: "Period",
-      description: "The start and end time of the encounter",
-      required: false,
-    },
-    {
-      name: "reasonCode",
-      path: "Encounter.reasonCode",
-      type: "CodeableConcept[]",
-      description: "Coded reason the encounter takes place",
-      required: false,
-    },
-    {
-      name: "serviceProvider",
-      path: "Encounter.serviceProvider",
-      type: "Reference",
-      description: "The organization responsible for the encounter",
-      required: false,
-      referenceTarget: ["http://hl7.org/fhir/StructureDefinition/Organization"],
-    },
-  ],
-  jsonTemplate: `{
+Encounter resource schema with status codes, class codes (AMB, IMP), subject reference to PH Core Patient, and participant references
+
+## Profile URL
+
+**Required in `meta.profile`:**
+`urn://example.com/ph-core/fhir/StructureDefinition/ph-core-encounter`
+
+## Required Fields
+
+- **`meta.profile`** (canonical[]): Must include the PH Core Encounter profile URL
+- **`status`** (code): Current status of the encounter (planned | arrived | triaged | in-progress | onleave | finished | cancelled | entered-in-error | unknown)
+- **`class`** (Coding): Classification of the encounter (e.g., AMB for ambulatory, IMP for inpatient)
+- **`subject`** (Reference): Reference to the patient - must conform to PH Core Patient profile
+
+## Optional Fields
+
+- **`participant.individual`** (Reference): Healthcare provider involved - must reference PH Core Practitioner, PractitionerRole, or PH Core RelatedPerson
+- **`period`** (Period): The start and end time of the encounter
+- **`reasonCode`** (CodeableConcept[]): Coded reason the encounter takes place
+- **`serviceProvider`** (Reference): The organization responsible for the encounter
+
+## JSON Template
+
+Use this as a starting point for creating valid resources:
+
+```json
+{
   "resourceType": "Encounter",
   "id": "example-encounter",
   "meta": {
@@ -127,5 +69,9 @@ export const encounterResource: ResourceDefinition = {
       ]
     }
   ]
-}`,
-};
+}
+```
+
+## Validation
+
+This resource must include the profile URL in `meta.profile`. Resources that do not conform will be rejected with HTTP 422 (Unprocessable Entity).

@@ -1,115 +1,33 @@
-import type { ResourceDefinition } from "./types";
+# PractitionerRole
 
-export const practitionerRoleResource: ResourceDefinition = {
-  id: "practitioner-role",
-  name: "PractitionerRole",
-  title: "Practitioner Role",
-  description:
-    "A specific set of Roles/Locations/specialties/services that a practitioner may perform at an organization for a period of time. This resource uses standard HL7 FHIR R4 validation.",
-  profileUrl: "http://hl7.org/fhir/StructureDefinition/PractitionerRole",
-  fhirVersion: "4.0.1",
-  baseDefinition: "http://hl7.org/fhir/StructureDefinition/PractitionerRole",
-  fields: [
-    {
-      name: "identifier",
-      path: "PractitionerRole.identifier",
-      type: "Identifier[]",
-      description: "Business identifiers assigned to this practitioner role",
-      required: false,
-    },
-    {
-      name: "active",
-      path: "PractitionerRole.active",
-      type: "boolean",
-      description: "Whether this practitioner role record is in active use",
-      required: false,
-    },
-    {
-      name: "period",
-      path: "PractitionerRole.period",
-      type: "Period",
-      description: "The period during which the practitioner is authorized to perform in these role(s)",
-      required: false,
-    },
-    {
-      name: "practitioner",
-      path: "PractitionerRole.practitioner",
-      type: "Reference",
-      description: "Practitioner that is able to provide the defined services",
-      required: false,
-      referenceTarget: ["Practitioner"],
-    },
-    {
-      name: "organization",
-      path: "PractitionerRole.organization",
-      type: "Reference",
-      description: "Organization where the roles are available",
-      required: false,
-      referenceTarget: ["Organization"],
-    },
-    {
-      name: "code",
-      path: "PractitionerRole.code",
-      type: "CodeableConcept[]",
-      description: "Roles which this practitioner may perform",
-      required: false,
-      binding: {
-        strength: "example",
-        valueSet: "http://hl7.org/fhir/ValueSet/practitioner-role",
-        displayName: "Practitioner Role",
-      },
-    },
-    {
-      name: "specialty",
-      path: "PractitionerRole.specialty",
-      type: "CodeableConcept[]",
-      description: "Specific specialty of the practitioner",
-      required: false,
-      binding: {
-        strength: "preferred",
-        valueSet: "http://hl7.org/fhir/ValueSet/c80-practice-codes",
-        displayName: "Practice Setting Code",
-      },
-    },
-    {
-      name: "location",
-      path: "PractitionerRole.location",
-      type: "Reference[]",
-      description: "The location(s) at which this practitioner provides care",
-      required: false,
-      referenceTarget: ["Location"],
-    },
-    {
-      name: "healthcareService",
-      path: "PractitionerRole.healthcareService",
-      type: "Reference[]",
-      description: "The healthcare services this practitioner provides",
-      required: false,
-      referenceTarget: ["HealthcareService"],
-    },
-    {
-      name: "telecom",
-      path: "PractitionerRole.telecom",
-      type: "ContactPoint[]",
-      description: "Contact details specific to the role/location/service",
-      required: false,
-    },
-    {
-      name: "availableTime",
-      path: "PractitionerRole.availableTime",
-      type: "BackboneElement[]",
-      description: "Times the practitioner is available at this location",
-      required: false,
-    },
-    {
-      name: "notAvailable",
-      path: "PractitionerRole.notAvailable",
-      type: "BackboneElement[]",
-      description: "Not available during this time due to provided reason",
-      required: false,
-    },
-  ],
-  jsonTemplate: `{
+Roles, specialties, and services a practitioner performs at an organization
+
+## Profile URL
+
+**Required in `meta.profile`:**
+`http://hl7.org/fhir/StructureDefinition/PractitionerRole`
+
+## Optional Fields
+
+- **`identifier`** (Identifier[]): Business identifiers assigned to this practitioner role
+- **`active`** (boolean): Whether this practitioner role record is in active use
+- **`period`** (Period): The period during which the practitioner is authorized to perform in these role(s)
+- **`practitioner`** (Reference): Practitioner that is able to provide the defined services
+- **`organization`** (Reference): Organization where the roles are available
+- **`code`** (CodeableConcept[]): Roles which this practitioner may perform
+- **`specialty`** (CodeableConcept[]): Specific specialty of the practitioner
+- **`location`** (Reference[]): The location(s) at which this practitioner provides care
+- **`healthcareService`** (Reference[]): The healthcare services this practitioner provides
+- **`telecom`** (ContactPoint[]): Contact details specific to the role/location/service
+- **`availableTime`** (BackboneElement[]): Times the practitioner is available at this location
+- **`notAvailable`** (BackboneElement[]): Not available during this time due to provided reason
+
+## JSON Template
+
+Use this as a starting point for creating valid resources:
+
+```json
+{
   "resourceType": "PractitionerRole",
   "id": "example-practitioner-role",
   "active": true,
@@ -166,5 +84,9 @@ export const practitionerRoleResource: ResourceDefinition = {
       "availableEndTime": "17:00:00"
     }
   ]
-}`,
-};
+}
+```
+
+## Validation
+
+This resource must include the profile URL in `meta.profile`. Resources that do not conform will be rejected with HTTP 422 (Unprocessable Entity).

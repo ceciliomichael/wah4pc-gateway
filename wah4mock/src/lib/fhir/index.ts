@@ -67,5 +67,20 @@ export {
   type StatusUpdateResult,
 } from './encounter';
 
+// Appointment helpers
+export {
+  buildAppointmentFromFormData,
+  extractAppointmentFormData,
+  validateAppointmentDates,
+  APPOINTMENT_STATUS_OPTIONS,
+  APPOINTMENT_TYPE_OPTIONS,
+  APPOINTMENT_TYPE_DISPLAY_MAP,
+  SERVICE_TYPE_OPTIONS,
+  SERVICE_TYPE_DISPLAY_MAP,
+  SPECIALTY_OPTIONS,
+  SPECIALTY_DISPLAY_MAP,
+  getAppointmentStatusLabel,
+} from './appointment';
+
 // Re-export profile URLs from types
 export { PHCORE_PROFILE_URLS } from '../types/fhir';

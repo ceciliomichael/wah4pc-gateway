@@ -1,105 +1,34 @@
-import type { ResourceDefinition } from "./types";
+# MedicationAdministration
 
-export const medicationAdministrationResource: ResourceDefinition = {
-  id: "medication-administration",
-  name: "MedicationAdministration",
-  title: "Medication Administration",
-  description:
-    "Describes the event of a patient consuming or otherwise being administered a medication. This resource uses standard HL7 FHIR R4 validation.",
-  profileUrl: "http://hl7.org/fhir/StructureDefinition/MedicationAdministration",
-  fhirVersion: "4.0.1",
-  baseDefinition: "http://hl7.org/fhir/StructureDefinition/MedicationAdministration",
-  fields: [
-    {
-      name: "identifier",
-      path: "MedicationAdministration.identifier",
-      type: "Identifier[]",
-      description: "External identifier for the administration",
-      required: false,
-    },
-    {
-      name: "status",
-      path: "MedicationAdministration.status",
-      type: "code",
-      description: "Status of the administration (in-progress | not-done | on-hold | completed | entered-in-error | stopped | unknown)",
-      required: true,
-      binding: {
-        strength: "required",
-        valueSet: "http://hl7.org/fhir/ValueSet/medication-admin-status",
-        displayName: "Medication Administration Status",
-      },
-    },
-    {
-      name: "category",
-      path: "MedicationAdministration.category",
-      type: "CodeableConcept",
-      description: "Type of medication usage",
-      required: false,
-      binding: {
-        strength: "preferred",
-        valueSet: "http://hl7.org/fhir/ValueSet/medication-admin-category",
-        displayName: "Medication Administration Category",
-      },
-    },
-    {
-      name: "medicationCodeableConcept",
-      path: "MedicationAdministration.medication[x]",
-      type: "CodeableConcept",
-      description: "What was administered",
-      required: true,
-      binding: {
-        strength: "example",
-        valueSet: "http://hl7.org/fhir/ValueSet/medication-codes",
-        displayName: "Medication Codes",
-      },
-    },
-    {
-      name: "subject",
-      path: "MedicationAdministration.subject",
-      type: "Reference",
-      description: "Who received medication",
-      required: true,
-      referenceTarget: ["Patient", "Group"],
-    },
-    {
-      name: "context",
-      path: "MedicationAdministration.context",
-      type: "Reference",
-      description: "Encounter or Episode of Care",
-      required: false,
-      referenceTarget: ["Encounter", "EpisodeOfCare"],
-    },
-    {
-      name: "effectiveDateTime",
-      path: "MedicationAdministration.effective[x]",
-      type: "dateTime",
-      description: "Start and end time of administration",
-      required: true,
-    },
-    {
-      name: "performer",
-      path: "MedicationAdministration.performer",
-      type: "BackboneElement[]",
-      description: "Who performed the medication administration",
-      required: false,
-    },
-    {
-      name: "request",
-      path: "MedicationAdministration.request",
-      type: "Reference",
-      description: "Request administration performed against",
-      required: false,
-      referenceTarget: ["MedicationRequest"],
-    },
-    {
-      name: "dosage",
-      path: "MedicationAdministration.dosage",
-      type: "BackboneElement",
-      description: "Details of how medication was taken",
-      required: false,
-    },
-  ],
-  jsonTemplate: `{
+Record of a medication actually given to a patient
+
+## Profile URL
+
+**Required in `meta.profile`:**
+`http://hl7.org/fhir/StructureDefinition/MedicationAdministration`
+
+## Required Fields
+
+- **`status`** (code): Status of the administration (in-progress | not-done | on-hold | completed | entered-in-error | stopped | unknown)
+- **`medicationCodeableConcept`** (CodeableConcept): What was administered
+- **`subject`** (Reference): Who received medication
+- **`effectiveDateTime`** (dateTime): Start and end time of administration
+
+## Optional Fields
+
+- **`identifier`** (Identifier[]): External identifier for the administration
+- **`category`** (CodeableConcept): Type of medication usage
+- **`context`** (Reference): Encounter or Episode of Care
+- **`performer`** (BackboneElement[]): Who performed the medication administration
+- **`request`** (Reference): Request administration performed against
+- **`dosage`** (BackboneElement): Details of how medication was taken
+
+## JSON Template
+
+Use this as a starting point for creating valid resources:
+
+```json
+{
   "resourceType": "MedicationAdministration",
   "id": "example-medication-administration",
   "status": "completed",
@@ -156,5 +85,9 @@ export const medicationAdministrationResource: ResourceDefinition = {
       "code": "mg"
     }
   }
-}`,
-};
+}
+```
+
+## Validation
+
+This resource must include the profile URL in `meta.profile`. Resources that do not conform will be rejected with HTTP 422 (Unprocessable Entity).

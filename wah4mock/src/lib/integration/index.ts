@@ -14,6 +14,7 @@ export {
 
 export {
   handleProcessQuery,
+  handleReceivePush,
   approveIncomingRequest,
   rejectIncomingRequest,
   getIncomingRequests,
@@ -22,6 +23,7 @@ export {
 export {
   handleReceiveResults,
   initiatePatientQuery,
+  initiatePush,
   IdempotencyConflictError,
 } from './outgoing';
 
@@ -35,11 +37,12 @@ export { integrationDb } from './db';
 import { findPatientByIdentifiers, registerProvider } from './common';
 import {
   handleProcessQuery,
+  handleReceivePush,
   approveIncomingRequest,
   rejectIncomingRequest,
   getIncomingRequests,
 } from './incoming';
-import { handleReceiveResults, initiatePatientQuery } from './outgoing';
+import { handleReceiveResults, initiatePatientQuery, initiatePush } from './outgoing';
 
 /**
  * Integration service object - maintains backward compatibility
@@ -49,12 +52,14 @@ export const integrationService = {
   // Webhook handlers
   handleProcessQuery,
   handleReceiveResults,
+  handleReceivePush,
   // Incoming request management
   approveIncomingRequest,
   rejectIncomingRequest,
   getIncomingRequests,
   // Outbound requests
   initiatePatientQuery,
+  initiatePush,
   registerProvider,
   // Utilities
   findPatientByIdentifiers,

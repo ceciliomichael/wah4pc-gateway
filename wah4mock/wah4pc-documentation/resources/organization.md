@@ -1,110 +1,36 @@
-import type { ResourceDefinition } from "./types";
+# PH Core Organization
 
-export const organizationResource: ResourceDefinition = {
-  id: "organization",
-  name: "Organization",
-  title: "PH Core Organization",
-  description:
-    "Represents a formally or informally recognized grouping of people or organizations formed for the purpose of achieving some form of collective action. This profile localizes the FHIR R4 Organization resource to the Philippine context with support for DOH NHFR codes and PH Core Address extensions.",
-  profileUrl: "urn://example.com/ph-core/fhir/StructureDefinition/ph-core-organization",
-  fhirVersion: "4.0.1",
-  baseDefinition: "http://hl7.org/fhir/StructureDefinition/Organization",
-  fields: [
-    {
-      name: "meta.profile",
-      path: "Organization.meta.profile",
-      type: "canonical[]",
-      description: "Must include the PH Core Organization profile URL",
-      required: true,
-    },
-    {
-      name: "identifier",
-      path: "Organization.identifier",
-      type: "Identifier[]",
-      description: "Identifies this organization across multiple systems. Supports slicing for specific identifier types.",
-      required: false,
-    },
-    {
-      name: "identifier:NhfrCode",
-      path: "Organization.identifier",
-      type: "Identifier",
-      description: "DOH National Health Facilities Registry (NHFR) Code - official facility identifier issued by the Department of Health",
-      required: false,
-      pattern: "http://doh.gov.ph/fhir/Identifier/doh-nhfr-code",
-    },
-    {
-      name: "active",
-      path: "Organization.active",
-      type: "boolean",
-      description: "Whether the organization's record is still in active use",
-      required: false,
-    },
-    {
-      name: "type",
-      path: "Organization.type",
-      type: "CodeableConcept[]",
-      description: "Kind of organization (e.g., hospital, clinic, pharmacy)",
-      required: false,
-      binding: {
-        strength: "example",
-        valueSet: "http://hl7.org/fhir/ValueSet/organization-type",
-        displayName: "Organization Type",
-      },
-    },
-    {
-      name: "name",
-      path: "Organization.name",
-      type: "string",
-      description: "Name used for the organization",
-      required: false,
-    },
-    {
-      name: "alias",
-      path: "Organization.alias",
-      type: "string[]",
-      description: "Alternative names the organization is known by",
-      required: false,
-    },
-    {
-      name: "telecom",
-      path: "Organization.telecom",
-      type: "ContactPoint[]",
-      description: "Contact details for the organization (phone, email, etc.)",
-      required: false,
-    },
-    {
-      name: "address",
-      path: "Organization.address",
-      type: "Address[]",
-      description: "Address(es) of the organization using PH Core Address profile with PSGC extensions",
-      required: false,
-      referenceTarget: ["urn://example.com/ph-core/fhir/StructureDefinition/ph-core-address"],
-    },
-    {
-      name: "partOf",
-      path: "Organization.partOf",
-      type: "Reference",
-      description: "The organization of which this organization forms a part",
-      required: false,
-      referenceTarget: ["Organization"],
-    },
-    {
-      name: "contact",
-      path: "Organization.contact",
-      type: "BackboneElement[]",
-      description: "Contact for the organization for a certain purpose",
-      required: false,
-    },
-    {
-      name: "contact.address",
-      path: "Organization.contact.address",
-      type: "Address",
-      description: "Contact address using PH Core Address profile",
-      required: false,
-      referenceTarget: ["urn://example.com/ph-core/fhir/StructureDefinition/ph-core-address"],
-    },
-  ],
-  jsonTemplate: `{
+Organization resource schema with DOH National Health Facilities Registry (NHFR) code support and PSGC address extensions
+
+## Profile URL
+
+**Required in `meta.profile`:**
+`urn://example.com/ph-core/fhir/StructureDefinition/ph-core-organization`
+
+## Required Fields
+
+- **`meta.profile`** (canonical[]): Must include the PH Core Organization profile URL
+
+## Optional Fields
+
+- **`identifier`** (Identifier[]): Identifies this organization across multiple systems. Supports slicing for specific identifier types.
+- **`identifier:NhfrCode`** (Identifier): DOH National Health Facilities Registry (NHFR) Code - official facility identifier issued by the Department of Health
+- **`active`** (boolean): Whether the organization
+- **`type`** (CodeableConcept[]): Kind of organization (e.g., hospital, clinic, pharmacy)
+- **`name`** (string): Name used for the organization
+- **`alias`** (string[]): Alternative names the organization is known by
+- **`telecom`** (ContactPoint[]): Contact details for the organization (phone, email, etc.)
+- **`address`** (Address[]): Address(es) of the organization using PH Core Address profile with PSGC extensions
+- **`partOf`** (Reference): The organization of which this organization forms a part
+- **`contact`** (BackboneElement[]): Contact for the organization for a certain purpose
+- **`contact.address`** (Address): Contact address using PH Core Address profile
+
+## JSON Template
+
+Use this as a starting point for creating valid resources:
+
+```json
+{
   "resourceType": "Organization",
   "id": "example-organization",
   "meta": {
@@ -186,5 +112,9 @@ export const organizationResource: ResourceDefinition = {
       ]
     }
   ]
-}`,
-};
+}
+```
+
+## Validation
+
+This resource must include the profile URL in `meta.profile`. Resources that do not conform will be rejected with HTTP 422 (Unprocessable Entity).

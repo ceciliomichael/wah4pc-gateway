@@ -750,8 +750,82 @@ export interface Immunization extends DomainResource {
 }
 
 // ============================================================================
+// Appointment Resource (FHIR R4.0.1)
+// ============================================================================
+
+export type AppointmentStatus =
+  | 'proposed'
+  | 'pending'
+  | 'booked'
+  | 'arrived'
+  | 'fulfilled'
+  | 'cancelled'
+  | 'noshow'
+  | 'entered-in-error'
+  | 'checked-in'
+  | 'waitlist';
+
+export interface AppointmentParticipant {
+  type?: CodeableConcept[];
+  actor?: Reference;
+  required?: 'required' | 'optional' | 'information-only';
+  status: 'accepted' | 'declined' | 'tentative' | 'needs-action';
+  period?: Period;
+}
+
+export interface Appointment extends DomainResource {
+  resourceType: 'Appointment';
+  identifier?: Identifier[];
+  status: AppointmentStatus;
+  cancelationReason?: CodeableConcept;
+  serviceCategory?: CodeableConcept[];
+  serviceType?: CodeableConcept[];
+  specialty?: CodeableConcept[];
+  appointmentType?: CodeableConcept;
+  reasonCode?: CodeableConcept[];
+  reasonReference?: Reference[];
+  priority?: number;
+  description?: string;
+  supportingInformation?: Reference[];
+  start?: string;
+  end?: string;
+  minutesDuration?: number;
+  slot?: Reference[];
+  created?: string;
+  comment?: string;
+  patientInstruction?: string;
+  basedOn?: Reference[];
+  participant: AppointmentParticipant[];
+  requestedPeriod?: Period[];
+}
+
+// ============================================================================
+// Appointment Form Data
+// ============================================================================
+
+export interface AppointmentFormData {
+  patientId: string;
+  practitionerId: string;
+  status: AppointmentStatus;
+  appointmentTypeCode?: string;
+  appointmentTypeDisplay?: string;
+  serviceTypeCode?: string;
+  serviceTypeDisplay?: string;
+  specialtyCode?: string;
+  specialtyDisplay?: string;
+  reasonText?: string;
+  description?: string;
+  comment?: string;
+  priority?: number;
+  start: string;
+  end?: string;
+  minutesDuration?: number;
+  patientInstruction?: string;
+}
+
+// ============================================================================
 // Resource Type Union
 // ============================================================================
 
-export type FHIRResource = Patient | Practitioner | Organization | Encounter | Condition | Observation | AllergyIntolerance | Medication | Immunization;
-export type FHIRResourceType = 'Patient' | 'Practitioner' | 'Organization' | 'Encounter' | 'Condition' | 'Observation' | 'AllergyIntolerance' | 'Medication' | 'Immunization';
+export type FHIRResource = Patient | Practitioner | Organization | Encounter | Condition | Observation | AllergyIntolerance | Medication | Immunization | Appointment;
+export type FHIRResourceType = 'Patient' | 'Practitioner' | 'Organization' | 'Encounter' | 'Condition' | 'Observation' | 'AllergyIntolerance' | 'Medication' | 'Immunization' | 'Appointment';

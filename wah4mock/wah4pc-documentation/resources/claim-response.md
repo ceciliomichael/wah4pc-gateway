@@ -1,124 +1,36 @@
-import type { ResourceDefinition } from "./types";
+# ClaimResponse
 
-export const claimResponseResource: ResourceDefinition = {
-  id: "claim-response",
-  name: "ClaimResponse",
-  title: "Claim Response",
-  description:
-    "This resource provides the adjudication details from the processing of a Claim resource. It is the response to a Claim submission from an insurer. This resource uses standard HL7 FHIR R4 validation.",
-  profileUrl: "http://hl7.org/fhir/StructureDefinition/ClaimResponse",
-  fhirVersion: "4.0.1",
-  baseDefinition: "http://hl7.org/fhir/StructureDefinition/ClaimResponse",
-  fields: [
-    {
-      name: "identifier",
-      path: "ClaimResponse.identifier",
-      type: "Identifier[]",
-      description: "Business identifier for the claim response",
-      required: false,
-    },
-    {
-      name: "status",
-      path: "ClaimResponse.status",
-      type: "code",
-      description: "The status of the response (active | cancelled | draft | entered-in-error)",
-      required: true,
-      binding: {
-        strength: "required",
-        valueSet: "http://hl7.org/fhir/ValueSet/fm-status",
-        displayName: "Financial Resource Status",
-      },
-    },
-    {
-      name: "type",
-      path: "ClaimResponse.type",
-      type: "CodeableConcept",
-      description: "Category of claim response",
-      required: true,
-      binding: {
-        strength: "extensible",
-        valueSet: "http://hl7.org/fhir/ValueSet/claim-type",
-        displayName: "Claim Type",
-      },
-    },
-    {
-      name: "use",
-      path: "ClaimResponse.use",
-      type: "code",
-      description: "Purpose (claim | preauthorization | predetermination)",
-      required: true,
-      binding: {
-        strength: "required",
-        valueSet: "http://hl7.org/fhir/ValueSet/claim-use",
-        displayName: "Claim Use",
-      },
-    },
-    {
-      name: "patient",
-      path: "ClaimResponse.patient",
-      type: "Reference",
-      description: "The recipient of the products and services",
-      required: true,
-      referenceTarget: ["Patient"],
-    },
-    {
-      name: "created",
-      path: "ClaimResponse.created",
-      type: "dateTime",
-      description: "Response creation date",
-      required: true,
-    },
-    {
-      name: "insurer",
-      path: "ClaimResponse.insurer",
-      type: "Reference",
-      description: "Party responsible for adjudication",
-      required: true,
-      referenceTarget: ["Organization"],
-    },
-    {
-      name: "request",
-      path: "ClaimResponse.request",
-      type: "Reference",
-      description: "The original claim reference",
-      required: false,
-      referenceTarget: ["Claim"],
-    },
-    {
-      name: "outcome",
-      path: "ClaimResponse.outcome",
-      type: "code",
-      description: "Result of the adjudication (queued | complete | error | partial)",
-      required: true,
-      binding: {
-        strength: "required",
-        valueSet: "http://hl7.org/fhir/ValueSet/remittance-outcome",
-        displayName: "Remittance Outcome",
-      },
-    },
-    {
-      name: "disposition",
-      path: "ClaimResponse.disposition",
-      type: "string",
-      description: "Disposition message",
-      required: false,
-    },
-    {
-      name: "total",
-      path: "ClaimResponse.total",
-      type: "BackboneElement[]",
-      description: "Adjudication totals",
-      required: false,
-    },
-    {
-      name: "payment",
-      path: "ClaimResponse.payment",
-      type: "BackboneElement",
-      description: "Payment details",
-      required: false,
-    },
-  ],
-  jsonTemplate: `{
+Adjudication details and payment advice from an insurer in response to a Claim
+
+## Profile URL
+
+**Required in `meta.profile`:**
+`http://hl7.org/fhir/StructureDefinition/ClaimResponse`
+
+## Required Fields
+
+- **`status`** (code): The status of the response (active | cancelled | draft | entered-in-error)
+- **`type`** (CodeableConcept): Category of claim response
+- **`use`** (code): Purpose (claim | preauthorization | predetermination)
+- **`patient`** (Reference): The recipient of the products and services
+- **`created`** (dateTime): Response creation date
+- **`insurer`** (Reference): Party responsible for adjudication
+- **`outcome`** (code): Result of the adjudication (queued | complete | error | partial)
+
+## Optional Fields
+
+- **`identifier`** (Identifier[]): Business identifier for the claim response
+- **`request`** (Reference): The original claim reference
+- **`disposition`** (string): Disposition message
+- **`total`** (BackboneElement[]): Adjudication totals
+- **`payment`** (BackboneElement): Payment details
+
+## JSON Template
+
+Use this as a starting point for creating valid resources:
+
+```json
+{
   "resourceType": "ClaimResponse",
   "id": "example-claim-response",
   "status": "active",
@@ -194,5 +106,9 @@ export const claimResponseResource: ResourceDefinition = {
       "currency": "PHP"
     }
   }
-}`,
-};
+}
+```
+
+## Validation
+
+This resource must include the profile URL in `meta.profile`. Resources that do not conform will be rejected with HTTP 422 (Unprocessable Entity).

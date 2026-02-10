@@ -1,92 +1,33 @@
-import type { ResourceDefinition } from "./types";
+# PH Core Procedure
 
-export const procedureResource: ResourceDefinition = {
-  id: "procedure",
-  name: "Procedure",
-  title: "PH Core Procedure",
-  description:
-    "An action that is or was performed on or for a patient, practitioner, device, organization, or location. This profile constrains references to use PH Core Patient and PH Core Encounter profiles.",
-  profileUrl: "urn://example.com/ph-core/fhir/StructureDefinition/ph-core-procedure",
-  fhirVersion: "4.0.1",
-  baseDefinition: "http://hl7.org/fhir/StructureDefinition/Procedure",
-  fields: [
-    {
-      name: "meta.profile",
-      path: "Procedure.meta.profile",
-      type: "canonical[]",
-      description: "Must include the PH Core Procedure profile URL",
-      required: true,
-    },
-    {
-      name: "status",
-      path: "Procedure.status",
-      type: "code",
-      description: "Current status (preparation | in-progress | not-done | on-hold | stopped | completed | entered-in-error | unknown)",
-      required: true,
-      binding: {
-        strength: "required",
-        valueSet: "http://hl7.org/fhir/ValueSet/event-status",
-        displayName: "Event Status",
-      },
-    },
-    {
-      name: "code",
-      path: "Procedure.code",
-      type: "CodeableConcept",
-      description: "Identification of the procedure - typically SNOMED CT or ICD-10-PCS codes",
-      required: false,
-      binding: {
-        strength: "example",
-        valueSet: "http://hl7.org/fhir/ValueSet/procedure-code",
-        displayName: "Procedure Codes (SNOMED CT)",
-      },
-    },
-    {
-      name: "subject",
-      path: "Procedure.subject",
-      type: "Reference",
-      description: "The patient on whom the procedure was performed - must conform to PH Core Patient",
-      required: true,
-      referenceTarget: ["urn://example.com/ph-core/fhir/StructureDefinition/ph-core-patient"],
-    },
-    {
-      name: "encounter",
-      path: "Procedure.encounter",
-      type: "Reference",
-      description: "The encounter during which the procedure was performed - must conform to PH Core Encounter",
-      required: false,
-      referenceTarget: ["urn://example.com/ph-core/fhir/StructureDefinition/ph-core-encounter"],
-    },
-    {
-      name: "performedDateTime",
-      path: "Procedure.performed[x]",
-      type: "dateTime | Period | string | Age | Range",
-      description: "When the procedure was performed",
-      required: false,
-    },
-    {
-      name: "performer",
-      path: "Procedure.performer",
-      type: "BackboneElement[]",
-      description: "The people who performed the procedure",
-      required: false,
-    },
-    {
-      name: "bodySite",
-      path: "Procedure.bodySite",
-      type: "CodeableConcept[]",
-      description: "Target body sites - SNOMED CT body structure codes",
-      required: false,
-    },
-    {
-      name: "outcome",
-      path: "Procedure.outcome",
-      type: "CodeableConcept",
-      description: "The result of the procedure",
-      required: false,
-    },
-  ],
-  jsonTemplate: `{
+Procedure resource schema with SNOMED CT codes, subject/encounter references to PH Core profiles, performer details, and body site coding
+
+## Profile URL
+
+**Required in `meta.profile`:**
+`urn://example.com/ph-core/fhir/StructureDefinition/ph-core-procedure`
+
+## Required Fields
+
+- **`meta.profile`** (canonical[]): Must include the PH Core Procedure profile URL
+- **`status`** (code): Current status (preparation | in-progress | not-done | on-hold | stopped | completed | entered-in-error | unknown)
+- **`subject`** (Reference): The patient on whom the procedure was performed - must conform to PH Core Patient
+
+## Optional Fields
+
+- **`code`** (CodeableConcept): Identification of the procedure - typically SNOMED CT or ICD-10-PCS codes
+- **`encounter`** (Reference): The encounter during which the procedure was performed - must conform to PH Core Encounter
+- **`performedDateTime`** (dateTime | Period | string | Age | Range): When the procedure was performed
+- **`performer`** (BackboneElement[]): The people who performed the procedure
+- **`bodySite`** (CodeableConcept[]): Target body sites - SNOMED CT body structure codes
+- **`outcome`** (CodeableConcept): The result of the procedure
+
+## JSON Template
+
+Use this as a starting point for creating valid resources:
+
+```json
+{
   "resourceType": "Procedure",
   "id": "example-procedure",
   "meta": {
@@ -152,5 +93,9 @@ export const procedureResource: ResourceDefinition = {
       }
     ]
   }
-}`,
-};
+}
+```
+
+## Validation
+
+This resource must include the profile URL in `meta.profile`. Resources that do not conform will be rejected with HTTP 422 (Unprocessable Entity).

@@ -1,114 +1,36 @@
-import type { ResourceDefinition } from "./types";
+# PaymentReconciliation
 
-export const paymentReconciliationResource: ResourceDefinition = {
-  id: "payment-reconciliation",
-  name: "PaymentReconciliation",
-  title: "Payment Reconciliation",
-  description:
-    "This resource provides the payment details and claim references supporting a bulk payment or payment advice. This resource uses standard HL7 FHIR R4 validation.",
-  profileUrl: "http://hl7.org/fhir/StructureDefinition/PaymentReconciliation",
-  fhirVersion: "4.0.1",
-  baseDefinition: "http://hl7.org/fhir/StructureDefinition/PaymentReconciliation",
-  fields: [
-    {
-      name: "identifier",
-      path: "PaymentReconciliation.identifier",
-      type: "Identifier[]",
-      description: "Business identifier for the payment reconciliation",
-      required: false,
-    },
-    {
-      name: "status",
-      path: "PaymentReconciliation.status",
-      type: "code",
-      description: "The status of the payment reconciliation (active | cancelled | draft | entered-in-error)",
-      required: true,
-      binding: {
-        strength: "required",
-        valueSet: "http://hl7.org/fhir/ValueSet/fm-status",
-        displayName: "Financial Resource Status",
-      },
-    },
-    {
-      name: "period",
-      path: "PaymentReconciliation.period",
-      type: "Period",
-      description: "Period covered by the payment reconciliation",
-      required: false,
-    },
-    {
-      name: "created",
-      path: "PaymentReconciliation.created",
-      type: "dateTime",
-      description: "Creation date of this payment reconciliation",
-      required: true,
-    },
-    {
-      name: "paymentIssuer",
-      path: "PaymentReconciliation.paymentIssuer",
-      type: "Reference",
-      description: "Organization issuing the payment",
-      required: false,
-      referenceTarget: ["Organization"],
-    },
-    {
-      name: "request",
-      path: "PaymentReconciliation.request",
-      type: "Reference",
-      description: "Reference to requesting resource",
-      required: false,
-      referenceTarget: ["Task"],
-    },
-    {
-      name: "requestor",
-      path: "PaymentReconciliation.requestor",
-      type: "Reference",
-      description: "Responsible practitioner or organization",
-      required: false,
-      referenceTarget: ["Practitioner", "PractitionerRole", "Organization"],
-    },
-    {
-      name: "outcome",
-      path: "PaymentReconciliation.outcome",
-      type: "code",
-      description: "Outcome of the request (queued | complete | error | partial)",
-      required: false,
-      binding: {
-        strength: "required",
-        valueSet: "http://hl7.org/fhir/ValueSet/remittance-outcome",
-        displayName: "Remittance Outcome",
-      },
-    },
-    {
-      name: "disposition",
-      path: "PaymentReconciliation.disposition",
-      type: "string",
-      description: "Disposition message",
-      required: false,
-    },
-    {
-      name: "paymentDate",
-      path: "PaymentReconciliation.paymentDate",
-      type: "date",
-      description: "When payment was issued",
-      required: true,
-    },
-    {
-      name: "paymentAmount",
-      path: "PaymentReconciliation.paymentAmount",
-      type: "Money",
-      description: "Total amount of payment",
-      required: true,
-    },
-    {
-      name: "detail",
-      path: "PaymentReconciliation.detail",
-      type: "BackboneElement[]",
-      description: "Settlement details",
-      required: false,
-    },
-  ],
-  jsonTemplate: `{
+Bulk payment details and references to Claims being settled
+
+## Profile URL
+
+**Required in `meta.profile`:**
+`http://hl7.org/fhir/StructureDefinition/PaymentReconciliation`
+
+## Required Fields
+
+- **`status`** (code): The status of the payment reconciliation (active | cancelled | draft | entered-in-error)
+- **`created`** (dateTime): Creation date of this payment reconciliation
+- **`paymentDate`** (date): When payment was issued
+- **`paymentAmount`** (Money): Total amount of payment
+
+## Optional Fields
+
+- **`identifier`** (Identifier[]): Business identifier for the payment reconciliation
+- **`period`** (Period): Period covered by the payment reconciliation
+- **`paymentIssuer`** (Reference): Organization issuing the payment
+- **`request`** (Reference): Reference to requesting resource
+- **`requestor`** (Reference): Responsible practitioner or organization
+- **`outcome`** (code): Outcome of the request (queued | complete | error | partial)
+- **`disposition`** (string): Disposition message
+- **`detail`** (BackboneElement[]): Settlement details
+
+## JSON Template
+
+Use this as a starting point for creating valid resources:
+
+```json
+{
   "resourceType": "PaymentReconciliation",
   "id": "example-payment-reconciliation",
   "status": "active",
@@ -152,5 +74,9 @@ export const paymentReconciliationResource: ResourceDefinition = {
       }
     }
   ]
-}`,
-};
+}
+```
+
+## Validation
+
+This resource must include the profile URL in `meta.profile`. Resources that do not conform will be rejected with HTTP 422 (Unprocessable Entity).

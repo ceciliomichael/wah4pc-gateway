@@ -1,186 +1,43 @@
-// Barrel export for FHIR Resource data - scalable modular structure
-// Add new resources by creating a new file and importing here
+# FHIR Resources
 
-// Type exports
-export type { ResourceSlug, PhCoreResourceSlug, BaseR4ResourceSlug, FieldDefinition, ResourceDefinition, CodeSystem, PageInfo } from "./types";
+The WAH4PC Gateway supports 24 FHIR resource types, categorized into Philippine Core (PH Core) and Base R4 (Financial/Administrative & Clinical).
 
-// ============================================================================
-// PH Core Resource Exports (validated against Philippine Core profiles)
-// ============================================================================
-export { patientResource } from "./patient";
-export { encounterResource } from "./encounter";
-export { procedureResource } from "./procedure";
-export { immunizationResource } from "./immunization";
-export { observationResource } from "./observation";
-export { medicationResource } from "./medication";
-export { locationResource } from "./location";
-export { organizationResource } from "./organization";
-export { practitionerResource } from "./practitioner";
+## Supported Resources
 
-// ============================================================================
-// Base R4 Resource Exports (validated against standard HL7 FHIR R4)
-// ============================================================================
-// Financial/Administrative
-export { accountResource } from "./account";
-export { claimResource } from "./claim";
-export { claimResponseResource } from "./claim-response";
-export { chargeItemResource } from "./charge-item";
-export { chargeItemDefinitionResource } from "./charge-item-definition";
-export { invoiceResource } from "./invoice";
-export { paymentNoticeResource } from "./payment-notice";
-export { paymentReconciliationResource } from "./payment-reconciliation";
+### PH Core Resources
+- **PH Core Patient** (`resources/patient`) - Patient resource schema with required extensions (indigenousPeople), PH Core Address profile, PhilHealth ID identifiers, and complete JSON template
+- **PH Core Encounter** (`resources/encounter`) - Encounter resource schema with status codes, class codes (AMB, IMP), subject reference to PH Core Patient, and participant references
+- **PH Core Procedure** (`resources/procedure`) - Procedure resource schema with SNOMED CT codes, subject/encounter references to PH Core profiles, performer details, and body site coding
+- **PH Core Immunization** (`resources/immunization`) - Immunization resource schema with CVX vaccine codes, patient/encounter references, dose quantity, lot number, and funding source
+- **PH Core Observation** (`resources/observation`) - Observation resource schema with LOINC codes for vital signs/labs, subject/encounter references, component values (e.g., blood pressure systolic/diastolic)
+- **PH Core Medication** (`resources/medication`) - Medication resource schema with PH Core drugs ValueSet binding, form codes, ingredient details, and batch information
+- **PH Core Location** (`resources/location`) - Location resource schema localized for Philippines with PSGC coding for region, province, city/municipality, and barangay
+- **PH Core Organization** (`resources/organization`) - Organization resource schema with DOH National Health Facilities Registry (NHFR) code support and PSGC address extensions
+- **PH Core Practitioner** (`resources/practitioner`) - Practitioner resource schema with PRC license identifier support and PH Core address extensions
 
-// Clinical/Other
-export { allergyIntoleranceResource } from "./allergy-intolerance";
-export { conditionResource } from "./condition";
-export { diagnosticReportResource } from "./diagnostic-report";
-export { medicationAdministrationResource } from "./medication-administration";
-export { medicationRequestResource } from "./medication-request";
-export { nutritionOrderResource } from "./nutrition-order";
-export { practitionerRoleResource } from "./practitioner-role";
+### Base R4 Resources
+- **Account** (`resources/account`) - Financial account for tracking charges for a patient or cost center
+- **Claim** (`resources/claim`) - Provider-issued list of services and products for insurance reimbursement (e.g., PhilHealth)
+- **ClaimResponse** (`resources/claim-response`) - Adjudication details and payment advice from an insurer in response to a Claim
+- **ChargeItem** (`resources/charge-item`) - Itemized record of provided product or service for billing purposes
+- **ChargeItemDefinition** (`resources/charge-item-definition`) - Definition of billing codes, prices, and rules for charge items
+- **Invoice** (`resources/invoice`) - List of ChargeItems with calculated totals for billing a patient or organization
+- **PaymentNotice** (`resources/payment-notice`) - Notification of payment status or clearing details
+- **PaymentReconciliation** (`resources/payment-reconciliation`) - Bulk payment details and references to Claims being settled
+- **AllergyIntolerance** (`resources/allergy-intolerance`) - Record of patient allergies and adverse reactions to substances
+- **Condition** (`resources/condition`) - Clinical condition, diagnosis, problem, or issue that has risen to a level of concern
+- **DiagnosticReport** (`resources/diagnostic-report`) - Findings and interpretation of diagnostic tests (lab, imaging, etc.)
+- **MedicationAdministration** (`resources/medication-administration`) - Record of a medication actually given to a patient
+- **MedicationRequest** (`resources/medication-request`) - Order or prescription for medication to be supplied and instructions for use
+- **NutritionOrder** (`resources/nutrition-order`) - Request for diet, formula feeding, or nutritional supplements
+- **PractitionerRole** (`resources/practitioner-role`) - Roles, specialties, and services a practitioner performs at an organization
 
-// ============================================================================
-// Import for aggregation
-// ============================================================================
-// PH Core
-import { patientResource } from "./patient";
-import { encounterResource } from "./encounter";
-import { procedureResource } from "./procedure";
-import { immunizationResource } from "./immunization";
-import { observationResource } from "./observation";
-import { medicationResource } from "./medication";
-import { locationResource } from "./location";
-import { organizationResource } from "./organization";
-import { practitionerResource } from "./practitioner";
+## Common Code Systems
 
-// Base R4 - Financial/Administrative
-import { accountResource } from "./account";
-import { claimResource } from "./claim";
-import { claimResponseResource } from "./claim-response";
-import { chargeItemResource } from "./charge-item";
-import { chargeItemDefinitionResource } from "./charge-item-definition";
-import { invoiceResource } from "./invoice";
-import { paymentNoticeResource } from "./payment-notice";
-import { paymentReconciliationResource } from "./payment-reconciliation";
-
-// Base R4 - Clinical/Other
-import { allergyIntoleranceResource } from "./allergy-intolerance";
-import { conditionResource } from "./condition";
-import { diagnosticReportResource } from "./diagnostic-report";
-import { medicationAdministrationResource } from "./medication-administration";
-import { medicationRequestResource } from "./medication-request";
-import { nutritionOrderResource } from "./nutrition-order";
-import { practitionerRoleResource } from "./practitioner-role";
-
-import type { ResourceDefinition, ResourceSlug, CodeSystem, PageInfo } from "./types";
-
-// ============================================================================
-// Aggregated resources arrays - grouped by category for display
-// ============================================================================
-
-// PH Core resources (validated against Philippine Core profiles)
-export const phCoreResources: ResourceDefinition[] = [
-  patientResource,
-  encounterResource,
-  procedureResource,
-  immunizationResource,
-  observationResource,
-  medicationResource,
-  locationResource,
-  organizationResource,
-  practitionerResource,
-];
-
-// Base R4 resources (validated against standard HL7 FHIR R4)
-export const baseR4Resources: ResourceDefinition[] = [
-  // Financial/Administrative
-  accountResource,
-  claimResource,
-  claimResponseResource,
-  chargeItemResource,
-  chargeItemDefinitionResource,
-  invoiceResource,
-  paymentNoticeResource,
-  paymentReconciliationResource,
-  // Clinical/Other
-  allergyIntoleranceResource,
-  conditionResource,
-  diagnosticReportResource,
-  medicationAdministrationResource,
-  medicationRequestResource,
-  nutritionOrderResource,
-  practitionerRoleResource,
-];
-
-// All resources combined (PH Core first, then Base R4)
-export const resources: ResourceDefinition[] = [
-  ...phCoreResources,
-  ...baseR4Resources,
-];
-
-// Page metadata
-export const pageInfo: PageInfo = {
-  title: "FHIR Resources",
-  description:
-    "Comprehensive schema documentation for all FHIR resource types supported by the WAH4PC Gateway. Resources are categorized into PH Core (Philippine-specific profiles) and Base R4 (standard HL7 FHIR). All resources are validated before being forwarded between healthcare providers.",
-  endpoint: "/receive/{resourceType}",
-  supportedResources: [
-    // PH Core
-    "Patient", "Encounter", "Procedure", "Immunization", "Observation", "Medication",
-    "Location", "Organization", "Practitioner",
-    // Base R4
-    "Account", "Claim", "ClaimResponse", "ChargeItem", "ChargeItemDefinition",
-    "Invoice", "PaymentNotice", "PaymentReconciliation",
-    "AllergyIntolerance", "Condition", "DiagnosticReport",
-    "MedicationAdministration", "MedicationRequest", "NutritionOrder", "PractitionerRole",
-  ],
-};
-
-// Common code systems used across resources
-export const commonCodeSystems: CodeSystem[] = [
-  {
-    name: "SNOMED CT",
-    url: "http://snomed.info/sct",
-    description: "Systematized Nomenclature of Medicine - Clinical Terms for clinical concepts",
-  },
-  {
-    name: "LOINC",
-    url: "http://loinc.org",
-    description: "Logical Observation Identifiers Names and Codes for laboratory and clinical observations",
-  },
-  {
-    name: "CVX",
-    url: "http://hl7.org/fhir/sid/cvx",
-    description: "CDC Vaccine Administered codes for immunizations",
-  },
-  {
-    name: "RxNorm",
-    url: "http://www.nlm.nih.gov/research/umls/rxnorm",
-    description: "Normalized names for clinical drugs",
-  },
-  {
-    name: "PSGC",
-    url: "urn://example.com/ph-core/fhir/CodeSystem/PSGC",
-    description: "Philippine Standard Geographic Code for location references",
-  },
-  {
-    name: "PSOC",
-    url: "urn://example.com/ph-core/fhir/CodeSystem/PSOC",
-    description: "Philippine Standard Occupational Classification",
-  },
-  {
-    name: "PSCED",
-    url: "urn://example.com/ph-core/fhir/CodeSystem/PSCED",
-    description: "Philippine Standard Classification of Education",
-  },
-];
-
-// Helper function to get a resource by slug
-export function getResourceBySlug(slug: string): ResourceDefinition | undefined {
-  return resources.find((r) => r.id === slug);
-}
-
-// Get all resource slugs for static generation
-export function getAllResourceSlugs(): ResourceSlug[] {
-  return resources.map((r) => r.id) as ResourceSlug[];
-}
+- **SNOMED CT** (`http://snomed.info/sct`): Systematized Nomenclature of Medicine - Clinical Terms for clinical concepts
+- **LOINC** (`http://loinc.org`): Logical Observation Identifiers Names and Codes for laboratory and clinical observations
+- **CVX** (`http://hl7.org/fhir/sid/cvx`): CDC Vaccine Administered codes for immunizations
+- **RxNorm** (`http://www.nlm.nih.gov/research/umls/rxnorm`): Normalized names for clinical drugs
+- **PSGC** (`urn://example.com/ph-core/fhir/CodeSystem/PSGC`): Philippine Standard Geographic Code for location references
+- **PSOC** (`urn://example.com/ph-core/fhir/CodeSystem/PSOC`): Philippine Standard Occupational Classification
+- **PSCED** (`urn://example.com/ph-core/fhir/CodeSystem/PSCED`): Philippine Standard Classification of Education

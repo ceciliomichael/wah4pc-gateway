@@ -1,0 +1,94 @@
+{
+  "resourceType": "CodeSystem",
+  "id": "zip-codes",
+  "url": "urn://example.com/ph-core/fhir/CodeSystem/zip-codes",
+  "version": "2024",
+  "name": "PhilippineZipCodes",
+  "title": "Philippine Zip Codes",
+  "status": "active",
+  "experimental": true,
+  "date": "2024-02-09",
+  "publisher": "Mock Gateway",
+  "description": "A simplified list of Philippine Zip Codes linked to PSGC City/Municipality codes for mock purposes.",
+  "caseSensitive": true,
+  "content": "complete",
+  "property": [
+    {
+      "code": "city",
+      "description": "PSGC City/Municipality Code",
+      "type": "code"
+    }
+  ],
+  "concept": [
+    {
+      "code": "4100",
+      "display": "Cavite City (Main)",
+      "property": [ { "code": "city", "valueCode": "042105000" } ]
+    },
+    {
+      "code": "4101",
+      "display": "Sangley Point",
+      "property": [ { "code": "city", "valueCode": "042105000" } ]
+    },
+    {
+      "code": "4102",
+      "display": "Bacoor City",
+      "property": [ { "code": "city", "valueCode": "042103000" } ]
+    },
+    {
+      "code": "4114",
+      "display": "Dasmariñas City",
+      "property": [ { "code": "city", "valueCode": "042106000" } ]
+    },
+    {
+      "code": "4115",
+      "display": "Dasmariñas (Resettlement Area)",
+      "property": [ { "code": "city", "valueCode": "042106000" } ]
+    },
+    {
+      "code": "4103",
+      "display": "Imus City",
+      "property": [ { "code": "city", "valueCode": "042111000" } ]
+    },
+    {
+      "code": "4107",
+      "display": "General Trias",
+      "property": [ { "code": "city", "valueCode": "042109000" } ]
+    },
+    {
+      "code": "4120",
+      "display": "Tagaytay City",
+      "property": [ { "code": "city", "valueCode": "042122000" } ]
+    },
+    {
+      "code": "1000",
+      "display": "Manila CPO (Ermita)",
+      "property": [ { "code": "city", "valueCode": "133900000" } ]
+    },
+    {
+      "code": "1001",
+      "display": "Quiapo",
+      "property": [ { "code": "city", "valueCode": "133900000" } ]
+    },
+    {
+      "code": "1002",
+      "display": "Intramuros",
+      "property": [ { "code": "city", "valueCode": "133900000" } ]
+    },
+    {
+      "code": "1003",
+      "display": "Santa Cruz",
+      "property": [ { "code": "city", "valueCode": "133900000" } ]
+    },
+    {
+      "code": "1004",
+      "display": "Malate",
+      "property": [ { "code": "city", "valueCode": "133900000" } ]
+    },
+    {
+      "code": "1008",
+      "display": "Sampaloc East",
+      "property": [ { "code": "city", "valueCode": "133900000" } ]
+    }
+  ]
+}

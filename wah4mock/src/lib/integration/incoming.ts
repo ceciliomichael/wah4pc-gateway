@@ -3,13 +3,17 @@
  * Handles requests FROM other providers that need approval
  */
 
+import { v4 as uuidv4 } from 'uuid';
 import { integrationDb } from './db';
+import { db } from '../db';
 import { findPatientByIdentifiers, formatPatientForGateway, sendToGateway } from './common';
 import type {
   ProcessQueryPayload,
+  ReceivePushPayload,
   GatewayResponse,
   IncomingRequest,
 } from '../types/integration';
+import type { Appointment } from '../types/fhir';
 
 // ============================================================================
 // Webhook Handler: Process Query
@@ -204,6 +208,107 @@ export async function rejectIncomingRequest(
       message: error instanceof Error ? error.message : 'Failed to reject request',
     };
   }
+}
+
+// ============================================================================
+// Webhook Handler: Receive Push (Unsolicited Data)
+// ============================================================================
+
+/**
+ * Handle incoming push webhook from gateway
+ * Called when another provider pushes data to us without a prior request
+ * (e.g., incoming referrals, appointments)
+ *
+ * Auto-saves Appointment resources to the local database
+ */
+export async function handleReceivePush(
+  payload: ReceivePushPayload
+): Promise<{ success: boolean; message: string; resourceSaved?: boolean }> {
+  const { transactionId, senderId, resourceType, data, reason, notes } = payload;
+
+  console.log(`[Integration] Received push ${transactionId} for ${resourceType} from ${senderId}`);
+  if (reason) console.log(`[Integration] Reason: ${reason}`);
+  if (notes) console.log(`[Integration] Notes: ${notes}`);
+
+  // Check for duplicate delivery (idempotency)
+  if (await integrationDb.dataAlreadyReceived(transactionId)) {
+    console.log(`[Integration] Push data already received for ${transactionId}, skipping`);
+    return {
+      success: true,
+      message: 'Data already received (idempotent)',
+    };
+  }
+
+  // Store the received data in integration log
+  await integrationDb.saveReceivedData({
+    transactionId,
+    resourceType,
+    status: 'SUCCESS',
+    data: data || {},
+  });
+
+  console.log(`[Integration] Stored push data for transaction ${transactionId}`);
+
+  // =========================================================================
+  // AUTO-SAVE: Save received resource to local database
+  // =========================================================================
+  let resourceSaved = false;
+
+  if (data && resourceType === 'Appointment') {
+    try {
+      resourceSaved = await saveReceivedAppointmentToLocalDb(data, transactionId, senderId);
+    } catch (error) {
+      // Log but don't fail - the integration data is already saved
+      console.error(`[Integration] Failed to auto-save appointment to local DB:`, error);
+    }
+  }
+
+  return {
+    success: true,
+    message: 'Push data received successfully',
+    resourceSaved,
+  };
+}
+
+/**
+ * Save a received Appointment resource to the local Appointment.json database
+ */
+async function saveReceivedAppointmentToLocalDb(
+  data: Record<string, unknown>,
+  transactionId: string,
+  senderId: string
+): Promise<boolean> {
+  if (data.resourceType !== 'Appointment') {
+    console.warn(`[Integration] Expected Appointment resource but got: ${data.resourceType}`);
+    return false;
+  }
+
+  const receivedAppointment = data as unknown as Appointment;
+
+  // Generate a local ID if not present
+  const localId = receivedAppointment.id || `appt-${uuidv4().slice(0, 8)}`;
+
+  // Add integration metadata extension
+  const appointmentToSave: Appointment = {
+    ...receivedAppointment,
+    id: localId,
+    extension: [
+      ...(receivedAppointment.extension || []),
+      {
+        url: 'urn:wah4pc:integration',
+        extension: [
+          { url: 'transactionId', valueString: transactionId },
+          { url: 'senderId', valueString: senderId },
+          { url: 'receivedAt', valueDateTime: new Date().toISOString() },
+          { url: 'source', valueString: 'gateway-push' },
+        ],
+      },
+    ],
+  };
+
+  await db.create('Appointment', appointmentToSave);
+  console.log(`[Integration] Auto-saved pushed appointment to local DB: ${localId}`);
+  return true;
 }
 
 // ============================================================================

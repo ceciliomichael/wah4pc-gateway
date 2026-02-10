@@ -26,6 +26,12 @@ func NewAuditMiddleware(l *logger.FileLogger) *AuditMiddleware {
 // Middleware returns the HTTP middleware handler
 func (m *AuditMiddleware) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		// Skip logging for excluded paths
+		if m.shouldSkipLogging(req) {
+			next.ServeHTTP(w, req)
+			return
+		}
+
 		start := time.Now()
 
 		// Generate unique request ID
@@ -105,6 +111,37 @@ func (m *AuditMiddleware) Middleware(next http.Handler) http.Handler {
 		// Send to async logger
 		m.logger.Log(entry)
 	})
+}
+
+// shouldSkipLogging determines if a request should be excluded from audit logs
+func (m *AuditMiddleware) shouldSkipLogging(req *http.Request) bool {
+	path := req.URL.Path
+
+	// Exclude OPTIONS requests (CORS preflight)
+	if req.Method == http.MethodOptions {
+		return true
+	}
+
+	// Exclude health checks - high volume, low value
+	if path == "/health" {
+		return true
+	}
+
+	// Exclude robots.txt (crawler noise)
+	if path == "/robots.txt" {
+		return true
+	}
+
+	// Exclude log management endpoints to prevent "observer effect" (reading logs creating logs)
+	if strings.HasPrefix(path, "/api/v1/logs") {
+		return true
+	}
+
+	// Exclude static assets if served via this middleware
+	if strings.HasPrefix(path, "/static/") || path == "/favicon.ico" {
+		return true
+	}
+	return false
 }
 
 // getClientIP extracts the client IP from the request

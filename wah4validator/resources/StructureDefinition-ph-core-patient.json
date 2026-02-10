@@ -54,7 +54,7 @@
           {
             "code": "Extension",
             "profile": [
-              "http://hl7.org/fhir/StructureDefinition/patient-religion|5.2.0"
+              "urn://example.com/ph-core/fhir/StructureDefinition/religion"
             ]
           }
         ]

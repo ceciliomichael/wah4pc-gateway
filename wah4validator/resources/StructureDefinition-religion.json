@@ -43,12 +43,13 @@
         "min": 1,
         "type": [
           {
-            "code": "string"
-          },
-          {
             "code": "CodeableConcept"
           }
-        ]
+        ],
+        "binding": {
+          "strength": "extensible",
+          "valueSet": "urn://example.com/ph-core/fhir/ValueSet/religion"
+        }
       }
     ]
   }

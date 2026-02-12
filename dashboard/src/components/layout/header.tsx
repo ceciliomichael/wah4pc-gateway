@@ -8,6 +8,7 @@ const pageConfig: Record<string, { title: string; subtitle: string }> = {
   "/providers": { title: "Providers", subtitle: "Manage healthcare connections" },
   "/apikeys": { title: "API Keys", subtitle: "Authentication & access control" },
   "/transactions": { title: "Transactions", subtitle: "FHIR resource transfers" },
+  "/logs": { title: "System Logs", subtitle: "Audit Trail and diagnostic" },
 };
 
 interface HeaderProps {

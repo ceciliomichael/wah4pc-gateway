@@ -17,6 +17,7 @@ type Router struct {
 	gatewayHandler        *handler.GatewayHandler
 	apiKeyHandler         *handler.ApiKeyHandler
 	logHandler            *handler.LogHandler
+	settingsHandler       *handler.SettingsHandler
 	webHandler            *handler.WebHandler
 	authMiddleware        *middleware.AuthMiddleware
 	rateLimitMiddleware   *middleware.RateLimitMiddleware
@@ -30,6 +31,7 @@ func NewRouter(
 	gatewayHandler *handler.GatewayHandler,
 	apiKeyHandler *handler.ApiKeyHandler,
 	logHandler *handler.LogHandler,
+	settingsHandler *handler.SettingsHandler,
 	apiKeyService *service.ApiKeyService,
 	masterKey string,
 	auditLogger *logger.FileLogger,
@@ -49,6 +51,7 @@ func NewRouter(
 		gatewayHandler:        gatewayHandler,
 		apiKeyHandler:         apiKeyHandler,
 		logHandler:            logHandler,
+		settingsHandler:       settingsHandler,
 		webHandler:            webHandler,
 		authMiddleware:        authMW,
 		rateLimitMiddleware:   rateLimitMW,
@@ -88,6 +91,9 @@ func (r *Router) registerRoutes() {
 	// Log routes
 	r.mux.HandleFunc("/api/v1/logs/dates", r.handleLogDates)
 	r.mux.HandleFunc("/api/v1/logs/", r.handleLogs)
+
+	// Settings routes
+	r.mux.HandleFunc("/api/v1/settings", r.handleSettings)
 }
 
 // Handler returns the HTTP handler with middleware chain
@@ -223,6 +229,24 @@ func (r *Router) handleTransactionByID(w http.ResponseWriter, req *http.Request)
 		return
 	}
 	r.gatewayHandler.GetTransaction(w, req)
+}
+
+// handleSettings routes /api/v1/settings
+func (r *Router) handleSettings(w http.ResponseWriter, req *http.Request) {
+	// Verify admin role
+	if middleware.GetRoleFromContext(req.Context()) != "admin" {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
+
+	switch req.Method {
+	case http.MethodGet:
+		r.settingsHandler.Get(w, req)
+	case http.MethodPut:
+		r.settingsHandler.Update(w, req)
+	default:
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	}
 }
 
 // handleLogDates routes /api/v1/logs/dates

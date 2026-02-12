@@ -134,3 +134,9 @@ export interface LogDetail {
   timestamp: string;
   content: string;
 }
+
+// System Settings
+export interface SystemSettings {
+  id: string;
+  validatorDisabled: boolean;
+}

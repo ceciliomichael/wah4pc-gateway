@@ -8,6 +8,7 @@ import {
   LuKeyRound,
   LuArrowLeftRight,
   LuFileText,
+  LuSettings,
   LuLogOut,
   LuChevronLeft,
   LuX,
@@ -31,6 +32,7 @@ const navItems: NavItem[] = [
   { href: "/apikeys", label: "API Keys", icon: LuKeyRound, description: "Access credentials" },
   { href: "/transactions", label: "Transactions", icon: LuArrowLeftRight, description: "FHIR transfers" },
   { href: "/logs", label: "System Logs", icon: LuFileText, description: "Audit trail" },
+  { href: "/settings", label: "Settings", icon: LuSettings, description: "Configuration" },
 ];
 
 interface SidebarProps {

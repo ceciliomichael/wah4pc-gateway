@@ -10,6 +10,7 @@ import type {
   LogDate,
   LogSummary,
   LogDetail,
+  SystemSettings,
 } from "@/types";
 
 // Use Next.js API routes (relative path)
@@ -154,6 +155,16 @@ export const logsApi = {
   getDates: async () => ensureArray(await fetchWithAuth<LogDate[]>("/logs/dates")),
   getLogs: async (date: string) => ensureArray(await fetchWithAuth<LogSummary[]>(`/logs/${date}`)),
   getLogDetail: (date: string, id: string) => fetchWithAuth<LogDetail>(`/logs/${date}/${id}`),
+};
+
+// Settings API
+export const settingsApi = {
+  get: () => fetchWithAuth<SystemSettings>("/settings"),
+  update: (data: SystemSettings) =>
+    fetchWithAuth<SystemSettings>("/settings", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
 };
 
 // Auth validation - test if key is valid via Next.js API route

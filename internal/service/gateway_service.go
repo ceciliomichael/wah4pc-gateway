@@ -43,6 +43,7 @@ type TransactionRepository interface {
 type GatewayService struct {
 	txRepo          TransactionRepository
 	providerService *ProviderService
+	settingsService *SettingsService
 	gatewayBaseURL  string
 	httpClient      *http.Client
 	validator       validator.Validator
@@ -52,12 +53,14 @@ type GatewayService struct {
 func NewGatewayService(
 	txRepo TransactionRepository,
 	providerService *ProviderService,
+	settingsService *SettingsService,
 	gatewayBaseURL string,
 	resourceValidator validator.Validator,
 ) *GatewayService {
 	return &GatewayService{
 		txRepo:          txRepo,
 		providerService: providerService,
+		settingsService: settingsService,
 		gatewayBaseURL:  gatewayBaseURL,
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
@@ -194,7 +197,7 @@ func (s *GatewayService) InitiatePush(req PushRequest) (*model.Transaction, erro
 	}
 
 	// Validate the data using the remote FHIR validator
-	if s.validator != nil {
+	if s.validator != nil && !s.settingsService.IsValidatorDisabled() {
 		if err := s.validator.Validate(req.ResourceType, req.Data); err != nil {
 			return nil, fmt.Errorf("%w: %v", ErrSchemaValidation, err)
 		}
@@ -274,7 +277,7 @@ func (s *GatewayService) ProcessResponse(result IncomingResultPayload, senderPro
 
 	// Validate the incoming data using the remote FHIR validator
 	// Only validate if we have a validator and the status is SUCCESS
-	if s.validator != nil && result.Status == string(ResultStatusSuccess) {
+	if s.validator != nil && result.Status == string(ResultStatusSuccess) && !s.settingsService.IsValidatorDisabled() {
 		if err := s.validator.Validate(tx.ResourceType, result.Data); err != nil {
 			// Update transaction status to REJECTED due to validation failure
 			tx.Status = model.StatusFailed

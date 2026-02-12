@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	"gopkg.in/yaml.v3"
 )
@@ -17,8 +18,9 @@ type Config struct {
 }
 
 type ValidatorConfig struct {
-	URL    string `yaml:"url"`
-	APIKey string `yaml:"api_key"`
+	URL      string `yaml:"url"`
+	APIKey   string `yaml:"api_key"`
+	Disabled bool   `yaml:"disabled"`
 }
 
 type AppConfig struct {
@@ -36,6 +38,7 @@ type DataConfig struct {
 	ProvidersPath    string `yaml:"providers_path"`
 	TransactionsPath string `yaml:"transactions_path"`
 	ApiKeysPath      string `yaml:"api_keys_path"`
+	SettingsPath     string `yaml:"settings_path"`
 }
 
 type LoggingConfig struct {
@@ -89,11 +92,19 @@ func loadFromEnv(cfg *Config) {
 	if apiKeysPath := os.Getenv("DATA_API_KEYS_PATH"); apiKeysPath != "" {
 		cfg.Data.ApiKeysPath = apiKeysPath
 	}
+	if settingsPath := os.Getenv("DATA_SETTINGS_PATH"); settingsPath != "" {
+		cfg.Data.SettingsPath = settingsPath
+	}
 	if validatorURL := os.Getenv("VALIDATOR_URL"); validatorURL != "" {
 		cfg.Validator.URL = validatorURL
 	}
 	if validatorAPIKey := os.Getenv("VALIDATOR_API_KEY"); validatorAPIKey != "" {
 		cfg.Validator.APIKey = validatorAPIKey
+	}
+	if validatorDisabled := os.Getenv("VALIDATOR_DISABLED"); validatorDisabled != "" {
+		if disabled, err := strconv.ParseBool(validatorDisabled); err == nil {
+			cfg.Validator.Disabled = disabled
+		}
 	}
 }
 
@@ -121,6 +132,9 @@ func setDefaults(cfg *Config) {
 	}
 	if cfg.Data.ApiKeysPath == "" {
 		cfg.Data.ApiKeysPath = "data/apikeys.json"
+	}
+	if cfg.Data.SettingsPath == "" {
+		cfg.Data.SettingsPath = "data/settings.json"
 	}
 	if cfg.Logging.Level == "" {
 		cfg.Logging.Level = "info"

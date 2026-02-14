@@ -9,10 +9,10 @@ type Identifier struct {
 	//   - "http://philhealth.gov.ph" (PhilHealth ID)
 	//   - "http://psa.gov.ph/birth-certificate" (PSA Birth Certificate)
 	//   - "http://hospital-a.com/mrn" (Hospital A's Medical Record Number)
-	System string `json:"system"`
+	System string `json:"system" bson:"system"`
 
 	// Value is the actual identifier value within the system's namespace
-	Value string `json:"value"`
+	Value string `json:"value" bson:"value"`
 }
 
 // CommonIdentifierSystems defines well-known identifier systems for the Philippines

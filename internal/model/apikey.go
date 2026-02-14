@@ -12,16 +12,16 @@ const (
 
 // ApiKey represents an API key for authentication
 type ApiKey struct {
-	ID         string     `json:"id"`
-	Prefix     string     `json:"prefix"`     // First 7 chars for display (e.g., "wah_abc")
-	KeyHash    string     `json:"keyHash"`    // SHA256 hash of the full key
-	Owner      string     `json:"owner"`      // Owner name or identifier
-	ProviderID string     `json:"providerId"` // Associated provider ID (empty for admin keys)
-	Role       ApiKeyRole `json:"role"`       // admin or user
-	RateLimit  int        `json:"rateLimit"`  // Requests per second (0 = unlimited)
-	IsActive   bool       `json:"isActive"`   // Whether the key is active
-	CreatedAt  time.Time  `json:"createdAt"`
-	LastUsedAt time.Time  `json:"lastUsedAt"`
+	ID         string     `json:"id" bson:"id"`
+	Prefix     string     `json:"prefix" bson:"prefix"`         // First 7 chars for display (e.g., "wah_abc")
+	KeyHash    string     `json:"keyHash" bson:"keyHash"`       // SHA256 hash of the full key
+	Owner      string     `json:"owner" bson:"owner"`           // Owner name or identifier
+	ProviderID string     `json:"providerId" bson:"providerId"` // Associated provider ID (empty for admin keys)
+	Role       ApiKeyRole `json:"role" bson:"role"`             // admin or user
+	RateLimit  int        `json:"rateLimit" bson:"rateLimit"`   // Requests per second (0 = unlimited)
+	IsActive   bool       `json:"isActive" bson:"isActive"`     // Whether the key is active
+	CreatedAt  time.Time  `json:"createdAt" bson:"createdAt"`
+	LastUsedAt time.Time  `json:"lastUsedAt" bson:"lastUsedAt"`
 }
 
 // GetID implements the Identifiable interface for generic repository

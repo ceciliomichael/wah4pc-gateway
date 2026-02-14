@@ -11,10 +11,13 @@ server:
 security:
   master_key: "tcgtrio123"  # Master key for administrative access (leave empty to disable)
 
-data:
-  providers_path: "data/providers.json"
-  transactions_path: "data/transactions.json"
-  api_keys_path: "data/apikeys.json"
+mongodb:
+  uri: "mongodb://localhost:27017"
+  database: "wah4pc_gateway"
+  providers_collection: "providers"
+  transactions_collection: "transactions"
+  api_keys_collection: "api_keys"
+  settings_collection: "settings"
 
 logging:
   level: "info"  # debug, info, warn, error

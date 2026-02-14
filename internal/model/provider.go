@@ -14,14 +14,14 @@ const (
 
 // Provider represents a registered healthcare provider in the gateway
 type Provider struct {
-	ID             string       `json:"id"`
-	Name           string       `json:"name"`
-	Type           ProviderType `json:"type"`
-	BaseURL        string       `json:"baseUrl"`        // Base URL for receiving FHIR resources
-	GatewayAuthKey string       `json:"gatewayAuthKey"` // Secret key for Gateway->Provider authentication
-	IsActive       bool         `json:"isActive"`
-	CreatedAt      time.Time    `json:"createdAt"`
-	UpdatedAt      time.Time    `json:"updatedAt"`
+	ID             string       `json:"id" bson:"id"`
+	Name           string       `json:"name" bson:"name"`
+	Type           ProviderType `json:"type" bson:"type"`
+	BaseURL        string       `json:"baseUrl" bson:"baseUrl"`               // Base URL for receiving FHIR resources
+	GatewayAuthKey string       `json:"gatewayAuthKey" bson:"gatewayAuthKey"` // Secret key for Gateway->Provider authentication
+	IsActive       bool         `json:"isActive" bson:"isActive"`
+	CreatedAt      time.Time    `json:"createdAt" bson:"createdAt"`
+	UpdatedAt      time.Time    `json:"updatedAt" bson:"updatedAt"`
 }
 
 // Identifiable interface for generic repository

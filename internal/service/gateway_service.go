@@ -36,7 +36,7 @@ type TransactionRepository interface {
 	GetByID(id string) (model.Transaction, error)
 	Create(tx model.Transaction) error
 	Update(tx model.Transaction) error
-	Find(predicate func(model.Transaction) bool) ([]model.Transaction, error)
+	FindPotentialDuplicates(requesterID, targetID, resourceType string, cutoff time.Time) ([]model.Transaction, error)
 }
 
 // GatewayService handles FHIR resource transfer orchestration
@@ -92,29 +92,16 @@ func (s *GatewayService) InitiateQuery(req QueryRequest) (*model.Transaction, er
 
 	// Check for duplicate requests within the time window
 	cutoff := time.Now().UTC().Add(-duplicateWindow)
-	duplicates, err := s.txRepo.Find(func(tx model.Transaction) bool {
-		// Time check first (fastest to fail)
-		if tx.CreatedAt.Before(cutoff) {
-			return false
-		}
-		// Check all matching criteria
-		if tx.RequesterID != req.RequesterID {
-			return false
-		}
-		if tx.TargetID != req.TargetID {
-			return false
-		}
-		if tx.ResourceType != req.ResourceType {
-			return false
-		}
-		// Check identifiers match (set equality)
-		if !model.IdentifiersMatch(tx.Identifiers, req.Identifiers) {
-			return false
-		}
-		return true
-	})
+	candidates, err := s.txRepo.FindPotentialDuplicates(req.RequesterID, req.TargetID, req.ResourceType, cutoff)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check for duplicates: %w", err)
+	}
+
+	duplicates := make([]model.Transaction, 0)
+	for _, tx := range candidates {
+		if model.IdentifiersMatch(tx.Identifiers, req.Identifiers) {
+			duplicates = append(duplicates, tx)
+		}
 	}
 	if len(duplicates) > 0 {
 		return nil, ErrDuplicateRequest

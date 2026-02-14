@@ -12,7 +12,7 @@ type Config struct {
 	App       AppConfig       `yaml:"app"`
 	Server    ServerConfig    `yaml:"server"`
 	Security  SecurityConfig  `yaml:"security"`
-	Data      DataConfig      `yaml:"data"`
+	MongoDB   MongoDBConfig   `yaml:"mongodb"`
 	Logging   LoggingConfig   `yaml:"logging"`
 	Validator ValidatorConfig `yaml:"validator"`
 }
@@ -34,11 +34,13 @@ type ServerConfig struct {
 	BaseURL string `yaml:"base_url"`
 }
 
-type DataConfig struct {
-	ProvidersPath    string `yaml:"providers_path"`
-	TransactionsPath string `yaml:"transactions_path"`
-	ApiKeysPath      string `yaml:"api_keys_path"`
-	SettingsPath     string `yaml:"settings_path"`
+type MongoDBConfig struct {
+	URI                    string `yaml:"uri"`
+	Database               string `yaml:"database"`
+	ProvidersCollection    string `yaml:"providers_collection"`
+	TransactionsCollection string `yaml:"transactions_collection"`
+	ApiKeysCollection      string `yaml:"api_keys_collection"`
+	SettingsCollection     string `yaml:"settings_collection"`
 }
 
 type LoggingConfig struct {
@@ -83,17 +85,23 @@ func loadFromEnv(cfg *Config) {
 	if masterKey := os.Getenv("SECURITY_MASTER_KEY"); masterKey != "" {
 		cfg.Security.MasterKey = masterKey
 	}
-	if providersPath := os.Getenv("DATA_PROVIDERS_PATH"); providersPath != "" {
-		cfg.Data.ProvidersPath = providersPath
+	if mongoURI := os.Getenv("MONGODB_URI"); mongoURI != "" {
+		cfg.MongoDB.URI = mongoURI
 	}
-	if txPath := os.Getenv("DATA_TRANSACTIONS_PATH"); txPath != "" {
-		cfg.Data.TransactionsPath = txPath
+	if mongoDBName := os.Getenv("MONGODB_DATABASE"); mongoDBName != "" {
+		cfg.MongoDB.Database = mongoDBName
 	}
-	if apiKeysPath := os.Getenv("DATA_API_KEYS_PATH"); apiKeysPath != "" {
-		cfg.Data.ApiKeysPath = apiKeysPath
+	if providersCollection := os.Getenv("MONGODB_PROVIDERS_COLLECTION"); providersCollection != "" {
+		cfg.MongoDB.ProvidersCollection = providersCollection
 	}
-	if settingsPath := os.Getenv("DATA_SETTINGS_PATH"); settingsPath != "" {
-		cfg.Data.SettingsPath = settingsPath
+	if txCollection := os.Getenv("MONGODB_TRANSACTIONS_COLLECTION"); txCollection != "" {
+		cfg.MongoDB.TransactionsCollection = txCollection
+	}
+	if apiKeyCollection := os.Getenv("MONGODB_API_KEYS_COLLECTION"); apiKeyCollection != "" {
+		cfg.MongoDB.ApiKeysCollection = apiKeyCollection
+	}
+	if settingsCollection := os.Getenv("MONGODB_SETTINGS_COLLECTION"); settingsCollection != "" {
+		cfg.MongoDB.SettingsCollection = settingsCollection
 	}
 	if validatorURL := os.Getenv("VALIDATOR_URL"); validatorURL != "" {
 		cfg.Validator.URL = validatorURL
@@ -124,17 +132,23 @@ func setDefaults(cfg *Config) {
 	if cfg.Server.BaseURL == "" {
 		cfg.Server.BaseURL = fmt.Sprintf("http://%s:%d", cfg.Server.Host, cfg.Server.Port)
 	}
-	if cfg.Data.ProvidersPath == "" {
-		cfg.Data.ProvidersPath = "data/providers.json"
+	if cfg.MongoDB.URI == "" {
+		cfg.MongoDB.URI = "mongodb://mongodb:27017"
 	}
-	if cfg.Data.TransactionsPath == "" {
-		cfg.Data.TransactionsPath = "data/transactions.json"
+	if cfg.MongoDB.Database == "" {
+		cfg.MongoDB.Database = "wah4pc_gateway"
 	}
-	if cfg.Data.ApiKeysPath == "" {
-		cfg.Data.ApiKeysPath = "data/apikeys.json"
+	if cfg.MongoDB.ProvidersCollection == "" {
+		cfg.MongoDB.ProvidersCollection = "providers"
 	}
-	if cfg.Data.SettingsPath == "" {
-		cfg.Data.SettingsPath = "data/settings.json"
+	if cfg.MongoDB.TransactionsCollection == "" {
+		cfg.MongoDB.TransactionsCollection = "transactions"
+	}
+	if cfg.MongoDB.ApiKeysCollection == "" {
+		cfg.MongoDB.ApiKeysCollection = "api_keys"
+	}
+	if cfg.MongoDB.SettingsCollection == "" {
+		cfg.MongoDB.SettingsCollection = "settings"
 	}
 	if cfg.Logging.Level == "" {
 		cfg.Logging.Level = "info"

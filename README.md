@@ -89,6 +89,7 @@ sequenceDiagram
 ### Prerequisites
 
 - Go 1.22 or higher
+- MongoDB (local instance on `localhost:27017`, or Docker)
 
 ### Installation
 
@@ -105,6 +106,12 @@ go mod download
 
 ```bash
 go run cmd/main.go
+```
+
+### Running with Docker Compose
+
+```bash
+docker compose up -d
 ```
 
 The server starts on `http://localhost:8080` by default.
@@ -138,10 +145,13 @@ server:
 security:
   master_key: "tcgtrio123"  # Admin access key
 
-data:
-  providers_path: "data/providers.json"
-  transactions_path: "data/transactions.json"
-  api_keys_path: "data/apikeys.json"
+mongodb:
+  uri: "mongodb://localhost:27017"
+  database: "wah4pc_gateway"
+  providers_collection: "providers"
+  transactions_collection: "transactions"
+  api_keys_collection: "api_keys"
+  settings_collection: "settings"
 
 logging:
   level: "info"  # debug, info, warn, error
@@ -155,7 +165,9 @@ logging:
 | `server.port` | Port number | HTTP server port |
 | `server.base_url` | Base URL | Gateway's public URL for callbacks |
 | `security.master_key` | Master key | Administrative access key |
-| `data.*_path` | Data paths | JSON file storage locations |
+| `mongodb.uri` | MongoDB URI | Connection string for MongoDB |
+| `mongodb.database` | Database | MongoDB database name |
+| `mongodb.*_collection` | Collection names | Collection names for each domain model |
 
 ### Environment Variables
 
@@ -493,7 +505,6 @@ wah4pc-gateway/
 |-- scripts/
 |   +-- mock_providers.go       # Simulation script
 |
-|-- data/                       # JSON data storage (auto-created)
 |-- dashboard/                  # Admin dashboard (Next.js)
 |-- frontend-docs/              # Documentation site (Next.js)
 |

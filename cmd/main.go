@@ -1,14 +1,15 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/wah4pc/wah4pc-gateway/internal/config"
 	"github.com/wah4pc/wah4pc-gateway/internal/handler"
-	"github.com/wah4pc/wah4pc-gateway/internal/model"
-	"github.com/wah4pc/wah4pc-gateway/internal/repository"
+	mongoRepo "github.com/wah4pc/wah4pc-gateway/internal/repository/mongo"
 	"github.com/wah4pc/wah4pc-gateway/internal/router"
 	"github.com/wah4pc/wah4pc-gateway/internal/service"
 	"github.com/wah4pc/wah4pc-gateway/internal/validator"
@@ -29,23 +30,38 @@ func main() {
 
 	log.Printf("Starting %s v%s", cfg.App.Name, cfg.App.Version)
 
+	// Initialize MongoDB client
+	mongoClient, err := mongoRepo.Connect(cfg.MongoDB.URI)
+	if err != nil {
+		log.Fatalf("Failed to connect to MongoDB: %v", err)
+	}
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if err := mongoClient.Disconnect(ctx); err != nil {
+			log.Printf("Failed to disconnect MongoDB client: %v", err)
+		}
+	}()
+
+	db := mongoClient.Database(cfg.MongoDB.Database)
+
 	// Initialize repositories
-	providerRepo, err := repository.NewJsonRepository[model.Provider](cfg.Data.ProvidersPath)
+	providerRepo, err := mongoRepo.NewProviderRepository(db, cfg.MongoDB.ProvidersCollection)
 	if err != nil {
 		log.Fatalf("Failed to initialize provider repository: %v", err)
 	}
 
-	txRepo, err := repository.NewJsonRepository[model.Transaction](cfg.Data.TransactionsPath)
+	txRepo, err := mongoRepo.NewTransactionRepository(db, cfg.MongoDB.TransactionsCollection)
 	if err != nil {
 		log.Fatalf("Failed to initialize transaction repository: %v", err)
 	}
 
-	apiKeyRepo, err := repository.NewJsonRepository[model.ApiKey](cfg.Data.ApiKeysPath)
+	apiKeyRepo, err := mongoRepo.NewApiKeyRepository(db, cfg.MongoDB.ApiKeysCollection)
 	if err != nil {
 		log.Fatalf("Failed to initialize API key repository: %v", err)
 	}
 
-	settingsRepo, err := repository.NewJsonRepository[model.SystemSettings](cfg.Data.SettingsPath)
+	settingsRepo, err := mongoRepo.NewSettingsRepository(db, cfg.MongoDB.SettingsCollection)
 	if err != nil {
 		log.Fatalf("Failed to initialize settings repository: %v", err)
 	}

@@ -5,12 +5,26 @@ services:
     ports:
       - "3040:3040"
     volumes:
-      - ./data:/app/data
       - ./log:/app/log
     environment:
       - SERVER_PORT=3040
       - SERVER_BASE_URL=https://wah4pc.echosphere.cfd
       - LOGGING_LEVEL=info
+      - MONGODB_URI=mongodb://mongodb:27017
+      - MONGODB_DATABASE=wah4pc_gateway
+    depends_on:
+      - mongodb
+    restart: always
+    networks:
+      - wah4pc-network
+
+  mongodb:
+    image: mongo:7
+    container_name: wah4pc-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
     restart: always
     networks:
       - wah4pc-network
@@ -18,3 +32,6 @@ services:
 networks:
   wah4pc-network:
     driver: bridge
+
+volumes:
+  mongodb_data:

@@ -181,3 +181,113 @@ func TestPushEndpoint_Success(t *testing.T) {
 		t.Fatal("did not receive push payload at target endpoint")
 	}
 }
+
+func TestRequestQuery_Target404ReturnsBadGateway(t *testing.T) {
+	targetServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer targetServer.Close()
+
+	mongoURI := os.Getenv("MONGODB_URI")
+	if mongoURI == "" {
+		mongoURI = "mongodb://localhost:27017"
+	}
+
+	mongoClient, err := mongoRepo.Connect(mongoURI)
+	if err != nil {
+		t.Skipf("skipping test: mongodb not reachable at %s: %v", mongoURI, err)
+	}
+	t.Cleanup(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		_ = mongoClient.Disconnect(ctx)
+	})
+
+	dbName := "wah4pc_gateway_test_query_target_404"
+	db := mongoClient.Database(dbName)
+	t.Cleanup(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		_ = db.Drop(ctx)
+	})
+
+	providerRepo, err := mongoRepo.NewProviderRepository(db, "providers")
+	if err != nil {
+		t.Fatalf("failed to create provider repository: %v", err)
+	}
+	txRepo, err := mongoRepo.NewTransactionRepository(db, "transactions")
+	if err != nil {
+		t.Fatalf("failed to create transaction repository: %v", err)
+	}
+	settingsRepo, err := mongoRepo.NewSettingsRepository(db, "settings")
+	if err != nil {
+		t.Fatalf("failed to create settings repository: %v", err)
+	}
+
+	now := time.Now().UTC()
+	if err := providerRepo.Create(model.Provider{
+		ID:             "requester-provider",
+		Name:           "Requester Provider",
+		Type:           model.ProviderTypeClinic,
+		BaseURL:        "http://requester.local",
+		GatewayAuthKey: "requester-auth-key",
+		IsActive:       true,
+		CreatedAt:      now,
+		UpdatedAt:      now,
+	}); err != nil {
+		t.Fatalf("failed to create requester provider: %v", err)
+	}
+
+	if err := providerRepo.Create(model.Provider{
+		ID:             "target-provider",
+		Name:           "Target Provider",
+		Type:           model.ProviderTypeHospital,
+		BaseURL:        targetServer.URL,
+		GatewayAuthKey: "target-auth-key",
+		IsActive:       true,
+		CreatedAt:      now,
+		UpdatedAt:      now,
+	}); err != nil {
+		t.Fatalf("failed to create target provider: %v", err)
+	}
+
+	providerService := service.NewProviderService(providerRepo)
+	settingsService := service.NewSettingsService(settingsRepo)
+	gatewayService := service.NewGatewayService(txRepo, providerService, settingsService, "http://gateway.local", nil)
+	gatewayHandler := handler.NewGatewayHandler(gatewayService)
+
+	requestBody := `{
+		"requesterId":"requester-provider",
+		"targetId":"target-provider",
+		"identifiers":[{"system":"http://philhealth.gov.ph","value":"12-345678901-1"}]
+	}`
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/fhir/request/Observation", strings.NewReader(requestBody))
+	req.Header.Set("Content-Type", "application/json")
+
+	recorder := httptest.NewRecorder()
+	gatewayHandler.RequestQuery(recorder, req)
+
+	response := recorder.Result()
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusBadGateway {
+		t.Fatalf("expected status %d, got %d", http.StatusBadGateway, response.StatusCode)
+	}
+
+	var apiResp handler.APIResponse
+	if err := json.NewDecoder(response.Body).Decode(&apiResp); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if apiResp.Success {
+		t.Fatal("expected error response")
+	}
+
+	if !strings.Contains(apiResp.Error, "target provider returned HTTP Not Found (404)") {
+		t.Fatalf("unexpected error message: %s", apiResp.Error)
+	}
+	if strings.Contains(apiResp.Error, "<!DOCTYPE") {
+		t.Fatalf("error message should not include HTML body: %s", apiResp.Error)
+	}
+}

@@ -406,8 +406,11 @@ func (s *GatewayService) forwardToTarget(url string, payload ProcessQueryPayload
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		respBody, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("target returned error %d: %s", resp.StatusCode, string(respBody))
+		_, _ = io.Copy(io.Discard, resp.Body)
+		return &UpstreamHTTPError{
+			Upstream:   "target provider",
+			StatusCode: resp.StatusCode,
+		}
 	}
 
 	return nil
@@ -437,8 +440,11 @@ func (s *GatewayService) forwardPushToTarget(url string, payload ProcessPushPayl
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		respBody, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("target returned error %d: %s", resp.StatusCode, string(respBody))
+		_, _ = io.Copy(io.Discard, resp.Body)
+		return &UpstreamHTTPError{
+			Upstream:   "target provider",
+			StatusCode: resp.StatusCode,
+		}
 	}
 
 	return nil
@@ -468,8 +474,11 @@ func (s *GatewayService) forwardToRequester(url string, payload ReceiveResultPay
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		respBody, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("requester returned error %d: %s", resp.StatusCode, string(respBody))
+		_, _ = io.Copy(io.Discard, resp.Body)
+		return &UpstreamHTTPError{
+			Upstream:   "requester provider",
+			StatusCode: resp.StatusCode,
+		}
 	}
 
 	return nil

@@ -3,6 +3,7 @@ package handler
 import (
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/wah4pc/wah4pc-gateway/internal/middleware"
@@ -40,6 +41,11 @@ func (h *GatewayHandler) RequestQuery(w http.ResponseWriter, r *http.Request) {
 
 	tx, err := h.service.InitiateQuery(req)
 	if err != nil {
+		var upstreamErr *service.UpstreamHTTPError
+		if errors.As(err, &upstreamErr) && upstreamErr.Upstream == "target provider" {
+			respondError(w, http.StatusBadGateway, "target provider returned HTTP "+http.StatusText(upstreamErr.StatusCode)+" ("+strconv.Itoa(upstreamErr.StatusCode)+")")
+			return
+		}
 		if errors.Is(err, service.ErrInvalidRequest) {
 			respondError(w, http.StatusBadRequest, "requesterId, targetId, and at least one identifier are required")
 			return
@@ -83,6 +89,11 @@ func (h *GatewayHandler) RequestPush(w http.ResponseWriter, r *http.Request) {
 
 	tx, err := h.service.InitiatePush(req)
 	if err != nil {
+		var upstreamErr *service.UpstreamHTTPError
+		if errors.As(err, &upstreamErr) && upstreamErr.Upstream == "target provider" {
+			respondError(w, http.StatusBadGateway, "target provider returned HTTP "+http.StatusText(upstreamErr.StatusCode)+" ("+strconv.Itoa(upstreamErr.StatusCode)+")")
+			return
+		}
 		if errors.Is(err, service.ErrInvalidRequest) {
 			// Pass through the actual validation error message
 			respondError(w, http.StatusBadRequest, err.Error())
@@ -122,6 +133,11 @@ func (h *GatewayHandler) ReceiveResult(w http.ResponseWriter, r *http.Request) {
 	senderProviderID := r.Header.Get("X-Provider-ID")
 
 	if err := h.service.ProcessResponse(result, senderProviderID); err != nil {
+		var upstreamErr *service.UpstreamHTTPError
+		if errors.As(err, &upstreamErr) && upstreamErr.Upstream == "requester provider" {
+			respondError(w, http.StatusBadGateway, "requester provider returned HTTP "+http.StatusText(upstreamErr.StatusCode)+" ("+strconv.Itoa(upstreamErr.StatusCode)+")")
+			return
+		}
 		if errors.Is(err, service.ErrTransactionNotFound) {
 			respondError(w, http.StatusNotFound, "transaction not found - no matching request exists")
 			return

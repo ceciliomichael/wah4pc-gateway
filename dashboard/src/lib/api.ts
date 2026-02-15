@@ -13,6 +13,22 @@ import type {
   SystemSettings,
 } from "@/types";
 
+interface ProviderApiShape {
+  id: string;
+  name: string;
+  type: Provider["type"];
+  baseUrl?: string;
+  base_url?: string;
+  gatewayAuthKey?: string;
+  gateway_auth_key?: string;
+  isActive?: boolean;
+  is_active?: boolean;
+  createdAt?: string;
+  created_at?: string;
+  updatedAt?: string;
+  updated_at?: string;
+}
+
 // Use Next.js API routes (relative path)
 // Can be overridden via NEXT_PUBLIC_API_URL environment variable
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
@@ -89,23 +105,42 @@ function ensureArray<T>(data: T[] | null | undefined): T[] {
   return [];
 }
 
+function normalizeProvider(data: ProviderApiShape): Provider {
+  return {
+    id: data.id,
+    name: data.name,
+    type: data.type,
+    baseUrl: data.baseUrl ?? data.base_url ?? "",
+    gatewayAuthKey: data.gatewayAuthKey ?? data.gateway_auth_key ?? "",
+    isActive: data.isActive ?? data.is_active ?? false,
+    createdAt: data.createdAt ?? data.created_at ?? "",
+    updatedAt: data.updatedAt ?? data.updated_at ?? "",
+  };
+}
+
 // Provider API - routes through Next.js API
 export const providerApi = {
-  getAll: async () => ensureArray(await fetchWithAuth<Provider[]>("/providers")),
+  getAll: async () => {
+    const providers = ensureArray(await fetchWithAuth<ProviderApiShape[]>("/providers"));
+    return providers.map(normalizeProvider);
+  },
 
-  getById: (id: string) => fetchWithAuth<Provider>(`/providers/${id}`),
+  getById: async (id: string) => {
+    const provider = await fetchWithAuth<ProviderApiShape>(`/providers/${id}`);
+    return normalizeProvider(provider);
+  },
 
   create: (data: ProviderCreateRequest) =>
-    fetchWithAuth<Provider>("/providers", {
+    fetchWithAuth<ProviderApiShape>("/providers", {
       method: "POST",
       body: JSON.stringify(data),
-    }),
+    }).then(normalizeProvider),
 
   update: (id: string, data: ProviderCreateRequest) =>
-    fetchWithAuth<Provider>(`/providers/${id}`, {
+    fetchWithAuth<ProviderApiShape>(`/providers/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
-    }),
+    }).then(normalizeProvider),
 
   delete: (id: string) =>
     fetchWithAuth<void>(`/providers/${id}`, {
@@ -113,10 +148,10 @@ export const providerApi = {
     }),
 
   setActive: (id: string, active: boolean) =>
-    fetchWithAuth<Provider>(`/providers/${id}/status`, {
+    fetchWithAuth<ProviderApiShape>(`/providers/${id}/status`, {
       method: "POST",
       body: JSON.stringify({ active }),
-    }),
+    }).then(normalizeProvider),
 };
 
 // API Key API - routes through Next.js API

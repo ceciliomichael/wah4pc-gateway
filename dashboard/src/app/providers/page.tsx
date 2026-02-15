@@ -44,9 +44,15 @@ function ProvidersContent() {
     setDialogOpen(true);
   };
 
-  const handleEdit = (provider: Provider) => {
-    setEditingProvider(provider);
-    setDialogOpen(true);
+  const handleEdit = async (provider: Provider) => {
+    try {
+      const fullProvider = await providerApi.getById(provider.id);
+      setEditingProvider(fullProvider);
+      setDialogOpen(true);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load provider details");
+    }
   };
 
   const handleDeleteClick = (provider: Provider) => {

@@ -142,7 +142,13 @@ func (s *GatewayService) InitiateQuery(req QueryRequest) (*model.Transaction, er
 		Notes:            req.Notes,
 	}
 
-	targetURL := fmt.Sprintf("%s/fhir/process-query", targetProvider.BaseURL)
+	targetURL, err := buildProviderEndpointURL(targetProvider.BaseURL, "/fhir/process-query")
+	if err != nil {
+		tx.Status = model.StatusFailed
+		tx.UpdatedAt = time.Now().UTC()
+		_ = s.txRepo.Update(tx)
+		return &tx, fmt.Errorf("invalid target provider baseUrl: %w", err)
+	}
 	if err := s.forwardToTarget(targetURL, payload, targetProvider.GatewayAuthKey); err != nil {
 		// Update transaction status to failed
 		tx.Status = model.StatusFailed
@@ -221,7 +227,13 @@ func (s *GatewayService) InitiatePush(req PushRequest) (*model.Transaction, erro
 		Notes:         req.Notes,
 	}
 
-	targetURL := fmt.Sprintf("%s/fhir/receive-push", targetProvider.BaseURL)
+	targetURL, err := buildProviderEndpointURL(targetProvider.BaseURL, "/fhir/receive-push")
+	if err != nil {
+		tx.Status = model.StatusFailed
+		tx.UpdatedAt = time.Now().UTC()
+		_ = s.txRepo.Update(tx)
+		return &tx, fmt.Errorf("invalid target provider baseUrl: %w", err)
+	}
 	if err := s.forwardPushToTarget(targetURL, payload, targetProvider.GatewayAuthKey); err != nil {
 		// Update transaction status to failed
 		tx.Status = model.StatusFailed
@@ -288,7 +300,13 @@ func (s *GatewayService) ProcessResponse(result IncomingResultPayload, senderPro
 	}
 
 	// Forward data to requester
-	requesterURL := fmt.Sprintf("%s/fhir/receive-results", requesterProvider.BaseURL)
+	requesterURL, err := buildProviderEndpointURL(requesterProvider.BaseURL, "/fhir/receive-results")
+	if err != nil {
+		tx.Status = model.StatusFailed
+		tx.UpdatedAt = time.Now().UTC()
+		_ = s.txRepo.Update(tx)
+		return fmt.Errorf("invalid requester provider baseUrl: %w", err)
+	}
 	relayPayload := ReceiveResultPayload{
 		TransactionID: tx.ID,
 		Status:        result.Status,

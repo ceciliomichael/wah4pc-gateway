@@ -61,7 +61,7 @@ func (h *ProviderHandler) Register(w http.ResponseWriter, r *http.Request) {
 	provider, err := h.service.Register(input)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidProvider) {
-			respondError(w, http.StatusBadRequest, "name and baseUrl are required")
+			respondError(w, http.StatusBadRequest, "invalid provider data: name and a valid baseUrl are required")
 			return
 		}
 		if errors.Is(err, service.ErrProviderAlreadyExists) {
@@ -150,6 +150,10 @@ func (h *ProviderHandler) Update(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, service.ErrProviderNotFound) {
 			respondError(w, http.StatusNotFound, "provider not found")
+			return
+		}
+		if errors.Is(err, service.ErrInvalidProvider) {
+			respondError(w, http.StatusBadRequest, "invalid provider data: baseUrl must be a valid URL")
 			return
 		}
 		respondError(w, http.StatusInternalServerError, "failed to update provider")

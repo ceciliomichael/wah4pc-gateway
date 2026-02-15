@@ -45,7 +45,8 @@ type RegisterInput struct {
 
 // Register adds a new provider to the registry
 func (s *ProviderService) Register(input RegisterInput) (*model.Provider, error) {
-	if input.Name == "" || input.BaseURL == "" {
+	normalizedBaseURL, err := normalizeProviderBaseURL(input.BaseURL)
+	if input.Name == "" || err != nil {
 		return nil, ErrInvalidProvider
 	}
 
@@ -54,7 +55,7 @@ func (s *ProviderService) Register(input RegisterInput) (*model.Provider, error)
 		ID:             uuid.New().String(),
 		Name:           input.Name,
 		Type:           input.Type,
-		BaseURL:        input.BaseURL,
+		BaseURL:        normalizedBaseURL,
 		GatewayAuthKey: input.GatewayAuthKey,
 		IsActive:       true,
 		CreatedAt:      now,
@@ -114,7 +115,11 @@ func (s *ProviderService) Update(id string, input RegisterInput) (*model.Provide
 		provider.Type = input.Type
 	}
 	if input.BaseURL != "" {
-		provider.BaseURL = input.BaseURL
+		normalizedBaseURL, normalizeErr := normalizeProviderBaseURL(input.BaseURL)
+		if normalizeErr != nil {
+			return nil, ErrInvalidProvider
+		}
+		provider.BaseURL = normalizedBaseURL
 	}
 	if input.GatewayAuthKey != "" {
 		provider.GatewayAuthKey = input.GatewayAuthKey

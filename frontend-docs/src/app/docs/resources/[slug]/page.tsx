@@ -100,8 +100,7 @@ function FieldRow({ field }: { field: FieldDefinition }) {
         </div>
       </div>
 
-      {expanded && hasDetails && (
-        <div className="px-4 pb-4 pt-0 space-y-3 bg-slate-50 border-t border-slate-100">
+      <div className={expanded && hasDetails ? "px-4 pb-4 pt-0 space-y-3 bg-slate-50 border-t border-slate-100" : "hidden"}>
           {field.binding && (
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center gap-2">
@@ -141,8 +140,7 @@ function FieldRow({ field }: { field: FieldDefinition }) {
               </div>
             </div>
           )}
-        </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -170,8 +168,7 @@ function CodeSystemsSection() {
             <ChevronDown className="h-5 w-5 text-slate-400" />
           )}
         </button>
-        {isOpen && (
-          <div className="divide-y divide-slate-100">
+        <div className={isOpen ? "divide-y divide-slate-100" : "hidden"}>
             {commonCodeSystems.map((system) => (
               <div key={system.name} className="px-6 py-4">
                 <div className="flex items-start justify-between gap-4">
@@ -186,7 +183,6 @@ function CodeSystemsSection() {
               </div>
             ))}
           </div>
-        )}
       </div>
     </section>
   );

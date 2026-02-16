@@ -73,8 +73,7 @@ export function EndpointCard({
         </div>
       </button>
 
-      {isExpanded && (
-        <div className="border-t border-slate-100 bg-slate-50/30 p-4 sm:p-5 space-y-4 sm:space-y-6">
+      <div className={isExpanded ? "border-t border-slate-100 bg-slate-50/30 p-4 sm:p-5 space-y-4 sm:space-y-6" : "hidden"}>
           {/* Mobile: Show full endpoint path and description */}
           <div className="sm:hidden rounded-lg bg-slate-100 p-3">
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Endpoint</p>
@@ -110,8 +109,7 @@ export function EndpointCard({
               </ul>
             </div>
           )}
-        </div>
-      )}
+      </div>
     </div>
   );
 }

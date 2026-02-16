@@ -83,7 +83,7 @@ func TestProviderServiceRegister_InvalidBaseURL(t *testing.T) {
 
 	_, err := svc.Register(RegisterInput{
 		Name:    "Test Provider",
-		BaseURL: "wah4clinic.echosphere.cfd",
+		BaseURL: "wah4clinic.echosphere.cfd/api",
 	})
 	if err == nil {
 		t.Fatal("expected register to fail for invalid baseUrl")

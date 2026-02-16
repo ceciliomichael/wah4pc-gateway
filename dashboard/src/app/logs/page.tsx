@@ -34,6 +34,8 @@ function LogsContent() {
       path === "/providers" ||
       path === "/api/v1/providers" ||
       path.startsWith("/api/v1/providers/") ||
+      path === "/api/v1/apikeys" ||
+      path.startsWith("/api/v1/apikeys/") ||
       path === "/settings" ||
       path === "/api/v1/settings"
     );

@@ -145,6 +145,8 @@ func shouldHideLogURL(rawURL string) bool {
 	return path == "/providers" ||
 		path == "/api/v1/providers" ||
 		strings.HasPrefix(path, "/api/v1/providers/") ||
+		path == "/api/v1/apikeys" ||
+		strings.HasPrefix(path, "/api/v1/apikeys/") ||
 		path == "/settings" ||
 		path == "/api/v1/settings" ||
 		path == "/api/v1/transactions" ||

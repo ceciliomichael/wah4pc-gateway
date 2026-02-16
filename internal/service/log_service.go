@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	neturl "net/url"
 	"os"
 	"path/filepath"
 	"sort"
@@ -113,6 +114,9 @@ func (s *LogService) readIndexFile(path string) ([]model.LogSummary, error) {
 	for scanner.Scan() {
 		var log model.LogSummary
 		if err := json.Unmarshal(scanner.Bytes(), &log); err == nil {
+			if shouldHideLogURL(log.URL) {
+				continue
+			}
 			logs = append(logs, log)
 		}
 	}
@@ -127,6 +131,24 @@ func (s *LogService) readIndexFile(path string) ([]model.LogSummary, error) {
 	})
 
 	return logs, nil
+}
+
+func shouldHideLogURL(rawURL string) bool {
+	path := rawURL
+	if parsed, err := neturl.Parse(rawURL); err == nil && parsed.Path != "" {
+		path = parsed.Path
+	}
+	if idx := strings.Index(path, "?"); idx >= 0 {
+		path = path[:idx]
+	}
+
+	return path == "/providers" ||
+		path == "/api/v1/providers" ||
+		strings.HasPrefix(path, "/api/v1/providers/") ||
+		path == "/settings" ||
+		path == "/api/v1/settings" ||
+		path == "/api/v1/transactions" ||
+		strings.HasPrefix(path, "/api/v1/transactions/")
 }
 
 func (s *LogService) scanLogFiles(dirPath, dateStr string) ([]model.LogSummary, error) {

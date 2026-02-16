@@ -139,6 +139,8 @@ func (m *AuditMiddleware) shouldSkipLogging(req *http.Request) bool {
 
 	// Exclude selected operational endpoints from audit logging
 	if path == "/providers" ||
+		path == "/api/v1/providers" ||
+		strings.HasPrefix(path, "/api/v1/providers/") ||
 		path == "/settings" ||
 		path == "/api/v1/settings" ||
 		path == "/api/v1/transactions" ||

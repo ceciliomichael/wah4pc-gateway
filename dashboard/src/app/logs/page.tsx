@@ -26,6 +26,19 @@ function LogsContent() {
   // Mobile: show date dropdown instead of sidebar
   const [showDateDropdown, setShowDateDropdown] = useState(false);
 
+  const shouldHideLog = (url: string): boolean => {
+    const path = url.split("?")[0];
+    return (
+      path === "/api/v1/transactions" ||
+      path.startsWith("/api/v1/transactions/") ||
+      path === "/providers" ||
+      path === "/api/v1/providers" ||
+      path.startsWith("/api/v1/providers/") ||
+      path === "/settings" ||
+      path === "/api/v1/settings"
+    );
+  };
+
   // Fetch dates on mount
   useEffect(() => {
     fetchDates();
@@ -66,7 +79,11 @@ function LogsContent() {
     
     try {
       const data = await logsApi.getLogs(date);
-      setLogs(data);
+      const filteredLogs = data.filter((log) => !shouldHideLog(log.url));
+      setLogs(filteredLogs);
+      if (selectedLog && !filteredLogs.some((log) => log.id === selectedLog.id)) {
+        setSelectedLog(null);
+      }
     } catch (err) {
       console.error("Failed to fetch logs:", err);
       setError(`Failed to load logs for ${date}`);

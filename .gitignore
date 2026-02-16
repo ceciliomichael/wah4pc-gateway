@@ -10,3 +10,4 @@ log/
 
 # Data
 data/
+.gocache

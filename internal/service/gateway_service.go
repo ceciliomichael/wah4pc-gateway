@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -31,6 +32,7 @@ var (
 
 // duplicateWindow defines how long to check for duplicate requests
 const duplicateWindow = 5 * time.Minute
+const upstreamErrorBodyLimit = 512
 
 // TransactionRepository defines the interface for transaction data access
 type TransactionRepository interface {
@@ -416,10 +418,11 @@ func (s *GatewayService) forwardToTarget(url string, payload ProcessQueryPayload
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		_, _ = io.Copy(io.Discard, resp.Body)
+		detail := extractUpstreamErrorDetail(resp.Body)
 		return &UpstreamHTTPError{
-			Upstream:   "target provider",
-			StatusCode: resp.StatusCode,
+			Upstream:     "target provider",
+			StatusCode:   resp.StatusCode,
+			ResponseBody: detail,
 		}
 	}
 
@@ -450,10 +453,11 @@ func (s *GatewayService) forwardPushToTarget(url string, payload ProcessPushPayl
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		_, _ = io.Copy(io.Discard, resp.Body)
+		detail := extractUpstreamErrorDetail(resp.Body)
 		return &UpstreamHTTPError{
-			Upstream:   "target provider",
-			StatusCode: resp.StatusCode,
+			Upstream:     "target provider",
+			StatusCode:   resp.StatusCode,
+			ResponseBody: detail,
 		}
 	}
 
@@ -484,12 +488,33 @@ func (s *GatewayService) forwardToRequester(url string, payload ReceiveResultPay
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		_, _ = io.Copy(io.Discard, resp.Body)
+		detail := extractUpstreamErrorDetail(resp.Body)
 		return &UpstreamHTTPError{
-			Upstream:   "requester provider",
-			StatusCode: resp.StatusCode,
+			Upstream:     "requester provider",
+			StatusCode:   resp.StatusCode,
+			ResponseBody: detail,
 		}
 	}
 
 	return nil
+}
+
+// extractUpstreamErrorDetail returns a compact, bounded upstream response body for diagnostics.
+func extractUpstreamErrorDetail(body io.Reader) string {
+	if body == nil {
+		return ""
+	}
+
+	limited := io.LimitReader(body, upstreamErrorBodyLimit+1)
+	raw, err := io.ReadAll(limited)
+	if err != nil || len(raw) == 0 {
+		return ""
+	}
+
+	if len(raw) > upstreamErrorBodyLimit {
+		raw = raw[:upstreamErrorBodyLimit]
+	}
+
+	compact := strings.Join(strings.Fields(string(raw)), " ")
+	return strings.TrimSpace(compact)
 }

@@ -3,7 +3,6 @@ package handler
 import (
 	"errors"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/wah4pc/wah4pc-gateway/internal/middleware"
@@ -47,7 +46,7 @@ func (h *GatewayHandler) RequestQuery(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		var upstreamErr *service.UpstreamHTTPError
 		if errors.As(err, &upstreamErr) && upstreamErr.Upstream == "target provider" {
-			respondError(w, http.StatusBadGateway, "target provider returned HTTP "+http.StatusText(upstreamErr.StatusCode)+" ("+strconv.Itoa(upstreamErr.StatusCode)+")")
+			respondError(w, http.StatusBadGateway, upstreamErr.Summary())
 			return
 		}
 		if errors.Is(err, service.ErrInvalidRequest) {
@@ -99,7 +98,7 @@ func (h *GatewayHandler) RequestPush(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		var upstreamErr *service.UpstreamHTTPError
 		if errors.As(err, &upstreamErr) && upstreamErr.Upstream == "target provider" {
-			respondError(w, http.StatusBadGateway, "target provider returned HTTP "+http.StatusText(upstreamErr.StatusCode)+" ("+strconv.Itoa(upstreamErr.StatusCode)+")")
+			respondError(w, http.StatusBadGateway, upstreamErr.Summary())
 			return
 		}
 		if errors.Is(err, service.ErrInvalidRequest) {
@@ -149,7 +148,7 @@ func (h *GatewayHandler) ReceiveResult(w http.ResponseWriter, r *http.Request) {
 	if err := h.service.ProcessResponse(result, senderProviderID, resourceType); err != nil {
 		var upstreamErr *service.UpstreamHTTPError
 		if errors.As(err, &upstreamErr) && upstreamErr.Upstream == "requester provider" {
-			respondError(w, http.StatusBadGateway, "requester provider returned HTTP "+http.StatusText(upstreamErr.StatusCode)+" ("+strconv.Itoa(upstreamErr.StatusCode)+")")
+			respondError(w, http.StatusBadGateway, upstreamErr.Summary())
 			return
 		}
 		if errors.Is(err, service.ErrInvalidResourceType) {

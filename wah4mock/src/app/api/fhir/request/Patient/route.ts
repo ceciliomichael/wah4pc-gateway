@@ -13,7 +13,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateIntegrationConfig } from '@/lib/config';
 import { InitiateQueryRequestSchema } from '@/lib/types/integration';
-import { initiatePatientQuery, IdempotencyConflictError } from '@/lib/integration';
+import { initiateQuery, IdempotencyConflictError } from '@/lib/integration';
 import { integrationDb } from '@/lib/integration/db';
 
 /**
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const { targetId, identifiers, reason, notes } = parseResult.data;
+    const { targetId, identifiers, selector, reason, notes } = parseResult.data;
 
     // 3. Get Idempotency-Key from header (optional - for safe retries)
     const idempotencyKey = request.headers.get('Idempotency-Key') || undefined;
@@ -68,9 +68,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     console.log(`[Request] Initiating patient query to provider ${targetId}${idempotencyKey ? ` (Idempotency-Key: ${idempotencyKey})` : ''}`);
 
     // 4. Send request to gateway
-    const result = await initiatePatientQuery({
+    const result = await initiateQuery({
       targetId,
+      resourceType: 'Patient',
       identifiers,
+      selector,
       reason,
       notes,
       idempotencyKey,

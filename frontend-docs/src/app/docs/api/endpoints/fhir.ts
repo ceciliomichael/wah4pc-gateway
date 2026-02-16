@@ -4,7 +4,7 @@ export const fhirEndpoints: EndpointCardProps[] = [
   {
     method: "POST",
     path: "/api/v1/fhir/request/{resourceType}",
-    description: "Initiate a FHIR resource request to another provider. Uses FHIR-compliant identifiers (system + value) to identify the patient across different healthcare systems.",
+    description: "Initiate a FHIR resource request to another provider. Use the selector object to target patient-scoped resources or resource-scoped lookups.",
     pathParams: [
       {
         name: "resourceType",
@@ -28,16 +28,18 @@ export const fhirEndpoints: EndpointCardProps[] = [
     requestBody: `{
   "requesterId": "your-provider-uuid",
   "targetId": "target-provider-uuid",
-  "identifiers": [
-    {
-      "system": "http://philhealth.gov.ph",
-      "value": "12-345678901-2"
-    },
-    {
-      "system": "http://hospital-b.com/mrn",
-      "value": "MRN-12345"
-    }
-  ],
+  "selector": {
+    "patientIdentifiers": [
+      {
+        "system": "http://philhealth.gov.ph",
+        "value": "12-345678901-2"
+      },
+      {
+        "system": "http://hospital-b.com/mrn",
+        "value": "MRN-12345"
+      }
+    ]
+  },
   "reason": "Referral consultation",
   "notes": "Need latest lab results"
 }`,
@@ -58,6 +60,18 @@ export const fhirEndpoints: EndpointCardProps[] = [
         "value": "MRN-12345"
       }
     ],
+    "selector": {
+      "patientIdentifiers": [
+        {
+          "system": "http://philhealth.gov.ph",
+          "value": "12-345678901-2"
+        },
+        {
+          "system": "http://hospital-b.com/mrn",
+          "value": "MRN-12345"
+        }
+      ]
+    },
     "resourceType": "Patient",
     "status": "PENDING",
     "metadata": {
@@ -70,13 +84,16 @@ export const fhirEndpoints: EndpointCardProps[] = [
 }`,
     notes: [
       "Both requesterId and targetId must be registered providers",
-      "identifiers is an array of FHIR-compliant identifiers (system + value pairs)",
-      "At least one identifier is required",
-      "Common systems: http://philhealth.gov.ph, http://psa.gov.ph/birth-certificate, or your hospital's MRN system",
+      "Use selector.patientIdentifiers/patientReference for patient-scoped resources (e.g., MedicationRequest, Observation)",
+      "Use selector.resourceIdentifiers/resourceReference for resource-scoped resources (e.g., Organization, Practitioner)",
+      "Backward compatibility: legacy identifiers is still accepted and mapped to selector.patientIdentifiers",
+      "Example (legacy): identifiers=[{system,value}] is normalized to selector.patientIdentifiers=[{system,value}]",
+      "Example policy: Organization with patientIdentifiers is rejected; use resourceIdentifiers/resourceReference for Organization",
+      "At least one valid selector input is required based on resourceType policy",
       "The gateway forwards the request to the target's /fhir/process-query endpoint",
       "Results will be delivered to your /fhir/receive-results endpoint asynchronously",
       "**Idempotency**: Use `Idempotency-Key` header for safe retries. Keys are cached for 24 hours.",
-      "**Duplicate Detection**: Identical requests (same requester, target, identifiers) within 5 minutes return 429.",
+      "**Duplicate Detection**: Identical requests (same requester, target, selector) within 5 minutes return 429.",
       "**Response Headers**: `Idempotency-Replayed: true` and `Idempotency-Original-Date` indicate cached responses.",
     ],
   },
@@ -113,17 +130,9 @@ export const fhirEndpoints: EndpointCardProps[] = [
   "transactionId": "txn_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "status": "SUCCESS",
   "data": {
-    "resourceType": "Patient",
-    "id": "patient-123",
-    "identifier": [
-      {
-        "system": "http://philhealth.gov.ph",
-        "value": "12-345678901-2"
-      }
-    ],
-    "name": [{ "family": "Dela Cruz", "given": ["Juan"] }],
-    "birthDate": "1990-05-15",
-    "gender": "male"
+    "resourceType": "MedicationRequest",
+    "id": "medrx-1",
+    "status": "active"
   }
 }`,
     responseStatus: 200,
@@ -137,6 +146,10 @@ export const fhirEndpoints: EndpointCardProps[] = [
       "The transactionId must match a PENDING transaction",
       "X-Provider-ID header is optional but recommended for security validation",
       "Valid status values: SUCCESS, REJECTED, ERROR",
+      "For SUCCESS query responses, the gateway relays data as a FHIR Bundle (type=collection)",
+      "Example transform: SUCCESS with a single resource object is wrapped into Bundle.entry[0].resource",
+      "Example transform: SUCCESS with an array is wrapped into Bundle.entry[]",
+      "REJECTED/ERROR payloads are forwarded without Bundle wrapping",
       "The gateway forwards the data to the requester's /fhir/receive-results endpoint",
     ],
   },

@@ -12,6 +12,7 @@ import type {
   IncomingRequest,
   TransactionStatus,
   Identifier,
+  QuerySelector,
 } from '../types/integration';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -75,6 +76,7 @@ export async function createTransaction(params: {
   targetId: string;
   resourceType: string;
   identifiers: Identifier[];
+  selector?: QuerySelector;
   reason?: string;
   notes?: string;
   idempotencyKey: string;
@@ -88,6 +90,7 @@ export async function createTransaction(params: {
     targetId: params.targetId,
     resourceType: params.resourceType,
     identifiers: params.identifiers,
+    selector: params.selector,
     status: 'PENDING',
     reason: params.reason,
     notes: params.notes,
@@ -238,6 +241,7 @@ export async function saveIncomingRequest(params: {
   transactionId: string;
   requesterId: string;
   identifiers: Identifier[];
+  selector?: QuerySelector;
   resourceType: string;
   gatewayReturnUrl: string;
   reason?: string;
@@ -251,6 +255,7 @@ export async function saveIncomingRequest(params: {
     transactionId: params.transactionId,
     requesterId: params.requesterId,
     identifiers: params.identifiers,
+    selector: params.selector,
     resourceType: params.resourceType,
     gatewayReturnUrl: params.gatewayReturnUrl,
     reason: params.reason,

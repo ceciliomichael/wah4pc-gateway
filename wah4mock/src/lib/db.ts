@@ -5,7 +5,7 @@
 
 import { promises as fs } from 'fs';
 import path from 'path';
-import type { Resource, FHIRResourceType } from './types/fhir';
+import type { Resource } from './types/fhir';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 
@@ -45,7 +45,7 @@ async function ensureFile(resourceType: string): Promise<void> {
  * Read all resources of a given type
  */
 export async function readResources<T extends Resource>(
-  resourceType: FHIRResourceType
+  resourceType: string
 ): Promise<T[]> {
   await ensureFile(resourceType);
   const filePath = getFilePath(resourceType);
@@ -61,7 +61,7 @@ export async function readResources<T extends Resource>(
  * Write all resources of a given type
  */
 export async function writeResources<T extends Resource>(
-  resourceType: FHIRResourceType,
+  resourceType: string,
   resources: T[]
 ): Promise<void> {
   await ensureDataDir();
@@ -73,7 +73,7 @@ export async function writeResources<T extends Resource>(
  * Get all resources
  */
 export async function getAll<T extends Resource>(
-  resourceType: FHIRResourceType
+  resourceType: string
 ): Promise<T[]> {
   return readResources<T>(resourceType);
 }
@@ -82,7 +82,7 @@ export async function getAll<T extends Resource>(
  * Get a single resource by ID
  */
 export async function getById<T extends Resource>(
-  resourceType: FHIRResourceType,
+  resourceType: string,
   id: string
 ): Promise<T | null> {
   const resources = await readResources<T>(resourceType);
@@ -93,7 +93,7 @@ export async function getById<T extends Resource>(
  * Create a new resource
  */
 export async function create<T extends Resource>(
-  resourceType: FHIRResourceType,
+  resourceType: string,
   resource: T
 ): Promise<T> {
   const resources = await readResources<T>(resourceType);
@@ -115,7 +115,7 @@ export async function create<T extends Resource>(
  * Update an existing resource
  */
 export async function update<T extends Resource>(
-  resourceType: FHIRResourceType,
+  resourceType: string,
   id: string,
   resource: T
 ): Promise<T | null> {
@@ -143,7 +143,7 @@ export async function update<T extends Resource>(
  * Delete a resource by ID
  */
 export async function remove<T extends Resource>(
-  resourceType: FHIRResourceType,
+  resourceType: string,
   id: string
 ): Promise<boolean> {
   const resources = await readResources<T>(resourceType);
@@ -162,7 +162,7 @@ export async function remove<T extends Resource>(
  * Search resources with simple filters
  */
 export async function search<T extends Resource>(
-  resourceType: FHIRResourceType,
+  resourceType: string,
   params: Record<string, string>
 ): Promise<T[]> {
   const resources = await readResources<T>(resourceType);
@@ -200,7 +200,7 @@ export async function search<T extends Resource>(
 /**
  * Count resources of a given type
  */
-export async function count(resourceType: FHIRResourceType): Promise<number> {
+export async function count(resourceType: string): Promise<number> {
   const resources = await readResources(resourceType);
   return resources.length;
 }

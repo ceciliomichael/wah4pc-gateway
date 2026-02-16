@@ -30,7 +30,7 @@ sequenceDiagram
 
     rect rgb(240, 253, 244)
         Note over YS,OP: Step 2 - Requesting Data (You are Requester)
-        YS->>GW: POST /api/v1/fhir/request/Patient
+        YS->>GW: POST /api/v1/fhir/request/{resourceType}
         GW->>OP: POST /fhir/process-query
         OP-->>GW: 200 OK
         GW-->>YS: 202 Accepted (Transaction ID)
@@ -45,7 +45,7 @@ sequenceDiagram
 
     rect rgb(254, 242, 242)
         Note over YS,OP: Step 3 - Providing Data (You are Target)
-        OP->>GW: POST /api/v1/fhir/request/Patient
+        OP->>GW: POST /api/v1/fhir/request/{resourceType}
         GW->>YS: POST /fhir/process-query
         YS-->>GW: 200 OK
     end
@@ -74,8 +74,8 @@ sequenceDiagram
 
     rect rgb(240, 249, 255)
         Note over GW,DB: Webhook 1 - Incoming Query
-        GW->>PQ: POST request with transactionId, identifiers[]
-        PQ->>DB: Match patient by identifiers
+        GW->>PQ: POST request with transactionId, selector (or legacy identifiers)
+        PQ->>DB: Resolve selector and fetch matching resources
         DB-->>PQ: Patient record
         PQ-->>GW: 200 OK (Acknowledged)
         PQ->>GW: POST gatewayReturnUrl with data
@@ -1192,7 +1192,7 @@ export const bestPractices = [
   },
   {
     title: "Handle Duplicate Detection",
-    description: "The gateway prevents identical requests (same requester, target, identifiers) within 5 minutes. Handle 429 errors gracefully and avoid immediate retries.",
+    description: "The gateway prevents identical requests (same requester, target, selector) within 5 minutes. Handle 429 errors gracefully and avoid immediate retries.",
     icon: "CheckCircle2",
   },
   {

@@ -31,7 +31,7 @@ export const endpoints: EndpointCategory[] = [
   {
     category: "FHIR Gateway",
     iconName: "Server",
-    description: "FHIR resource transfer endpoints using standard identifiers",
+    description: "FHIR resource transfer endpoints using selector-based query inputs",
     items: fhirEndpoints,
   },
   {

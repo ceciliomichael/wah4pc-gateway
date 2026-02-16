@@ -6,9 +6,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import type { FHIRResourceType, Resource } from '@/lib/types/fhir';
+import type { Resource } from '@/lib/types/fhir';
 
-const VALID_RESOURCE_TYPES: FHIRResourceType[] = [
+const VALID_RESOURCE_TYPES: string[] = [
   'Patient',
   'Practitioner',
   'Organization',
@@ -19,10 +19,25 @@ const VALID_RESOURCE_TYPES: FHIRResourceType[] = [
   'Medication',
   'Immunization',
   'Appointment',
+  'Procedure',
+  'Location',
+  'Account',
+  'Claim',
+  'ClaimResponse',
+  'ChargeItem',
+  'ChargeItemDefinition',
+  'Invoice',
+  'PaymentNotice',
+  'PaymentReconciliation',
+  'DiagnosticReport',
+  'MedicationAdministration',
+  'MedicationRequest',
+  'NutritionOrder',
+  'PractitionerRole',
 ];
 
-function isValidResourceType(type: string): type is FHIRResourceType {
-  return VALID_RESOURCE_TYPES.includes(type as FHIRResourceType);
+function isValidResourceType(type: string): boolean {
+  return VALID_RESOURCE_TYPES.includes(type);
 }
 
 interface RouteParams {

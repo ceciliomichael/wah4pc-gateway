@@ -42,6 +42,15 @@ export const IdentifierSchema = z.object({
 
 export type Identifier = z.infer<typeof IdentifierSchema>;
 
+export const QuerySelectorSchema = z.object({
+  patientIdentifiers: z.array(IdentifierSchema).optional(),
+  patientReference: z.string().min(1).optional(),
+  resourceIdentifiers: z.array(IdentifierSchema).optional(),
+  resourceReference: z.string().min(1).optional(),
+});
+
+export type QuerySelector = z.infer<typeof QuerySelectorSchema>;
+
 // ============================================================================
 // Webhook 1: Process Query (incoming from gateway)
 // Called when another provider requests data from us
@@ -50,7 +59,8 @@ export type Identifier = z.infer<typeof IdentifierSchema>;
 export const ProcessQueryPayloadSchema = z.object({
   transactionId: transactionIdValidator,
   requesterId: z.string().uuid(),
-  identifiers: z.array(IdentifierSchema).min(1),
+  identifiers: z.array(IdentifierSchema).optional().default([]),
+  selector: QuerySelectorSchema.optional(),
   resourceType: z.string(),
   gatewayReturnUrl: z.string().url(),
   reason: z.string().optional(),
@@ -146,9 +156,31 @@ export type ProviderRegistrationResponse = z.infer<typeof ProviderRegistrationRe
 
 export const InitiateQueryRequestSchema = z.object({
   targetId: z.string().uuid(),
-  identifiers: z.array(IdentifierSchema).min(1),
+  identifiers: z.array(IdentifierSchema).optional().default([]),
+  selector: QuerySelectorSchema.optional(),
+  resourceType: z.string().optional().default('Patient'),
   reason: z.string().optional(),
   notes: z.string().optional(),
+}).superRefine((value, ctx) => {
+  const hasLegacyIdentifiers = value.identifiers.length > 0;
+  const selector = value.selector;
+  const hasSelector = Boolean(
+    selector &&
+      (
+        (selector.patientIdentifiers?.length ?? 0) > 0 ||
+        Boolean(selector.patientReference) ||
+        (selector.resourceIdentifiers?.length ?? 0) > 0 ||
+        Boolean(selector.resourceReference)
+      )
+  );
+
+  if (!hasLegacyIdentifiers && !hasSelector) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Provide either identifiers or selector',
+      path: ['selector'],
+    });
+  }
 });
 
 export type InitiateQueryRequest = z.infer<typeof InitiateQueryRequestSchema>;
@@ -183,6 +215,7 @@ export interface PendingTransaction {
   targetId: string;
   resourceType: string;
   identifiers: Identifier[];
+  selector?: QuerySelector;
   status: TransactionStatus;
   reason?: string;
   notes?: string;
@@ -215,6 +248,7 @@ export interface IncomingRequest {
   transactionId: string;
   requesterId: string;
   identifiers: Identifier[];
+  selector?: QuerySelector;
   resourceType: string;
   gatewayReturnUrl: string;
   reason?: string;

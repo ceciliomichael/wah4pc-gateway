@@ -88,16 +88,18 @@ export const consistencyDiagram = `flowchart TB
 
 export const step1_initialRequest = `{
   "targetId": "prov_hosp_metro_001",
-  "identifiers": [
-    {
-      "system": "http://philhealth.gov.ph",
-      "value": "12-345678901-2"
-    },
-    {
-      "system": "http://hospital-metro.com/mrn",
-      "value": "patient_12345"
-    }
-  ],
+  "selector": {
+    "patientIdentifiers": [
+      {
+        "system": "http://philhealth.gov.ph",
+        "value": "12-345678901-2"
+      },
+      {
+        "system": "http://hospital-metro.com/mrn",
+        "value": "patient_12345"
+      }
+    ]
+  },
   "resourceType": "MedicationRequest",
   "reason": "treatment",
   "notes": "Urgent request"
@@ -120,27 +122,28 @@ export const step2_gatewayResponse = `{
 export const step3_providerWebhook = `{
   "transactionId": "txn_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "resourceType": "MedicationRequest",
-  "identifiers": [
-    {
-      "system": "http://philhealth.gov.ph",
-      "value": "12-345678901-2"
-    },
-    {
-      "system": "http://hospital-metro.com/mrn",
-      "value": "patient_12345"
-    }
-  ],
+  "selector": {
+    "patientIdentifiers": [
+      {
+        "system": "http://philhealth.gov.ph",
+        "value": "12-345678901-2"
+      },
+      {
+        "system": "http://hospital-metro.com/mrn",
+        "value": "patient_12345"
+      }
+    ]
+  },
   "requesterId": "prov_clinic_sunrise_002",
-  "callbackUrl": "${config.gatewayUrl}/api/v1/fhir/receive/MedicationRequest"
+  "gatewayReturnUrl": "${config.gatewayUrl}/api/v1/fhir/receive/MedicationRequest"
 }`;
 
 export const step4_providerCallback = `{
   "transactionId": "txn_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-  "status": "success",
+  "status": "SUCCESS",
   "data": {
     "resourceType": "Bundle",
-    "type": "searchset",
-    "total": 2,
+    "type": "collection",
     "entry": [
       {
         "resource": {
@@ -306,7 +309,7 @@ export const errorScenarios = [
     scenario: "Missing transaction_id in Callback",
     request: `POST /api/v1/fhir/receive/Patient
 {
-  "status": "success",
+  "status": "SUCCESS",
   "data": { ... }
   // ERROR: No transaction_id!
 }`,
@@ -321,7 +324,7 @@ export const errorScenarios = [
     request: `POST /api/v1/fhir/receive/Patient
 {
   "transactionId": "txn_00000000-0000-0000-0000-000000000000",
-  "status": "success"
+  "status": "SUCCESS"
 }`,
     response: `{
   "success": false,

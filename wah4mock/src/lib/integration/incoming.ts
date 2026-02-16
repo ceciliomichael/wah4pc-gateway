@@ -12,12 +12,10 @@ import type {
   ReceivePushPayload,
   GatewayResponse,
   IncomingRequest,
+  QuerySelector,
+  Identifier,
 } from '../types/integration';
-import type { Appointment } from '../types/fhir';
-
-// ============================================================================
-// Webhook Handler: Process Query
-// ============================================================================
+import type { Appointment, Patient, Resource } from '../types/fhir';
 
 /**
  * Handle incoming process-query webhook from gateway
@@ -28,22 +26,30 @@ import type { Appointment } from '../types/fhir';
 export async function handleProcessQuery(
   payload: ProcessQueryPayload
 ): Promise<{ saved: boolean; requestId?: string }> {
-  const { transactionId, requesterId, identifiers, gatewayReturnUrl, resourceType, reason, notes } = payload;
+  const {
+    transactionId,
+    requesterId,
+    identifiers,
+    selector,
+    gatewayReturnUrl,
+    resourceType,
+    reason,
+    notes,
+  } = payload;
 
   console.log(`[Integration] Received query ${transactionId} for ${resourceType}`);
   console.log(`[Integration] From requester: ${requesterId}`);
 
-  // Check for duplicate (idempotency)
   if (await integrationDb.incomingRequestExists(transactionId)) {
     console.log(`[Integration] Request ${transactionId} already exists, skipping`);
     return { saved: true };
   }
 
-  // Save as pending approval - user must manually approve/reject
   const request = await integrationDb.saveIncomingRequest({
     transactionId,
     requesterId,
     identifiers,
+    selector,
     resourceType,
     gatewayReturnUrl,
     reason,
@@ -51,13 +57,127 @@ export async function handleProcessQuery(
   });
 
   console.log(`[Integration] Saved incoming request ${request.id} for approval`);
-
   return { saved: true, requestId: request.id };
 }
 
-// ============================================================================
-// Approval/Rejection Handlers
-// ============================================================================
+function normalizeSelector(selector: QuerySelector | undefined, identifiers: Identifier[]): QuerySelector {
+  const normalized: QuerySelector = selector ? { ...selector } : {};
+  if ((!normalized.patientIdentifiers || normalized.patientIdentifiers.length === 0) && identifiers.length > 0) {
+    normalized.patientIdentifiers = identifiers;
+  }
+  return normalized;
+}
+
+function getReferenceTail(reference: string | undefined): string | null {
+  if (!reference) {
+    return null;
+  }
+  const value = reference.trim();
+  if (!value) {
+    return null;
+  }
+  if (!value.includes('/')) {
+    return value;
+  }
+  const segments = value.split('/');
+  return segments[segments.length - 1] || null;
+}
+
+function collectReferenceValues(value: unknown, references: string[]): void {
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      collectReferenceValues(item, references);
+    }
+    return;
+  }
+
+  if (!value || typeof value !== 'object') {
+    return;
+  }
+
+  const objectValue = value as Record<string, unknown>;
+  for (const [key, nestedValue] of Object.entries(objectValue)) {
+    if (key === 'reference' && typeof nestedValue === 'string') {
+      references.push(nestedValue);
+      continue;
+    }
+    collectReferenceValues(nestedValue, references);
+  }
+}
+
+function buildCollectionBundle(resources: Resource[]): Record<string, unknown> {
+  return {
+    resourceType: 'Bundle',
+    type: 'collection',
+    entry: resources.map((resource) => ({ resource })),
+  };
+}
+
+function hasResourceSelector(selector: QuerySelector): boolean {
+  return Boolean(selector.resourceReference) || (selector.resourceIdentifiers?.length ?? 0) > 0;
+}
+
+function isPatientResource(resource: Resource): resource is Patient {
+  return resource.resourceType === 'Patient';
+}
+
+async function findResourcesBySelector(
+  resourceType: string,
+  selector: QuerySelector
+): Promise<Resource[]> {
+  const resources = await db.getAll<Resource>(resourceType);
+
+  if (hasResourceSelector(selector)) {
+    const resourceRefTail = getReferenceTail(selector.resourceReference);
+    const byReference = resourceRefTail ? resources.filter((resource) => resource.id === resourceRefTail) : [];
+
+    if (byReference.length > 0) {
+      return byReference;
+    }
+
+    const lookupIdentifiers = selector.resourceIdentifiers || [];
+    if (lookupIdentifiers.length === 0) {
+      return [];
+    }
+
+    return resources.filter((resource) => {
+      const asRecord = resource as unknown as Record<string, unknown>;
+      const identifierValue = asRecord.identifier;
+      if (!Array.isArray(identifierValue)) {
+        return false;
+      }
+      const resourceIdentifiers = identifierValue as Record<string, unknown>[];
+      return lookupIdentifiers.some((lookup) =>
+        resourceIdentifiers.some((candidate) =>
+          candidate.system === lookup.system && candidate.value === lookup.value
+        )
+      );
+    });
+  }
+
+  let patientID = getReferenceTail(selector.patientReference);
+  if (!patientID && (selector.patientIdentifiers?.length ?? 0) > 0) {
+    const matchedPatient = await findPatientByIdentifiers(selector.patientIdentifiers || []);
+    patientID = matchedPatient?.id || null;
+  }
+
+  if (!patientID) {
+    return [];
+  }
+
+  return resources.filter((resource) => {
+    if (resourceType === 'Patient') {
+      return resource.id === patientID;
+    }
+
+    const references: string[] = [];
+    collectReferenceValues(resource, references);
+    return references.some((reference) => {
+      const tail = getReferenceTail(reference);
+      return tail === patientID && (reference.startsWith('Patient/') || reference === patientID);
+    });
+  });
+}
 
 /**
  * Approve an incoming request and send data to the gateway
@@ -65,68 +185,53 @@ export async function handleProcessQuery(
 export async function approveIncomingRequest(
   requestId: string
 ): Promise<{ success: boolean; message: string; data?: Record<string, unknown> }> {
-  // Get the request
   const request = await integrationDb.getIncomingRequestById(requestId);
-
   if (!request) {
     return { success: false, message: 'Request not found' };
   }
-
   if (request.status !== 'PENDING_APPROVAL') {
     return { success: false, message: `Request already processed with status: ${request.status}` };
   }
 
-  // Update status to processing
   await integrationDb.updateIncomingRequestStatus(requestId, 'PROCESSING');
-
   console.log(`[Integration] Processing approved request ${requestId}`);
 
   let responsePayload: GatewayResponse;
 
   try {
-    // Currently only supporting Patient resource
-    if (request.resourceType !== 'Patient') {
+    const selector = normalizeSelector(request.selector, request.identifiers);
+    const matchedResources = await findResourcesBySelector(request.resourceType, selector);
+
+    if (matchedResources.length === 0) {
+      console.log(`[Integration] No ${request.resourceType} resources found for request ${requestId}`);
       responsePayload = {
         transactionId: request.transactionId,
         status: 'REJECTED',
         data: {
-          error: `Resource type '${request.resourceType}' is not supported`,
-          supportedTypes: ['Patient'],
+          error: `${request.resourceType} not found`,
+          searchedSelector: selector,
         },
       };
+    } else if (request.resourceType === 'Patient' && matchedResources.length === 1 && isPatientResource(matchedResources[0])) {
+      responsePayload = {
+        transactionId: request.transactionId,
+        status: 'SUCCESS',
+        data: formatPatientForGateway(matchedResources[0], request.identifiers),
+      };
     } else {
-      // Search for patient
-      const patient = await findPatientByIdentifiers(request.identifiers);
-
-      if (!patient) {
-        console.log(`[Integration] No patient found for request ${requestId}`);
-        responsePayload = {
-          transactionId: request.transactionId,
-          status: 'REJECTED',
-          data: {
-            error: 'Patient not found',
-            searchedIdentifiers: request.identifiers,
-          },
-        };
-      } else {
-        console.log(`[Integration] Found patient ${patient.id} for request ${requestId}`);
-        responsePayload = {
-          transactionId: request.transactionId,
-          status: 'SUCCESS',
-          data: formatPatientForGateway(patient, request.identifiers),
-        };
-      }
+      responsePayload = {
+        transactionId: request.transactionId,
+        status: 'SUCCESS',
+        data: buildCollectionBundle(matchedResources),
+      };
     }
 
-    // Send response to gateway
     await sendToGateway(request.gatewayReturnUrl, responsePayload);
 
-    // Update status based on response
     const finalStatus = responsePayload.status === 'SUCCESS' ? 'SUCCESS' : 'REJECTED';
     await integrationDb.updateIncomingRequestStatus(requestId, finalStatus, responsePayload.data);
 
     console.log(`[Integration] Sent response for request ${requestId}, status: ${finalStatus}`);
-
     return {
       success: true,
       message: `Request processed successfully with status: ${finalStatus}`,
@@ -135,12 +240,10 @@ export async function approveIncomingRequest(
   } catch (error) {
     console.error(`[Integration] Error processing request ${requestId}:`, error);
 
-    // Update status to error
     await integrationDb.updateIncomingRequestStatus(requestId, 'ERROR', {
       error: error instanceof Error ? error.message : 'Unknown error',
     });
 
-    // Attempt to notify gateway of error
     try {
       await sendToGateway(request.gatewayReturnUrl, {
         transactionId: request.transactionId,
@@ -168,13 +271,10 @@ export async function rejectIncomingRequest(
   requestId: string,
   reason?: string
 ): Promise<{ success: boolean; message: string }> {
-  // Get the request
   const request = await integrationDb.getIncomingRequestById(requestId);
-
   if (!request) {
     return { success: false, message: 'Request not found' };
   }
-
   if (request.status !== 'PENDING_APPROVAL') {
     return { success: false, message: `Request already processed with status: ${request.status}` };
   }
@@ -182,7 +282,6 @@ export async function rejectIncomingRequest(
   console.log(`[Integration] Rejecting request ${requestId}`);
 
   try {
-    // Send rejection to gateway
     await sendToGateway(request.gatewayReturnUrl, {
       transactionId: request.transactionId,
       status: 'REJECTED',
@@ -192,17 +291,14 @@ export async function rejectIncomingRequest(
       },
     });
 
-    // Update status
     await integrationDb.updateIncomingRequestStatus(requestId, 'REJECTED_BY_USER', {
       rejectionReason: reason || 'No reason provided',
     });
 
     console.log(`[Integration] Rejected request ${requestId}`);
-
     return { success: true, message: 'Request rejected successfully' };
   } catch (error) {
     console.error(`[Integration] Error rejecting request ${requestId}:`, error);
-
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Failed to reject request',
@@ -210,16 +306,9 @@ export async function rejectIncomingRequest(
   }
 }
 
-// ============================================================================
-// Webhook Handler: Receive Push (Unsolicited Data)
-// ============================================================================
-
 /**
  * Handle incoming push webhook from gateway
  * Called when another provider pushes data to us without a prior request
- * (e.g., incoming referrals, appointments)
- *
- * Auto-saves Appointment resources to the local database
  */
 export async function handleReceivePush(
   payload: ReceivePushPayload
@@ -227,10 +316,13 @@ export async function handleReceivePush(
   const { transactionId, senderId, resourceType, data, reason, notes } = payload;
 
   console.log(`[Integration] Received push ${transactionId} for ${resourceType} from ${senderId}`);
-  if (reason) console.log(`[Integration] Reason: ${reason}`);
-  if (notes) console.log(`[Integration] Notes: ${notes}`);
+  if (reason) {
+    console.log(`[Integration] Reason: ${reason}`);
+  }
+  if (notes) {
+    console.log(`[Integration] Notes: ${notes}`);
+  }
 
-  // Check for duplicate delivery (idempotency)
   if (await integrationDb.dataAlreadyReceived(transactionId)) {
     console.log(`[Integration] Push data already received for ${transactionId}, skipping`);
     return {
@@ -239,7 +331,6 @@ export async function handleReceivePush(
     };
   }
 
-  // Store the received data in integration log
   await integrationDb.saveReceivedData({
     transactionId,
     resourceType,
@@ -249,16 +340,11 @@ export async function handleReceivePush(
 
   console.log(`[Integration] Stored push data for transaction ${transactionId}`);
 
-  // =========================================================================
-  // AUTO-SAVE: Save received resource to local database
-  // =========================================================================
   let resourceSaved = false;
-
   if (data && resourceType === 'Appointment') {
     try {
       resourceSaved = await saveReceivedAppointmentToLocalDb(data, transactionId, senderId);
     } catch (error) {
-      // Log but don't fail - the integration data is already saved
       console.error(`[Integration] Failed to auto-save appointment to local DB:`, error);
     }
   }
@@ -270,25 +356,19 @@ export async function handleReceivePush(
   };
 }
 
-/**
- * Save a received Appointment resource to the local Appointment.json database
- */
 async function saveReceivedAppointmentToLocalDb(
   data: Record<string, unknown>,
   transactionId: string,
   senderId: string
 ): Promise<boolean> {
   if (data.resourceType !== 'Appointment') {
-    console.warn(`[Integration] Expected Appointment resource but got: ${data.resourceType}`);
+    console.warn(`[Integration] Expected Appointment resource but got: ${String(data.resourceType)}`);
     return false;
   }
 
   const receivedAppointment = data as unknown as Appointment;
-
-  // Generate a local ID if not present
   const localId = receivedAppointment.id || `appt-${uuidv4().slice(0, 8)}`;
 
-  // Add integration metadata extension
   const appointmentToSave: Appointment = {
     ...receivedAppointment,
     id: localId,
@@ -311,13 +391,6 @@ async function saveReceivedAppointmentToLocalDb(
   return true;
 }
 
-// ============================================================================
-// Query Functions
-// ============================================================================
-
-/**
- * Get all incoming requests (for UI display)
- */
 export async function getIncomingRequests(): Promise<IncomingRequest[]> {
   return integrationDb.getAllIncomingRequests();
 }

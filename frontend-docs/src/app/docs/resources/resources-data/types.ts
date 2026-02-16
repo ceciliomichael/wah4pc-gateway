@@ -52,6 +52,7 @@ export interface ResourceDefinition {
   name: string;
   title: string;
   description: string;
+  querySelectorRequirement?: "patient" | "resource";
   profileUrl: string;
   fhirVersion: string;
   baseDefinition: string;

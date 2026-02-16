@@ -74,6 +74,33 @@ import { practitionerRoleResource } from "./practitioner-role";
 
 import type { ResourceDefinition, ResourceSlug, CodeSystem, PageInfo } from "./types";
 
+export const querySelectorRequirements: Record<string, "patient" | "resource"> = {
+  Patient: "patient",
+  Encounter: "patient",
+  Procedure: "patient",
+  Immunization: "patient",
+  Observation: "patient",
+  AllergyIntolerance: "patient",
+  Condition: "patient",
+  DiagnosticReport: "patient",
+  MedicationRequest: "patient",
+  MedicationAdministration: "patient",
+  NutritionOrder: "patient",
+  Claim: "patient",
+  ClaimResponse: "patient",
+  PaymentNotice: "patient",
+  PaymentReconciliation: "patient",
+  Invoice: "patient",
+  ChargeItem: "patient",
+  Account: "patient",
+  Organization: "resource",
+  Location: "resource",
+  Practitioner: "resource",
+  PractitionerRole: "resource",
+  ChargeItemDefinition: "resource",
+  Medication: "resource",
+};
+
 // ============================================================================
 // Aggregated resources arrays - grouped by category for display
 // ============================================================================
@@ -177,7 +204,14 @@ export const commonCodeSystems: CodeSystem[] = [
 
 // Helper function to get a resource by slug
 export function getResourceBySlug(slug: string): ResourceDefinition | undefined {
-  return resources.find((r) => r.id === slug);
+  const resource = resources.find((r) => r.id === slug);
+  if (!resource) {
+    return undefined;
+  }
+  return {
+    ...resource,
+    querySelectorRequirement: querySelectorRequirements[resource.name],
+  };
 }
 
 // Get all resource slugs for static generation

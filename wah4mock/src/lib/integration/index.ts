@@ -22,6 +22,7 @@ export {
 
 export {
   handleReceiveResults,
+  initiateQuery,
   initiatePatientQuery,
   initiatePush,
   IdempotencyConflictError,
@@ -42,7 +43,7 @@ import {
   rejectIncomingRequest,
   getIncomingRequests,
 } from './incoming';
-import { handleReceiveResults, initiatePatientQuery, initiatePush } from './outgoing';
+import { handleReceiveResults, initiateQuery, initiatePatientQuery, initiatePush } from './outgoing';
 
 /**
  * Integration service object - maintains backward compatibility
@@ -58,6 +59,7 @@ export const integrationService = {
   rejectIncomingRequest,
   getIncomingRequests,
   // Outbound requests
+  initiateQuery,
   initiatePatientQuery,
   initiatePush,
   registerProvider,

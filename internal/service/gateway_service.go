@@ -83,12 +83,11 @@ func NewGatewayService(
 // InitiateQuery starts a new FHIR resource transfer
 // Flow: Requester -> Gateway -> Target
 func (s *GatewayService) InitiateQuery(req QueryRequest) (*model.Transaction, error) {
-	// Validate required fields
-	if req.RequesterID == "" || req.TargetID == "" || len(req.Identifiers) == 0 {
-		return nil, ErrInvalidRequest
-	}
 	if req.ResourceType == "" {
 		req.ResourceType = "Patient" // Default
+	}
+	if err := normalizeAndValidateQuerySelector(&req); err != nil {
+		return nil, err
 	}
 
 	// Validate both providers exist
@@ -116,7 +115,7 @@ func (s *GatewayService) InitiateQuery(req QueryRequest) (*model.Transaction, er
 
 	duplicates := make([]model.Transaction, 0)
 	for _, tx := range candidates {
-		if model.IdentifiersMatch(tx.Identifiers, req.Identifiers) {
+		if model.QuerySelectorsMatch(effectiveSelectorFromTransaction(tx), req.Selector) {
 			duplicates = append(duplicates, tx)
 		}
 	}
@@ -130,7 +129,8 @@ func (s *GatewayService) InitiateQuery(req QueryRequest) (*model.Transaction, er
 		ID:           "txn_" + uuid.New().String(),
 		RequesterID:  req.RequesterID,
 		TargetID:     req.TargetID,
-		Identifiers:  req.Identifiers,
+		Identifiers:  req.Identifiers, // Legacy mirror of selector.patientIdentifiers
+		Selector:     req.Selector,
 		ResourceType: req.ResourceType,
 		Status:       model.StatusPending,
 		Metadata: model.TransactionMetadata{
@@ -152,7 +152,8 @@ func (s *GatewayService) InitiateQuery(req QueryRequest) (*model.Transaction, er
 	payload := ProcessQueryPayload{
 		TransactionID:    tx.ID,
 		RequesterID:      req.RequesterID,
-		Identifiers:      req.Identifiers,
+		Identifiers:      req.Identifiers, // Legacy mirror of selector.patientIdentifiers
+		Selector:         req.Selector,
 		ResourceType:     req.ResourceType,
 		GatewayReturnURL: gatewayReturnURL,
 		Reason:           req.Reason,
@@ -321,9 +322,10 @@ func (s *GatewayService) ProcessResponse(result IncomingResultPayload, senderPro
 		return ErrUnauthorizedProvider
 	}
 
-	// Normalize array payloads into object payloads for requester compatibility.
-	// Single resource arrays are unwrapped; multiple resources are wrapped into a FHIR Bundle.
-	result.Data = normalizeResultData(result.Data)
+	// Standardize successful query results to a FHIR Bundle for requester consistency.
+	if result.Status == string(ResultStatusSuccess) {
+		result.Data = normalizeSuccessResultDataAsBundle(result.Data)
+	}
 
 	// Validate the incoming data using the remote FHIR validator
 	// Only validate if we have a validator and the status is SUCCESS
@@ -558,48 +560,64 @@ func extractUpstreamErrorDetail(body io.Reader) string {
 	return strings.TrimSpace(compact)
 }
 
-// normalizeResultData converts non-object result payloads into an object form.
-// - JSON object: unchanged
-// - Single-item JSON array: unwrap first item
-// - Multi-item JSON array: wrap into FHIR Bundle (type=collection)
+// normalizeSuccessResultDataAsBundle converts successful result payloads into a FHIR Bundle.
+// - Bundle object: unchanged
+// - Any other object: wrapped into single-entry collection Bundle
+// - Array: wrapped into collection Bundle entries
 // For invalid or unsupported JSON shapes, data is returned unchanged.
-func normalizeResultData(data json.RawMessage) json.RawMessage {
+func normalizeSuccessResultDataAsBundle(data json.RawMessage) json.RawMessage {
 	trimmed := bytes.TrimSpace(data)
 	if len(trimmed) == 0 {
 		return data
 	}
 
+	type bundleEntry struct {
+		Resource json.RawMessage `json:"resource"`
+	}
+	type bundle struct {
+		ResourceType string        `json:"resourceType"`
+		Type         string        `json:"type"`
+		Entry        []bundleEntry `json:"entry"`
+	}
+
 	switch trimmed[0] {
 	case '{':
-		return data
+		var obj map[string]json.RawMessage
+		if err := json.Unmarshal(trimmed, &obj); err != nil {
+			return data
+		}
+		if rtRaw, ok := obj["resourceType"]; ok {
+			var rt string
+			if err := json.Unmarshal(rtRaw, &rt); err == nil && rt == "Bundle" {
+				return data
+			}
+		}
+
+		normalized, err := json.Marshal(bundle{
+			ResourceType: "Bundle",
+			Type:         "collection",
+			Entry:        []bundleEntry{{Resource: trimmed}},
+		})
+		if err != nil {
+			return data
+		}
+		return normalized
 	case '[':
 		var resources []json.RawMessage
 		if err := json.Unmarshal(trimmed, &resources); err != nil {
 			return data
 		}
-
-		if len(resources) == 1 {
-			return resources[0]
-		}
-
-		type bundleEntry struct {
-			Resource json.RawMessage `json:"resource"`
-		}
-		bundle := struct {
-			ResourceType string        `json:"resourceType"`
-			Type         string        `json:"type"`
-			Entry        []bundleEntry `json:"entry"`
-		}{
+		resultBundle := bundle{
 			ResourceType: "Bundle",
 			Type:         "collection",
 			Entry:        make([]bundleEntry, 0, len(resources)),
 		}
 
 		for _, resource := range resources {
-			bundle.Entry = append(bundle.Entry, bundleEntry{Resource: resource})
+			resultBundle.Entry = append(resultBundle.Entry, bundleEntry{Resource: resource})
 		}
 
-		normalized, err := json.Marshal(bundle)
+		normalized, err := json.Marshal(resultBundle)
 		if err != nil {
 			return data
 		}

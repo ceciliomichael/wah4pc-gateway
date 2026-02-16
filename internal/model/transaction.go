@@ -24,6 +24,7 @@ type Transaction struct {
 	RequesterID  string              `json:"requesterId" bson:"requesterId"`
 	TargetID     string              `json:"targetId" bson:"targetId"`
 	Identifiers  []Identifier        `json:"identifiers" bson:"identifiers"` // FHIR-compliant patient identifiers (system + value)
+	Selector     QuerySelector       `json:"selector,omitempty" bson:"selector,omitempty"`
 	ResourceType string              `json:"resourceType" bson:"resourceType"`
 	Status       TransactionStatus   `json:"status" bson:"status"`
 	Metadata     TransactionMetadata `json:"metadata" bson:"metadata"`

@@ -50,7 +50,7 @@ func (h *GatewayHandler) RequestQuery(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if errors.Is(err, service.ErrInvalidRequest) {
-			respondError(w, http.StatusBadRequest, "requesterId, targetId, and at least one identifier are required")
+			respondError(w, http.StatusBadRequest, err.Error())
 			return
 		}
 		if errors.Is(err, service.ErrProviderNotFound) {

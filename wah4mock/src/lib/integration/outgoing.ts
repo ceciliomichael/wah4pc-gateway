@@ -13,6 +13,7 @@ import type {
   ReceiveResultsPayload,
   Identifier,
   InitiateQueryResponse,
+  QuerySelector,
 } from '../types/integration';
 
 // ============================================================================
@@ -245,14 +246,17 @@ export class IdempotencyConflictError extends Error {
  * 
  * @throws {IdempotencyConflictError} When a request with the same key is still processing (409)
  */
-export async function initiatePatientQuery(params: {
+export async function initiateQuery(params: {
   targetId: string;
-  identifiers: Identifier[];
+  resourceType: string;
+  identifiers?: Identifier[];
+  selector?: QuerySelector;
   reason?: string;
   notes?: string;
   idempotencyKey?: string;
 }): Promise<InitiateQueryResponse & { idempotencyKey: string }> {
-  const { targetId, identifiers, reason, notes } = params;
+  const { targetId, resourceType, reason, notes } = params;
+  const identifiers = params.identifiers || [];
 
   // Generate idempotency key if not provided (for new requests)
   // Reuse provided key when retrying failed requests
@@ -268,18 +272,24 @@ export async function initiatePatientQuery(params: {
 
   const { gatewayUrl, providerId, apiKey } = config.integration;
 
-  console.log(`[Integration] Initiating patient query to provider ${targetId} (Idempotency-Key: ${idempotencyKey})`);
+  const effectiveSelector: QuerySelector = params.selector || {};
+  if (identifiers.length > 0 && (!effectiveSelector.patientIdentifiers || effectiveSelector.patientIdentifiers.length === 0)) {
+    effectiveSelector.patientIdentifiers = identifiers;
+  }
+
+  console.log(`[Integration] Initiating ${resourceType} query to provider ${targetId} (Idempotency-Key: ${idempotencyKey})`);
 
   const requestBody = {
     requesterId: providerId,
     targetId,
-    resourceType: 'Patient',
+    resourceType,
     identifiers,
+    selector: effectiveSelector,
     reason,
     notes,
   };
 
-  const response = await fetch(`${gatewayUrl}/api/v1/fhir/request/Patient`, {
+  const response = await fetch(`${gatewayUrl}/api/v1/fhir/request/${resourceType}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -311,8 +321,9 @@ export async function initiatePatientQuery(params: {
     await integrationDb.createTransaction({
       transactionId: result.data.id,
       targetId,
-      resourceType: 'Patient',
+      resourceType,
       identifiers,
+      selector: effectiveSelector,
       reason,
       notes,
       idempotencyKey,
@@ -322,6 +333,26 @@ export async function initiatePatientQuery(params: {
   console.log(`[Integration] Created transaction ${result.data?.id} (Idempotency-Key: ${idempotencyKey})`);
 
   return { ...result, idempotencyKey };
+}
+
+export async function initiatePatientQuery(params: {
+  targetId: string;
+  identifiers: Identifier[];
+  reason?: string;
+  notes?: string;
+  idempotencyKey?: string;
+}): Promise<InitiateQueryResponse & { idempotencyKey: string }> {
+  return initiateQuery({
+    targetId: params.targetId,
+    resourceType: 'Patient',
+    identifiers: params.identifiers,
+    selector: {
+      patientIdentifiers: params.identifiers,
+    },
+    reason: params.reason,
+    notes: params.notes,
+    idempotencyKey: params.idempotencyKey,
+  });
 }
 
 // ============================================================================

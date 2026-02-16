@@ -9,24 +9,26 @@ import (
 // QueryRequest represents an incoming request to fetch FHIR resources
 // This is the payload sent by requesters to initiate a data transfer
 type QueryRequest struct {
-	RequesterID  string             `json:"requesterId"`
-	TargetID     string             `json:"targetId"`
-	Identifiers  []model.Identifier `json:"identifiers"` // FHIR-compliant patient identifiers
-	ResourceType string             `json:"resourceType"`
-	Reason       string             `json:"reason,omitempty"`
-	Notes        string             `json:"notes,omitempty"`
+	RequesterID  string              `json:"requesterId"`
+	TargetID     string              `json:"targetId"`
+	Identifiers  []model.Identifier  `json:"identifiers"` // Legacy: mapped to selector.patientIdentifiers when selector is omitted
+	Selector     model.QuerySelector `json:"selector,omitempty"`
+	ResourceType string              `json:"resourceType"`
+	Reason       string              `json:"reason,omitempty"`
+	Notes        string              `json:"notes,omitempty"`
 }
 
 // ProcessQueryPayload is sent to the target provider to request patient data
 // The target provider uses this to look up the patient and prepare the response
 type ProcessQueryPayload struct {
-	TransactionID    string             `json:"transactionId"`
-	RequesterID      string             `json:"requesterId"`
-	Identifiers      []model.Identifier `json:"identifiers"` // FHIR-compliant patient identifiers
-	ResourceType     string             `json:"resourceType"`
-	GatewayReturnURL string             `json:"gatewayReturnUrl"`
-	Reason           string             `json:"reason,omitempty"` // Optional: Purpose of the request (e.g., "Emergency", "Referral")
-	Notes            string             `json:"notes,omitempty"`  // Optional: Additional context for the target provider
+	TransactionID    string              `json:"transactionId"`
+	RequesterID      string              `json:"requesterId"`
+	Identifiers      []model.Identifier  `json:"identifiers"` // Legacy mirror of selector.patientIdentifiers
+	Selector         model.QuerySelector `json:"selector,omitempty"`
+	ResourceType     string              `json:"resourceType"`
+	GatewayReturnURL string              `json:"gatewayReturnUrl"`
+	Reason           string              `json:"reason,omitempty"` // Optional: Purpose of the request (e.g., "Emergency", "Referral")
+	Notes            string              `json:"notes,omitempty"`  // Optional: Additional context for the target provider
 }
 
 // ReceiveResultPayload is sent to the requester with the retrieved data

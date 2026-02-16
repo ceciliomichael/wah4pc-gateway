@@ -22,12 +22,16 @@ export const webhookEndpoints: EndpointCardProps[] = [
     {
       "system": "http://philhealth.gov.ph",
       "value": "12-345678901-2"
-    },
-    {
-      "system": "http://hospital-b.com/mrn",
-      "value": "MRN-12345"
     }
   ],
+  "selector": {
+    "patientIdentifiers": [
+      {
+        "system": "http://philhealth.gov.ph",
+        "value": "12-345678901-2"
+      }
+    ]
+  },
   "resourceType": "Patient",
   "gatewayReturnUrl": "https://gateway.wah4pc.com/api/v1/fhir/receive/Patient",
   "reason": "Referral consultation",
@@ -43,7 +47,9 @@ export const webhookEndpoints: EndpointCardProps[] = [
       "Process the request asynchronously and send results to the gatewayReturnUrl",
       "Use the transactionId when sending results back to correlate the response",
       "Validate the X-Gateway-Auth header matches your registered gatewayAuthKey",
-      "Search your database using the provided identifiers array",
+      "Use selector to resolve the request (patientIdentifiers/patientReference for patient-scoped resources, resourceIdentifiers/resourceReference for resource-scoped resources)",
+      "identifiers is a legacy mirror of selector.patientIdentifiers for backward compatibility",
+      "Example policy: Organization/Practitioner requests should use resourceIdentifiers/resourceReference, not patientIdentifiers",
       "The reason and notes fields provide context about why data is being requested",
     ],
   },
@@ -65,17 +71,17 @@ export const webhookEndpoints: EndpointCardProps[] = [
   "transactionId": "txn_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "status": "SUCCESS",
   "data": {
-    "resourceType": "Patient",
-    "id": "patient-123",
-    "identifier": [
+    "resourceType": "Bundle",
+    "type": "collection",
+    "entry": [
       {
-        "system": "http://philhealth.gov.ph",
-        "value": "12-345678901-2"
+        "resource": {
+          "resourceType": "MedicationRequest",
+          "id": "medrx-1",
+          "status": "active"
+        }
       }
-    ],
-    "name": [{ "family": "Dela Cruz", "given": ["Juan"] }],
-    "birthDate": "1990-05-15",
-    "gender": "male"
+    ]
   }
 }`,
     responseStatus: 200,
@@ -86,8 +92,9 @@ export const webhookEndpoints: EndpointCardProps[] = [
       "**You must implement this endpoint** on your server at the baseUrl you registered",
       "The transactionId corresponds to a request you previously initiated",
       "Status values: SUCCESS (data found), REJECTED (patient not found), ERROR (processing failed)",
-      "When status is SUCCESS, the data field contains the FHIR resource",
+      "When status is SUCCESS, the data field contains a FHIR Bundle (type=collection)",
       "When status is REJECTED or ERROR, the data field contains error details",
+      "Do not assume a single resource object for SUCCESS; always parse Bundle.entry[]",
       "Store the received data and update your pending transaction status",
       "Validate the X-Gateway-Auth header matches your registered gatewayAuthKey",
     ],

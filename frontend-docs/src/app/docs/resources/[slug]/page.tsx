@@ -228,6 +228,15 @@ export default function ResourceDetailPage() {
         </div>
         <p className="text-slate-600 max-w-3xl">{resource.description}</p>
 
+        <div className="mt-4 inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+          <span className="font-semibold">Request Selector:</span>
+          <code className="rounded bg-white px-2 py-0.5 text-xs text-slate-800 border border-slate-200">
+            {resource.querySelectorRequirement === "resource"
+              ? "selector.resourceIdentifiers | selector.resourceReference"
+              : "selector.patientIdentifiers | selector.patientReference"}
+          </code>
+        </div>
+
         {/* Profile URL */}
         <div className="mt-6 p-4 bg-slate-100 rounded-lg">
           <div className="flex items-center justify-between gap-4 flex-wrap">

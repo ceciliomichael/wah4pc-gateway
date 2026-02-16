@@ -34,13 +34,18 @@ var (
 const duplicateWindow = 5 * time.Minute
 const upstreamErrorBodyLimit = 512
 
+var duplicateBlockingStatuses = []model.TransactionStatus{
+	model.StatusPending,
+	model.StatusReceived,
+}
+
 // TransactionRepository defines the interface for transaction data access
 type TransactionRepository interface {
 	GetAll() ([]model.Transaction, error)
 	GetByID(id string) (model.Transaction, error)
 	Create(tx model.Transaction) error
 	Update(tx model.Transaction) error
-	FindPotentialDuplicates(requesterID, targetID, resourceType string, cutoff time.Time) ([]model.Transaction, error)
+	FindPotentialDuplicates(requesterID, targetID, resourceType string, statuses []model.TransactionStatus, cutoff time.Time) ([]model.Transaction, error)
 }
 
 // GatewayService handles FHIR resource transfer orchestration
@@ -96,7 +101,13 @@ func (s *GatewayService) InitiateQuery(req QueryRequest) (*model.Transaction, er
 
 	// Check for duplicate requests within the time window
 	cutoff := time.Now().UTC().Add(-duplicateWindow)
-	candidates, err := s.txRepo.FindPotentialDuplicates(req.RequesterID, req.TargetID, req.ResourceType, cutoff)
+	candidates, err := s.txRepo.FindPotentialDuplicates(
+		req.RequesterID,
+		req.TargetID,
+		req.ResourceType,
+		duplicateBlockingStatuses,
+		cutoff,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check for duplicates: %w", err)
 	}

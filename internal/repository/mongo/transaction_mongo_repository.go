@@ -114,14 +114,20 @@ func (r *TransactionRepository) Update(tx model.Transaction) error {
 	return nil
 }
 
-func (r *TransactionRepository) FindPotentialDuplicates(requesterID, targetID, resourceType string, cutoff time.Time) ([]model.Transaction, error) {
+func (r *TransactionRepository) FindPotentialDuplicates(requesterID, targetID, resourceType string, statuses []model.TransactionStatus, cutoff time.Time) ([]model.Transaction, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+
+	statusesFilter := make([]string, 0, len(statuses))
+	for _, status := range statuses {
+		statusesFilter = append(statusesFilter, string(status))
+	}
 
 	filter := bson.D{
 		{Key: "requesterId", Value: requesterID},
 		{Key: "targetId", Value: targetID},
 		{Key: "resourceType", Value: resourceType},
+		{Key: "status", Value: bson.D{{Key: "$in", Value: statusesFilter}}},
 		{Key: "createdAt", Value: bson.D{{Key: "$gte", Value: cutoff}}},
 	}
 

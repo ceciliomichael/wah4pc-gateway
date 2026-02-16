@@ -45,7 +45,7 @@ func (r *txRepoStub) Update(tx model.Transaction) error {
 	return nil
 }
 
-func (r *txRepoStub) FindPotentialDuplicates(_ string, _ string, _ string, _ time.Time) ([]model.Transaction, error) {
+func (r *txRepoStub) FindPotentialDuplicates(_ string, _ string, _ string, _ []model.TransactionStatus, _ time.Time) ([]model.Transaction, error) {
 	return []model.Transaction{}, nil
 }
 

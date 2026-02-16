@@ -137,6 +137,15 @@ func (m *AuditMiddleware) shouldSkipLogging(req *http.Request) bool {
 		return true
 	}
 
+	// Exclude selected operational endpoints from audit logging
+	if path == "/providers" ||
+		path == "/settings" ||
+		path == "/api/v1/settings" ||
+		path == "/api/v1/transactions" ||
+		strings.HasPrefix(path, "/api/v1/transactions/") {
+		return true
+	}
+
 	// Exclude static assets if served via this middleware
 	if strings.HasPrefix(path, "/static/") || path == "/favicon.ico" {
 		return true

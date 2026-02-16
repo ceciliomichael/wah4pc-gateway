@@ -11,7 +11,10 @@ import { SystemSettings } from "@/types";
 import { LuSave, LuShieldAlert, LuShieldCheck } from "react-icons/lu";
 
 function SettingsContent() {
-  const [settings, setSettings] = useState<SystemSettings | null>(null);
+  const [settings, setSettings] = useState<SystemSettings>({
+    id: "global",
+    validatorDisabled: true,
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,8 +39,6 @@ function SettingsContent() {
   };
 
   const handleSave = async () => {
-    if (!settings) return;
-
     setIsSaving(true);
     setError(null);
     setSuccessMessage(null);
@@ -89,7 +90,7 @@ function SettingsContent() {
                 <h3 className="text-base font-semibold text-slate-900">
                   FHIR Schema Validation
                 </h3>
-                {settings?.validatorDisabled ? (
+                {settings.validatorDisabled ? (
                   <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
                     <LuShieldAlert className="w-3 h-3 mr-1" />
                     Disabled
@@ -107,11 +108,11 @@ function SettingsContent() {
             </div>
             
             <Switch
-              checked={!settings?.validatorDisabled}
+              checked={!settings.validatorDisabled}
               onCheckedChange={(checked) => 
-                setSettings(settings ? { ...settings, validatorDisabled: !checked } : null)
+                setSettings({ ...settings, validatorDisabled: !checked })
               }
-              label={!settings?.validatorDisabled ? "Enabled" : "Disabled"}
+              label={!settings.validatorDisabled ? "Enabled" : "Disabled"}
             />
           </div>
 

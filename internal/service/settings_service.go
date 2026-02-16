@@ -47,7 +47,7 @@ func (s *SettingsService) GetSettings() (*model.SystemSettings, error) {
 	// Create default settings if not found
 	defaultSettings := model.SystemSettings{
 		ID:                model.SettingsIDGlobal,
-		ValidatorDisabled: false, // Enabled by default
+		ValidatorDisabled: true, // Disabled by default
 	}
 
 	s.mu.Lock()
@@ -100,8 +100,8 @@ func (s *SettingsService) UpdateSettings(updates model.SystemSettings) (*model.S
 func (s *SettingsService) IsValidatorDisabled() bool {
 	settings, err := s.GetSettings()
 	if err != nil {
-		// Default to enabled (false) on error for safety
-		return false
+		// Default to disabled (true) on error
+		return true
 	}
 	return settings.ValidatorDisabled
 }

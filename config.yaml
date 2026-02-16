@@ -23,6 +23,6 @@ logging:
   level: "info"  # debug, info, warn, error
 
 validator:
-  disabled: false
+  disabled: true
   url: "https://wah4pc-validator-api.echosphere.cfd"
   api_key: "dev-api-key-for-frontend"

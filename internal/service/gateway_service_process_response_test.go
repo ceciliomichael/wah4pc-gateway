@@ -228,3 +228,96 @@ func TestGatewayServiceProcessResponse_WrapsMultiItemArrayAsBundle(t *testing.T)
 		t.Fatal("expected requester to receive relayed payload")
 	}
 }
+
+func TestGatewayServiceProcessResponse_TimesOutAfterTwentyFourHoursAndFailsTransaction(t *testing.T) {
+	t.Parallel()
+
+	requesterReceived := make(chan ReceiveResultPayload, 1)
+	requester := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/fhir/receive-results" {
+			http.NotFound(w, r)
+			return
+		}
+
+		var payload ReceiveResultPayload
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+
+		requesterReceived <- payload
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer requester.Close()
+
+	providerRepo := newProviderRepoStub()
+	now := time.Now().UTC()
+	_ = providerRepo.Create(model.Provider{
+		ID:        "requester",
+		Name:      "Requester",
+		BaseURL:   requester.URL,
+		IsActive:  true,
+		CreatedAt: now,
+		UpdatedAt: now,
+	})
+	_ = providerRepo.Create(model.Provider{
+		ID:        "target",
+		Name:      "Target",
+		BaseURL:   "http://target.local",
+		IsActive:  true,
+		CreatedAt: now,
+		UpdatedAt: now,
+	})
+
+	txRepo := newTxRepoStub()
+	txRepo.items["txn-timeout"] = model.Transaction{
+		ID:           "txn-timeout",
+		RequesterID:  "requester",
+		TargetID:     "target",
+		ResourceType: "Observation",
+		Status:       model.StatusPending,
+		CreatedAt:    now.Add(-24*time.Hour - 1*time.Minute),
+		UpdatedAt:    now.Add(-24*time.Hour - 1*time.Minute),
+	}
+
+	svc := NewGatewayService(
+		txRepo,
+		NewProviderService(providerRepo),
+		NewSettingsService(&settingsRepoStub{}),
+		"http://gateway.local",
+		nil,
+	)
+
+	err := svc.ProcessResponse(
+		IncomingResultPayload{
+			TransactionID: "txn-timeout",
+			Status:        string(ResultStatusSuccess),
+			Data:          json.RawMessage(`{"resourceType":"Observation","id":"obs-1"}`),
+		},
+		"target",
+		"Observation",
+	)
+	if !errors.Is(err, ErrRequestTimedOut) {
+		t.Fatalf("expected ErrRequestTimedOut, got: %v", err)
+	}
+
+	updated, getErr := txRepo.GetByID("txn-timeout")
+	if getErr != nil {
+		t.Fatalf("expected transaction to exist, got: %v", getErr)
+	}
+	if updated.Status != model.StatusFailed {
+		t.Fatalf("expected transaction status %s, got %s", model.StatusFailed, updated.Status)
+	}
+
+	select {
+	case payload := <-requesterReceived:
+		if payload.Status != string(ResultStatusError) {
+			t.Fatalf("expected requester timeout status %s, got %s", ResultStatusError, payload.Status)
+		}
+		if string(payload.Data) != `{"message":"request exceeded 24 hour timeout window"}` {
+			t.Fatalf("unexpected timeout payload: %s", string(payload.Data))
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("expected requester to receive timeout payload")
+	}
+}

@@ -60,6 +60,46 @@ func (r *testSettingsRepoStub) Update(_ model.SystemSettings) error {
 	return nil
 }
 
+type testProviderRepoStub struct {
+	items map[string]model.Provider
+}
+
+func (r *testProviderRepoStub) GetAll() ([]model.Provider, error) {
+	result := make([]model.Provider, 0, len(r.items))
+	for _, provider := range r.items {
+		result = append(result, provider)
+	}
+	return result, nil
+}
+
+func (r *testProviderRepoStub) GetByID(id string) (model.Provider, error) {
+	provider, ok := r.items[id]
+	if !ok {
+		return model.Provider{}, repository.ErrNotFound
+	}
+	return provider, nil
+}
+
+func (r *testProviderRepoStub) Create(provider model.Provider) error {
+	r.items[provider.ID] = provider
+	return nil
+}
+
+func (r *testProviderRepoStub) Update(provider model.Provider) error {
+	r.items[provider.ID] = provider
+	return nil
+}
+
+func (r *testProviderRepoStub) Delete(id string) error {
+	delete(r.items, id)
+	return nil
+}
+
+func (r *testProviderRepoStub) Exists(id string) (bool, error) {
+	_, ok := r.items[id]
+	return ok, nil
+}
+
 func TestGatewayHandlerRequestQuery_InvalidResourceTypePath(t *testing.T) {
 	h := &GatewayHandler{}
 
@@ -154,5 +194,76 @@ func TestGatewayHandlerReceiveResult_ResourceTypeMismatchReturnsConflict(t *test
 
 	if rec.Code != http.StatusConflict {
 		t.Fatalf("expected %d, got %d", http.StatusConflict, rec.Code)
+	}
+}
+
+func TestGatewayHandlerReceiveResult_TimedOutReturnsRequestTimeout(t *testing.T) {
+	now := time.Now().UTC()
+	txRepo := &testTxRepoStub{
+		items: map[string]model.Transaction{
+			"txn-timeout": {
+				ID:           "txn-timeout",
+				RequesterID:  "requester",
+				TargetID:     "target",
+				ResourceType: "Observation",
+				Status:       model.StatusPending,
+				CreatedAt:    now.Add(-24*time.Hour - 2*time.Minute),
+				UpdatedAt:    now.Add(-24*time.Hour - 2*time.Minute),
+			},
+		},
+	}
+	providerRepo := &testProviderRepoStub{
+		items: map[string]model.Provider{
+			"requester": {
+				ID:             "requester",
+				Name:           "Requester",
+				BaseURL:        "http://requester.local",
+				GatewayAuthKey: "requester-auth-key",
+				IsActive:       true,
+				CreatedAt:      now,
+				UpdatedAt:      now,
+			},
+			"target": {
+				ID:             "target",
+				Name:           "Target",
+				BaseURL:        "http://target.local",
+				GatewayAuthKey: "target-auth-key",
+				IsActive:       true,
+				CreatedAt:      now,
+				UpdatedAt:      now,
+			},
+		},
+	}
+
+	gwService := service.NewGatewayService(
+		txRepo,
+		service.NewProviderService(providerRepo),
+		service.NewSettingsService(&testSettingsRepoStub{}),
+		"http://gateway.local",
+		nil,
+	)
+	h := NewGatewayHandler(gwService)
+
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"/api/v1/fhir/receive/Observation",
+		strings.NewReader(`{"transactionId":"txn-timeout","status":"SUCCESS","data":{"resourceType":"Observation"}}`),
+	)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Provider-ID", "target")
+	rec := httptest.NewRecorder()
+
+	h.ReceiveResult(rec, req)
+
+	if rec.Code != http.StatusRequestTimeout {
+		t.Fatalf("expected %d, got %d", http.StatusRequestTimeout, rec.Code)
+	}
+
+	updated, err := txRepo.GetByID("txn-timeout")
+	if err != nil {
+		t.Fatalf("expected transaction to exist, got %v", err)
+	}
+	if updated.Status != model.StatusFailed {
+		t.Fatalf("expected status %s, got %s", model.StatusFailed, updated.Status)
 	}
 }

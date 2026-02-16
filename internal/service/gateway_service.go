@@ -22,6 +22,7 @@ var (
 	ErrInvalidRequest       = errors.New("invalid request data")
 	ErrInvalidResourceType  = errors.New("invalid resource type")
 	ErrResourceTypeMismatch = errors.New("resource type mismatch")
+	ErrRequestTimedOut      = errors.New("request took too long")
 	ErrTargetUnreachable    = errors.New("target provider unreachable")
 	ErrRequesterUnreachable = errors.New("requester provider unreachable")
 	ErrInvalidStatus        = errors.New("transaction not in pending status")
@@ -32,6 +33,7 @@ var (
 
 // duplicateWindow defines how long to check for duplicate requests
 const duplicateWindow = 5 * time.Minute
+const requestTimeoutWindow = 24 * time.Hour
 const upstreamErrorBodyLimit = 512
 
 var duplicateBlockingStatuses = []model.TransactionStatus{
@@ -290,6 +292,28 @@ func (s *GatewayService) ProcessResponse(result IncomingResultPayload, senderPro
 	// Validate transaction is in PENDING status (reject orphan/duplicate receives)
 	if tx.Status != model.StatusPending {
 		return fmt.Errorf("%w: current status is %s", ErrInvalidStatus, tx.Status)
+	}
+
+	// Requests that exceed the timeout window are failed and requester is notified.
+	if time.Since(tx.CreatedAt) > requestTimeoutWindow {
+		tx.Status = model.StatusFailed
+		tx.UpdatedAt = time.Now().UTC()
+		_ = s.txRepo.Update(tx)
+
+		requesterProvider, err := s.providerService.GetByID(tx.RequesterID)
+		if err == nil {
+			requesterURL, urlErr := buildProviderEndpointURL(requesterProvider.BaseURL, "/fhir/receive-results")
+			if urlErr == nil {
+				timeoutPayload := ReceiveResultPayload{
+					TransactionID: tx.ID,
+					Status:        string(ResultStatusError),
+					Data:          json.RawMessage(`{"message":"request exceeded 24 hour timeout window"}`),
+				}
+				_ = s.forwardToRequester(requesterURL, timeoutPayload, requesterProvider.GatewayAuthKey)
+			}
+		}
+
+		return ErrRequestTimedOut
 	}
 
 	// Validate the sender is the expected target provider (security check)

@@ -167,6 +167,10 @@ func (h *GatewayHandler) ReceiveResult(w http.ResponseWriter, r *http.Request) {
 			respondError(w, http.StatusConflict, "transaction already processed or not in pending status")
 			return
 		}
+		if errors.Is(err, service.ErrRequestTimedOut) {
+			respondError(w, http.StatusRequestTimeout, "request took too long; transaction marked failed")
+			return
+		}
 		if errors.Is(err, service.ErrUnauthorizedProvider) {
 			respondError(w, http.StatusForbidden, "provider not authorized for this transaction")
 			return

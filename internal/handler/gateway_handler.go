@@ -24,15 +24,19 @@ func NewGatewayHandler(svc *service.GatewayService) *GatewayHandler {
 // RequestQuery handles POST /api/v1/fhir/request/{resourceType}
 // This is the entry point for requesters to initiate a FHIR query
 func (h *GatewayHandler) RequestQuery(w http.ResponseWriter, r *http.Request) {
-	// Extract resource type from path
-	resourceType := extractResourceType(r.URL.Path, "/api/v1/fhir/request/")
-	if resourceType == "" {
-		resourceType = "Patient" // Default
+	resourceType, err := service.ParseAndValidateResourceType(r.URL.Path, "/api/v1/fhir/request/")
+	if err != nil {
+		respondError(w, http.StatusBadRequest, "invalid resource type in URL path")
+		return
 	}
 
 	var req service.QueryRequest
 	if err := decodeJSON(r, &req); err != nil {
 		respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if req.ResourceType != "" && req.ResourceType != resourceType {
+		respondError(w, http.StatusBadRequest, "resourceType in body must match URL path")
 		return
 	}
 
@@ -72,15 +76,19 @@ func (h *GatewayHandler) RequestQuery(w http.ResponseWriter, r *http.Request) {
 // RequestPush handles POST /api/v1/fhir/push/{resourceType}
 // This allows providers to push data to another provider without a request
 func (h *GatewayHandler) RequestPush(w http.ResponseWriter, r *http.Request) {
-	// Extract resource type from path
-	resourceType := extractResourceType(r.URL.Path, "/api/v1/fhir/push/")
-	if resourceType == "" {
-		resourceType = "Patient" // Default
+	resourceType, err := service.ParseAndValidateResourceType(r.URL.Path, "/api/v1/fhir/push/")
+	if err != nil {
+		respondError(w, http.StatusBadRequest, "invalid resource type in URL path")
+		return
 	}
 
 	var req service.PushRequest
 	if err := decodeJSON(r, &req); err != nil {
 		respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if req.ResourceType != "" && req.ResourceType != resourceType {
+		respondError(w, http.StatusBadRequest, "resourceType in body must match URL path")
 		return
 	}
 
@@ -123,6 +131,12 @@ func (h *GatewayHandler) RequestPush(w http.ResponseWriter, r *http.Request) {
 // ReceiveResult handles POST /api/v1/fhir/receive/{resourceType}
 // This is where target providers send data back
 func (h *GatewayHandler) ReceiveResult(w http.ResponseWriter, r *http.Request) {
+	resourceType, err := service.ParseAndValidateResourceType(r.URL.Path, "/api/v1/fhir/receive/")
+	if err != nil {
+		respondError(w, http.StatusBadRequest, "invalid resource type in URL path")
+		return
+	}
+
 	var result service.IncomingResultPayload
 	if err := decodeJSON(r, &result); err != nil {
 		respondError(w, http.StatusBadRequest, "invalid request body")
@@ -132,10 +146,18 @@ func (h *GatewayHandler) ReceiveResult(w http.ResponseWriter, r *http.Request) {
 	// Extract sender provider ID from header (optional, for security validation)
 	senderProviderID := r.Header.Get("X-Provider-ID")
 
-	if err := h.service.ProcessResponse(result, senderProviderID); err != nil {
+	if err := h.service.ProcessResponse(result, senderProviderID, resourceType); err != nil {
 		var upstreamErr *service.UpstreamHTTPError
 		if errors.As(err, &upstreamErr) && upstreamErr.Upstream == "requester provider" {
 			respondError(w, http.StatusBadGateway, "requester provider returned HTTP "+http.StatusText(upstreamErr.StatusCode)+" ("+strconv.Itoa(upstreamErr.StatusCode)+")")
+			return
+		}
+		if errors.Is(err, service.ErrInvalidResourceType) {
+			respondError(w, http.StatusBadRequest, "invalid resource type in URL path")
+			return
+		}
+		if errors.Is(err, service.ErrResourceTypeMismatch) {
+			respondError(w, http.StatusConflict, "resource type in URL does not match transaction resource type")
 			return
 		}
 		if errors.Is(err, service.ErrTransactionNotFound) {
@@ -216,14 +238,4 @@ func getProviderFilter(r *http.Request) string {
 		return "" // Admin sees all
 	}
 	return middleware.GetProviderIDFromContext(r.Context())
-}
-
-// extractResourceType extracts the resource type from path
-func extractResourceType(path, prefix string) string {
-	if !strings.HasPrefix(path, prefix) {
-		return ""
-	}
-	resourceType := strings.TrimPrefix(path, prefix)
-	resourceType = strings.TrimSuffix(resourceType, "/")
-	return resourceType
 }

@@ -19,6 +19,8 @@ import (
 var (
 	ErrTransactionNotFound  = errors.New("transaction not found")
 	ErrInvalidRequest       = errors.New("invalid request data")
+	ErrInvalidResourceType  = errors.New("invalid resource type")
+	ErrResourceTypeMismatch = errors.New("resource type mismatch")
 	ErrTargetUnreachable    = errors.New("target provider unreachable")
 	ErrRequesterUnreachable = errors.New("requester provider unreachable")
 	ErrInvalidStatus        = errors.New("transaction not in pending status")
@@ -254,7 +256,11 @@ func (s *GatewayService) InitiatePush(req PushRequest) (*model.Transaction, erro
 
 // ProcessResponse handles incoming data from a target provider
 // Flow: Target -> Gateway -> Requester
-func (s *GatewayService) ProcessResponse(result IncomingResultPayload, senderProviderID string) error {
+func (s *GatewayService) ProcessResponse(result IncomingResultPayload, senderProviderID string, pathResourceType string) error {
+	if !IsAllowedResourceType(pathResourceType) {
+		return fmt.Errorf("%w: unsupported resourceType %q", ErrInvalidResourceType, pathResourceType)
+	}
+
 	// Look up the transaction
 	tx, err := s.txRepo.GetByID(result.TransactionID)
 	if err != nil {
@@ -262,6 +268,10 @@ func (s *GatewayService) ProcessResponse(result IncomingResultPayload, senderPro
 			return ErrTransactionNotFound
 		}
 		return err
+	}
+
+	if tx.ResourceType != pathResourceType {
+		return fmt.Errorf("%w: expected %s, got %s", ErrResourceTypeMismatch, tx.ResourceType, pathResourceType)
 	}
 
 	// Validate transaction is in PENDING status (reject orphan/duplicate receives)

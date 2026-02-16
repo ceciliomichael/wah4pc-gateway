@@ -286,6 +286,10 @@ func (s *GatewayService) ProcessResponse(result IncomingResultPayload, senderPro
 		return ErrUnauthorizedProvider
 	}
 
+	// Normalize array payloads into object payloads for requester compatibility.
+	// Single resource arrays are unwrapped; multiple resources are wrapped into a FHIR Bundle.
+	result.Data = normalizeResultData(result.Data)
+
 	// Validate the incoming data using the remote FHIR validator
 	// Only validate if we have a validator and the status is SUCCESS
 	if s.validator != nil && result.Status == string(ResultStatusSuccess) && !s.settingsService.IsValidatorDisabled() {
@@ -517,4 +521,55 @@ func extractUpstreamErrorDetail(body io.Reader) string {
 
 	compact := strings.Join(strings.Fields(string(raw)), " ")
 	return strings.TrimSpace(compact)
+}
+
+// normalizeResultData converts non-object result payloads into an object form.
+// - JSON object: unchanged
+// - Single-item JSON array: unwrap first item
+// - Multi-item JSON array: wrap into FHIR Bundle (type=collection)
+// For invalid or unsupported JSON shapes, data is returned unchanged.
+func normalizeResultData(data json.RawMessage) json.RawMessage {
+	trimmed := bytes.TrimSpace(data)
+	if len(trimmed) == 0 {
+		return data
+	}
+
+	switch trimmed[0] {
+	case '{':
+		return data
+	case '[':
+		var resources []json.RawMessage
+		if err := json.Unmarshal(trimmed, &resources); err != nil {
+			return data
+		}
+
+		if len(resources) == 1 {
+			return resources[0]
+		}
+
+		type bundleEntry struct {
+			Resource json.RawMessage `json:"resource"`
+		}
+		bundle := struct {
+			ResourceType string        `json:"resourceType"`
+			Type         string        `json:"type"`
+			Entry        []bundleEntry `json:"entry"`
+		}{
+			ResourceType: "Bundle",
+			Type:         "collection",
+			Entry:        make([]bundleEntry, 0, len(resources)),
+		}
+
+		for _, resource := range resources {
+			bundle.Entry = append(bundle.Entry, bundleEntry{Resource: resource})
+		}
+
+		normalized, err := json.Marshal(bundle)
+		if err != nil {
+			return data
+		}
+		return normalized
+	default:
+		return data
+	}
 }

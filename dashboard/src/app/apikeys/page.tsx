@@ -9,7 +9,6 @@ import { LuPlus, LuLoaderCircle, LuCircleAlert } from "react-icons/lu";
 import { CreateApiKeyDialog } from "@/components/apikeys/create-key-dialog";
 import { ApiKeyList } from "@/components/apikeys/apikey-list";
 import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
-import { SuccessDialog } from "@/components/ui/success-dialog";
 import { Button } from "@/components/ui/button";
 
 function ApiKeysContent() {
@@ -26,7 +25,6 @@ function ApiKeysContent() {
   const [revokeDialogOpen, setRevokeDialogOpen] = useState(false);
   const [revokingKey, setRevokingKey] = useState<ApiKey | null>(null);
   const [isRevoking, setIsRevoking] = useState(false);
-  const [saveSuccessDialogOpen, setSaveSuccessDialogOpen] = useState(false);
 
   // Copy state
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -173,7 +171,6 @@ function ApiKeysContent() {
         onClose={() => setCreateDialogOpen(false)}
         onSuccess={() => {
           setCreateDialogOpen(false);
-          setSaveSuccessDialogOpen(true);
           fetchData();
         }}
         providers={providers}
@@ -199,12 +196,6 @@ function ApiKeysContent() {
         message={`Are you sure you want to revoke the API key "${revokingKey?.prefix}..."? The key will no longer be usable for authentication.`}
       />
 
-      <SuccessDialog
-        open={saveSuccessDialogOpen}
-        onClose={() => setSaveSuccessDialogOpen(false)}
-        title="Saved Successfully"
-        message="API key was created successfully."
-      />
     </div>
   );
 }

@@ -64,7 +64,7 @@ export function Dialog({
         role="dialog"
         aria-modal="true"
         className={clsx(
-          "relative bg-white rounded-xl shadow-xl w-full",
+          "relative bg-white rounded-2xl overflow-hidden shadow-xl w-full",
           "animate-in fade-in-0 zoom-in-95 duration-200",
           sizeStyles[size],
           className
@@ -101,7 +101,7 @@ export function DialogHeader({
         <button
           type="button"
           onClick={onClose}
-          className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+          className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
           aria-label="Close dialog"
         >
           <LuX className="w-5 h-5" />
@@ -159,7 +159,7 @@ export function DialogFooter({ children, className }: DialogFooterProps) {
   return (
     <div
       className={clsx(
-        "flex items-center justify-end gap-3 px-5 py-4 bg-slate-50 border-t border-slate-200",
+        "flex items-center justify-end gap-3 px-5 py-4 bg-slate-50 border-t border-slate-200 rounded-b-2xl",
         className
       )}
     >

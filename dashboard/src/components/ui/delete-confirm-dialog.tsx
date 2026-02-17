@@ -37,7 +37,7 @@ export function DeleteConfirmDialog({
     <Dialog open={open} onClose={handleClose} size="sm">
       <DialogHeader onClose={handleClose} showCloseButton={!isDeleting}>
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-red-100">
+          <div className="p-2 rounded-full bg-red-100">
             <LuTriangleAlert className="w-5 h-5 text-red-600" />
           </div>
           <DialogTitle>{title}</DialogTitle>

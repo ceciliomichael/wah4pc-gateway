@@ -9,6 +9,7 @@ import { LuPlus, LuLoaderCircle, LuCircleAlert } from "react-icons/lu";
 import { CreateApiKeyDialog } from "@/components/apikeys/create-key-dialog";
 import { ApiKeyList } from "@/components/apikeys/apikey-list";
 import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
+import { SuccessDialog } from "@/components/ui/success-dialog";
 import { Button } from "@/components/ui/button";
 
 function ApiKeysContent() {
@@ -25,6 +26,8 @@ function ApiKeysContent() {
   const [revokeDialogOpen, setRevokeDialogOpen] = useState(false);
   const [revokingKey, setRevokingKey] = useState<ApiKey | null>(null);
   const [isRevoking, setIsRevoking] = useState(false);
+  const [deleteSuccessDialogOpen, setDeleteSuccessDialogOpen] = useState(false);
+  const [deleteSuccessMessage, setDeleteSuccessMessage] = useState("");
 
   // Copy state
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -72,6 +75,8 @@ function ApiKeysContent() {
       await apiKeyApi.delete(deletingKey.id);
       setDeleteDialogOpen(false);
       setDeletingKey(null);
+      setDeleteSuccessMessage("API key was deleted successfully.");
+      setDeleteSuccessDialogOpen(true);
       fetchData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete API key");
@@ -194,6 +199,13 @@ function ApiKeysContent() {
         isDeleting={isRevoking}
         title="Revoke API Key"
         message={`Are you sure you want to revoke the API key "${revokingKey?.prefix}..."? The key will no longer be usable for authentication.`}
+      />
+
+      <SuccessDialog
+        open={deleteSuccessDialogOpen}
+        onClose={() => setDeleteSuccessDialogOpen(false)}
+        title="Deleted"
+        message={deleteSuccessMessage}
       />
 
     </div>

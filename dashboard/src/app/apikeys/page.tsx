@@ -5,12 +5,14 @@ import { AuthGuard } from "@/components/auth-guard";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { apiKeyApi, providerApi } from "@/lib/api";
 import type { ApiKey, Provider } from "@/types";
-import { LuPlus, LuLoaderCircle, LuCircleAlert } from "react-icons/lu";
+import { LuPlus, LuLoaderCircle, LuCircleAlert, LuSearch } from "react-icons/lu";
 import { CreateApiKeyDialog } from "@/components/apikeys/create-key-dialog";
 import { ApiKeyList } from "@/components/apikeys/apikey-list";
 import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
 import { SuccessDialog } from "@/components/ui/success-dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
 
 function ApiKeysContent() {
   const ITEMS_PER_PAGE = 20;
@@ -31,6 +33,7 @@ function ApiKeysContent() {
   const [deleteSuccessDialogOpen, setDeleteSuccessDialogOpen] = useState(false);
   const [deleteSuccessMessage, setDeleteSuccessMessage] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Copy state
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -109,26 +112,46 @@ function ApiKeysContent() {
     }
   };
 
-  const getProviderName = (providerId?: string) => {
+  const getProviderName = (providerId?: string): string => {
     if (!providerId) return "-";
     const provider = providers.find((p) => p.id === providerId);
-    return provider?.name || providerId.slice(0, 8) + "...";
+    return provider?.name || `${providerId.slice(0, 8)}...`;
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredApiKeys = apiKeys.filter((key) => {
+    if (!normalizedQuery) return true;
+
+    const providerId = key.providerId || "";
+    const providerName = getProviderName(key.providerId);
+    const statusText = key.isActive ? "active" : "revoked";
+    const createdAtText = new Date(key.createdAt).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
-    });
-  };
+    }).toLowerCase();
 
-  const totalPages = Math.max(1, Math.ceil(apiKeys.length / ITEMS_PER_PAGE));
-  const paginatedApiKeys = apiKeys.slice(
+    return (
+      key.id.toLowerCase().includes(normalizedQuery) ||
+      key.prefix.toLowerCase().includes(normalizedQuery) ||
+      key.owner.toLowerCase().includes(normalizedQuery) ||
+      key.role.toLowerCase().includes(normalizedQuery) ||
+      providerId.toLowerCase().includes(normalizedQuery) ||
+      providerName.toLowerCase().includes(normalizedQuery) ||
+      statusText.includes(normalizedQuery) ||
+      createdAtText.includes(normalizedQuery)
+    );
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filteredApiKeys.length / ITEMS_PER_PAGE));
+  const paginatedApiKeys = filteredApiKeys.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -159,6 +182,14 @@ function ApiKeysContent() {
         </Button>
       </div>
 
+      <Input
+        type="text"
+        placeholder="Search by key, owner, role, provider, status..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        leftIcon={<LuSearch className="w-4 h-4" />}
+      />
+
       {/* Error */}
       {error && (
         <div className="flex items-center gap-2 text-red-600 bg-red-50 px-4 py-3 rounded-lg">
@@ -168,26 +199,45 @@ function ApiKeysContent() {
       )}
 
       {/* API Keys List */}
-      <ApiKeyList
-        apiKeys={paginatedApiKeys}
-        providers={providers}
-        copiedId={copiedId}
-        onCopy={handleCopyPrefix}
-        onRevoke={handleRevokeClick}
-        onDelete={handleDeleteClick}
-        onCreate={() => setCreateDialogOpen(true)}
-      />
+      {apiKeys.length === 0 ? (
+        <ApiKeyList
+          apiKeys={apiKeys}
+          providers={providers}
+          copiedId={copiedId}
+          onCopy={handleCopyPrefix}
+          onRevoke={handleRevokeClick}
+          onDelete={handleDeleteClick}
+          onCreate={() => setCreateDialogOpen(true)}
+        />
+      ) : filteredApiKeys.length > 0 ? (
+        <ApiKeyList
+          apiKeys={paginatedApiKeys}
+          providers={providers}
+          copiedId={copiedId}
+          onCopy={handleCopyPrefix}
+          onRevoke={handleRevokeClick}
+          onDelete={handleDeleteClick}
+          onCreate={() => setCreateDialogOpen(true)}
+        />
+      ) : (
+        <Card padding="none">
+          <div className="p-10 text-center text-slate-500">
+            No API keys matched your search
+          </div>
+        </Card>
+      )}
 
       {/* Summary */}
-      {apiKeys.length > 0 && (
+      {filteredApiKeys.length > 0 && (
         <div className="text-sm text-slate-500 text-center">
           Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}-
-          {Math.min(currentPage * ITEMS_PER_PAGE, apiKeys.length)} of{" "}
-          {apiKeys.length} API key{apiKeys.length !== 1 ? "s" : ""} registered
+          {Math.min(currentPage * ITEMS_PER_PAGE, filteredApiKeys.length)} of{" "}
+          {filteredApiKeys.length} API key
+          {filteredApiKeys.length !== 1 ? "s" : ""} registered
         </div>
       )}
 
-      {apiKeys.length > ITEMS_PER_PAGE && (
+      {filteredApiKeys.length > ITEMS_PER_PAGE && (
         <div className="flex items-center justify-center gap-2 sm:gap-3">
           <Button
             variant="secondary"

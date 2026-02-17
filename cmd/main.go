@@ -83,7 +83,7 @@ func main() {
 	// Initialize services
 	providerService := service.NewProviderService(providerRepo)
 	settingsService := service.NewSettingsService(settingsRepo)
-	gatewayService := service.NewGatewayService(txRepo, providerService, settingsService, cfg.Server.BaseURL, remoteValidator)
+	gatewayService := service.NewGatewayService(txRepo, providerService, settingsService, cfg.Server.BaseURL, remoteValidator, auditLogger)
 	apiKeyService := service.NewApiKeyService(apiKeyRepo, providerService)
 	logService := service.NewLogService(logBaseDir, txRepo)
 

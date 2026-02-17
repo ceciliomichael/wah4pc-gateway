@@ -16,6 +16,7 @@ import (
 	"github.com/wah4pc/wah4pc-gateway/internal/repository"
 	"github.com/wah4pc/wah4pc-gateway/internal/schemabuilder"
 	"github.com/wah4pc/wah4pc-gateway/internal/validator"
+	"github.com/wah4pc/wah4pc-gateway/pkg/logger"
 )
 
 var (
@@ -62,6 +63,7 @@ type GatewayService struct {
 	gatewayBaseURL  string
 	httpClient      *http.Client
 	validator       validator.Validator
+	auditLogger     *logger.FileLogger
 }
 
 // NewGatewayService creates a new gateway service
@@ -71,7 +73,13 @@ func NewGatewayService(
 	settingsService *SettingsService,
 	gatewayBaseURL string,
 	resourceValidator validator.Validator,
+	auditLogger ...*logger.FileLogger,
 ) *GatewayService {
+	var resolvedAuditLogger *logger.FileLogger
+	if len(auditLogger) > 0 {
+		resolvedAuditLogger = auditLogger[0]
+	}
+
 	return &GatewayService{
 		txRepo:          txRepo,
 		providerService: providerService,
@@ -80,7 +88,8 @@ func NewGatewayService(
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
-		validator: resourceValidator,
+		validator:   resourceValidator,
+		auditLogger: resolvedAuditLogger,
 	}
 }
 
@@ -486,7 +495,9 @@ func (s *GatewayService) forwardToRequester(url string, payload ReceiveResultPay
 	if err != nil {
 		return fmt.Errorf("failed to marshal payload: %w", err)
 	}
-	return s.forwardJSONWithRetry(url, body, authKey, "requester provider", ErrRequesterUnreachable)
+	forwardErr := s.forwardJSONWithRetry(url, body, authKey, "requester provider", ErrRequesterUnreachable)
+	s.logRelayToRequester(url, body, payload.TransactionID, forwardErr)
+	return forwardErr
 }
 
 func (s *GatewayService) forwardJSONWithRetry(url string, body []byte, authKey string, upstream string, sentinel error) error {
@@ -550,6 +561,57 @@ func (s *GatewayService) forwardJSONWithRetry(url string, body []byte, authKey s
 		TargetURL:  url,
 		LastReason: "unknown transport failure",
 	})
+}
+
+func (s *GatewayService) logRelayToRequester(url string, requestBody []byte, transactionID string, forwardErr error) {
+	if s.auditLogger == nil {
+		return
+	}
+
+	providerID := ""
+	if transactionID != "" {
+		if tx, err := s.txRepo.GetByID(transactionID); err == nil {
+			providerID = tx.RequesterID
+		}
+	}
+
+	statusCode := http.StatusOK
+	responseBody := `{"result":"relayed"}`
+	if forwardErr != nil {
+		statusCode = http.StatusBadGateway
+		responseBody = fmt.Sprintf(`{"error":"%s"}`, sanitizeJSONErrorText(forwardErr.Error()))
+	}
+
+	entry := logger.DetailedLogEntry{
+		ID:        uuid.New().String(),
+		Timestamp: time.Now().UTC(),
+		Duration:  0,
+		Method:    http.MethodPost,
+		URL:       url,
+		Host:      "",
+		RemoteAddr: "gateway-internal",
+		UserAgent:  "wah4pc-gateway/relay",
+		RequestHeaders: http.Header{
+			"Content-Type": []string{"application/json"},
+		},
+		RequestBody:      string(requestBody),
+		RequestBodySize:  len(requestBody),
+		StatusCode:       statusCode,
+		ResponseHeaders:  http.Header{},
+		ResponseBody:     responseBody,
+		ResponseBodySize: len(responseBody),
+		KeyID:            "gateway-internal",
+		Role:             "system",
+		ProviderID:       providerID,
+	}
+
+	s.auditLogger.Log(entry)
+}
+
+func sanitizeJSONErrorText(msg string) string {
+	msg = strings.ReplaceAll(msg, `\`, `\\`)
+	msg = strings.ReplaceAll(msg, `"`, `\"`)
+	return msg
 }
 
 func isRetryableUpstreamStatus(statusCode int) bool {

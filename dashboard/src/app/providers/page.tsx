@@ -112,9 +112,15 @@ function ProvidersContent() {
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const filteredProviders = providers.filter((provider) => {
     if (!normalizedQuery) return true;
+    const statusText = provider.isActive ? "active" : "inactive";
     return (
       provider.id.toLowerCase().includes(normalizedQuery) ||
-      provider.name.toLowerCase().includes(normalizedQuery)
+      provider.name.toLowerCase().includes(normalizedQuery) ||
+      provider.type.toLowerCase().includes(normalizedQuery) ||
+      (provider.facilityCode || "").toLowerCase().includes(normalizedQuery) ||
+      (provider.location || "").toLowerCase().includes(normalizedQuery) ||
+      provider.baseUrl.toLowerCase().includes(normalizedQuery) ||
+      statusText.includes(normalizedQuery)
     );
   });
   const totalPages = Math.max(
@@ -161,7 +167,7 @@ function ProvidersContent() {
 
       <Input
         type="text"
-        placeholder="Search by provider ID..."
+        placeholder="Search by ID, name, type, facility, location, URL..."
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
         leftIcon={<LuSearch className="w-4 h-4" />}
@@ -195,7 +201,7 @@ function ProvidersContent() {
       ) : (
         <Card padding="none">
           <div className="p-10 text-center text-slate-500">
-            No providers matched that provider ID search
+            No providers matched your search
           </div>
         </Card>
       )}

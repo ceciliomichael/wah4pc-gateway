@@ -121,7 +121,7 @@ func TestSimulationFlow_RequesterGatewayProviderGatewayRequester(t *testing.T) {
 		status := h.sendProviderResult(t, "Observation", "target", service.IncomingResultPayload{
 			TransactionID: tx.ID,
 			Status:        string(service.ResultStatusSuccess),
-			Data:          json.RawMessage(`{"resourceType":"Observation","id":"obs-1","meta":{"profile":["http://provider.local/StructureDefinition/custom-observation"]}}`),
+			Data:          json.RawMessage(`{"resourceType":"Observation","id":"obs-1","status":"final","code":{"coding":[{"system":"http://loinc.org","code":"8480-6"}]},"meta":{"profile":["http://provider.local/StructureDefinition/custom-observation"]}}`),
 		})
 		if status != http.StatusOK {
 			t.Fatalf("expected %d, got %d", http.StatusOK, status)
@@ -237,7 +237,7 @@ func TestSimulationFlow_RequesterGatewayProviderGatewayRequester(t *testing.T) {
 		status := h.sendProviderResult(t, "Observation", "other-provider", service.IncomingResultPayload{
 			TransactionID: tx.ID,
 			Status:        string(service.ResultStatusSuccess),
-			Data:          json.RawMessage(`{"resourceType":"Observation","id":"obs-2"}`),
+			Data:          json.RawMessage(`{"resourceType":"Observation","id":"obs-2","status":"final","code":{"coding":[{"system":"http://loinc.org","code":"8462-4"}]}}`),
 		})
 		if status != http.StatusForbidden {
 			t.Fatalf("expected %d, got %d", http.StatusForbidden, status)
@@ -262,7 +262,7 @@ func TestSimulationFlow_RequesterGatewayProviderGatewayRequester(t *testing.T) {
 		status := h.sendProviderResult(t, "Patient", "target", service.IncomingResultPayload{
 			TransactionID: tx.ID,
 			Status:        string(service.ResultStatusSuccess),
-			Data:          json.RawMessage(`{"resourceType":"Observation","id":"obs-3"}`),
+			Data:          json.RawMessage(`{"resourceType":"Observation","id":"obs-3","status":"final","code":{"coding":[{"system":"http://loinc.org","code":"85354-9"}]}}`),
 		})
 		if status != http.StatusConflict {
 			t.Fatalf("expected %d, got %d", http.StatusConflict, status)
@@ -291,7 +291,7 @@ func TestSimulationFlow_RequesterGatewayProviderGatewayRequester(t *testing.T) {
 		status := h.sendProviderResult(t, "Observation", "target", service.IncomingResultPayload{
 			TransactionID: tx.ID,
 			Status:        string(service.ResultStatusSuccess),
-			Data:          json.RawMessage(`{"resourceType":"Observation","id":"obs-timeout"}`),
+			Data:          json.RawMessage(`{"resourceType":"Observation","id":"obs-timeout","status":"final","code":{"coding":[{"system":"http://loinc.org","code":"8310-5"}]}}`),
 		})
 		if status != http.StatusRequestTimeout {
 			t.Fatalf("expected %d, got %d", http.StatusRequestTimeout, status)

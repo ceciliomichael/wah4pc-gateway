@@ -110,7 +110,7 @@ func TestGatewayServiceProcessResponse_WrapsSingleItemArrayAsBundle(t *testing.T
 		IncomingResultPayload{
 			TransactionID: "txn-1",
 			Status:        string(ResultStatusSuccess),
-			Data:          json.RawMessage(`[{"resourceType":"Observation","id":"obs-1"}]`),
+			Data:          json.RawMessage(`[{"resourceType":"Observation","id":"obs-1","status":"final","code":{"coding":[{"system":"http://loinc.org","code":"8480-6"}]}}]`),
 		},
 		"target",
 		"Observation",
@@ -200,7 +200,7 @@ func TestGatewayServiceProcessResponse_WrapsMultiItemArrayAsBundle(t *testing.T)
 		IncomingResultPayload{
 			TransactionID: "txn-2",
 			Status:        string(ResultStatusSuccess),
-			Data:          json.RawMessage(`[{"resourceType":"Observation","id":"obs-1"},{"resourceType":"Observation","id":"obs-2"}]`),
+			Data:          json.RawMessage(`[{"resourceType":"Observation","id":"obs-1","status":"final","code":{"coding":[{"system":"http://loinc.org","code":"8480-6"}]}},{"resourceType":"Observation","id":"obs-2","status":"final","code":{"coding":[{"system":"http://loinc.org","code":"8462-4"}]}}]`),
 		},
 		"target",
 		"Observation",
@@ -296,7 +296,7 @@ func TestGatewayServiceProcessResponse_WrapsSingleObjectAsBundle(t *testing.T) {
 		IncomingResultPayload{
 			TransactionID: "txn-obj",
 			Status:        string(ResultStatusSuccess),
-			Data:          json.RawMessage(`{"resourceType":"Observation","id":"obs-1"}`),
+			Data:          json.RawMessage(`{"resourceType":"Observation","id":"obs-1","status":"final","code":{"coding":[{"system":"http://loinc.org","code":"8480-6"}]}}`),
 		},
 		"target",
 		"Observation",
@@ -525,7 +525,7 @@ func TestGatewayServiceProcessResponse_TimesOutAfterTwentyFourHoursAndFailsTrans
 		IncomingResultPayload{
 			TransactionID: "txn-timeout",
 			Status:        string(ResultStatusSuccess),
-			Data:          json.RawMessage(`{"resourceType":"Observation","id":"obs-1"}`),
+			Data:          json.RawMessage(`{"resourceType":"Observation","id":"obs-1","status":"final","code":{"coding":[{"system":"http://loinc.org","code":"8480-6"}]}}`),
 		},
 		"target",
 		"Observation",
@@ -621,7 +621,7 @@ func TestGatewayServiceProcessResponse_NormalizesPHCoreProfileAndStoresAuditMeta
 		IncomingResultPayload{
 			TransactionID: "txn-profile-phcore",
 			Status:        string(ResultStatusSuccess),
-			Data:          json.RawMessage(`{"resourceType":"Observation","id":"obs-1","meta":{"profile":["http://provider.local/StructureDefinition/custom-observation"]}}`),
+			Data:          json.RawMessage(`{"resourceType":"Observation","id":"obs-1","status":"final","code":{"coding":[{"system":"http://loinc.org","code":"8480-6"}]},"meta":{"profile":["http://provider.local/StructureDefinition/custom-observation"]}}`),
 		},
 		"target",
 		"Observation",
@@ -756,6 +756,104 @@ func TestGatewayServiceProcessResponse_NormalizesBaseR4FallbackProfile(t *testin
 		profiles, _ := meta["profile"].([]interface{})
 		if len(profiles) != 1 || profiles[0] != "http://hl7.org/fhir/StructureDefinition/Condition" {
 			t.Fatalf("expected canonical base R4 profile, got %#v", profiles)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("expected requester to receive relayed payload")
+	}
+}
+
+func TestGatewayServiceProcessResponse_RebuildsLooseObservationPayload(t *testing.T) {
+	t.Parallel()
+
+	requesterReceived := make(chan ReceiveResultPayload, 1)
+	requester := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/fhir/receive-results" {
+			http.NotFound(w, r)
+			return
+		}
+
+		var payload ReceiveResultPayload
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+
+		requesterReceived <- payload
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer requester.Close()
+
+	providerRepo := newProviderRepoStub()
+	now := time.Now().UTC()
+	_ = providerRepo.Create(model.Provider{
+		ID:        "requester",
+		Name:      "Requester",
+		BaseURL:   requester.URL,
+		IsActive:  true,
+		CreatedAt: now,
+		UpdatedAt: now,
+	})
+	_ = providerRepo.Create(model.Provider{
+		ID:        "target",
+		Name:      "Target",
+		BaseURL:   "http://target.local",
+		IsActive:  true,
+		CreatedAt: now,
+		UpdatedAt: now,
+	})
+
+	txRepo := newTxRepoStub()
+	txRepo.items["txn-rebuild-obs"] = model.Transaction{
+		ID:           "txn-rebuild-obs",
+		RequesterID:  "requester",
+		TargetID:     "target",
+		ResourceType: "Observation",
+		Status:       model.StatusPending,
+		CreatedAt:    now,
+		UpdatedAt:    now,
+	}
+
+	svc := NewGatewayService(
+		txRepo,
+		NewProviderService(providerRepo),
+		NewSettingsService(&settingsRepoStub{}),
+		"http://gateway.local",
+		nil,
+	)
+
+	err := svc.ProcessResponse(
+		IncomingResultPayload{
+			TransactionID: "txn-rebuild-obs",
+			Status:        string(ResultStatusSuccess),
+			Data:          json.RawMessage(`{"observationStatus":"final","observationCodeSystem":"http://loinc.org","observationCode":"8480-6"}`),
+		},
+		"target",
+		"Observation",
+	)
+	if err != nil {
+		t.Fatalf("expected process response to succeed, got: %v", err)
+	}
+
+	select {
+	case payload := <-requesterReceived:
+		var bundle map[string]interface{}
+		if err := json.Unmarshal(payload.Data, &bundle); err != nil {
+			t.Fatalf("expected valid json payload, got %v", err)
+		}
+		entry, _ := bundle["entry"].([]interface{})
+		if len(entry) != 1 {
+			t.Fatalf("expected one entry, got %d", len(entry))
+		}
+		entryObj, _ := entry[0].(map[string]interface{})
+		resource, _ := entryObj["resource"].(map[string]interface{})
+		if resource["resourceType"] != "Observation" {
+			t.Fatalf("expected rebuilt Observation resource, got %#v", resource["resourceType"])
+		}
+		if _, ok := resource["status"]; !ok {
+			t.Fatalf("expected rebuilt observation status")
+		}
+		if _, ok := resource["code"]; !ok {
+			t.Fatalf("expected rebuilt observation code")
 		}
 	case <-time.After(2 * time.Second):
 		t.Fatal("expected requester to receive relayed payload")

@@ -206,6 +206,10 @@ func (h *GatewayHandler) ReceiveResult(w http.ResponseWriter, r *http.Request) {
 			respondError(w, http.StatusUnprocessableEntity, "FHIR schema validation failed: "+err.Error())
 			return
 		}
+		if errors.Is(err, service.ErrSchemaBuildFailed) {
+			respondError(w, http.StatusUnprocessableEntity, "FHIR schema build failed: "+err.Error())
+			return
+		}
 		if errors.Is(err, service.ErrInvalidResultPayload) {
 			respondError(w, http.StatusBadRequest, err.Error())
 			return

@@ -14,6 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/wah4pc/wah4pc-gateway/internal/model"
 	"github.com/wah4pc/wah4pc-gateway/internal/repository"
+	"github.com/wah4pc/wah4pc-gateway/internal/schemabuilder"
 	"github.com/wah4pc/wah4pc-gateway/internal/validator"
 )
 
@@ -30,6 +31,7 @@ var (
 	ErrDuplicateRequest     = errors.New("duplicate request: identical request was made recently")
 	ErrSchemaValidation     = errors.New("schema validation failed")
 	ErrInvalidResultPayload = errors.New("invalid result payload")
+	ErrSchemaBuildFailed    = errors.New("schema build failed")
 )
 
 // duplicateWindow defines how long to check for duplicate requests
@@ -336,6 +338,14 @@ func (s *GatewayService) ProcessResponse(result IncomingResultPayload, senderPro
 	// Standardize successful query results to a FHIR Bundle for requester consistency.
 	if result.Status == string(ResultStatusSuccess) {
 		result.Data = normalizeSuccessResultDataAsBundle(result.Data)
+		rebuiltData, buildErr := schemabuilder.BuildSuccessBundle(tx.ResourceType, result.Data)
+		if buildErr != nil {
+			tx.Status = model.StatusFailed
+			tx.UpdatedAt = time.Now().UTC()
+			_ = s.txRepo.Update(tx)
+			return fmt.Errorf("%w: %v", ErrSchemaBuildFailed, buildErr)
+		}
+		result.Data = rebuiltData
 		result.Data, profileAudit = normalizeCanonicalProfiles(result.Data)
 		if profileAudit.Applied {
 			tx.Metadata.OriginalProfiles = profileAudit.OriginalProfiles
@@ -344,17 +354,7 @@ func (s *GatewayService) ProcessResponse(result IncomingResultPayload, senderPro
 		}
 	}
 
-	// Validate the incoming data using the remote FHIR validator
-	// Only validate if we have a validator and the status is SUCCESS
-	if s.validator != nil && result.Status == string(ResultStatusSuccess) && !s.settingsService.IsValidatorDisabled() {
-		if err := s.validator.Validate(tx.ResourceType, result.Data); err != nil {
-			// Update transaction status to REJECTED due to validation failure
-			tx.Status = model.StatusFailed
-			tx.UpdatedAt = time.Now().UTC()
-			_ = s.txRepo.Update(tx)
-			return fmt.Errorf("%w: %v", ErrSchemaValidation, err)
-		}
-	}
+	// Terminology/code-system validation for SUCCESS payloads is intentionally skipped in this phase.
 
 	// Policy: REJECTED results are logged in transaction state but not relayed to requester.
 	if result.Status == string(ResultStatusRejected) {

@@ -4,6 +4,7 @@
 - Gateway base: `/api/v1`
 - Request endpoint pattern: `POST /api/v1/fhir/request/{resourceType}`
 - Target return endpoint pattern: `POST /api/v1/fhir/receive/{resourceType}`
+- Push endpoint pattern: `POST /api/v1/fhir/push/{resourceType}`
 
 ## Shared Notes
 - Required for all request bodies: `requesterId`, `targetId`
@@ -11,6 +12,41 @@
 - Patient-scoped resources use `patientIdentifiers`
 - Resource-scoped resources use resource-specific identifiers
 - For `Medication`, prefer `medicationCode` (`system` + `code`), with `medicationIdentifiers` as fallback
+
+## Push Format (All 25 Resources)
+Endpoint:
+```http
+POST /api/v1/fhir/push/{resourceType}
+```
+Body:
+```json
+{
+  "senderId": "string",
+  "targetId": "string",
+  "resource": {
+    "resourceType": "string"
+  },
+  "reason": "string",
+  "notes": "string"
+}
+```
+Push notes:
+- `resource` must be a full FHIR JSON resource payload.
+- `resource.resourceType` must exactly match `{resourceType}` in the URL path.
+- Top-level body `resourceType` is not used in push requests.
+- Gateway forwards to target provider webhook: `POST /fhir/receive-push` with envelope:
+```json
+{
+  "transactionId": "string",
+  "senderId": "string",
+  "resourceType": "string",
+  "resource": {
+    "resourceType": "string"
+  },
+  "reason": "string",
+  "notes": "string"
+}
+```
 
 ## 1. Patient
 Endpoint:

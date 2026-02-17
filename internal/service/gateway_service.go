@@ -193,7 +193,7 @@ func (s *GatewayService) InitiatePush(req PushRequest) (*model.Transaction, erro
 	if req.ResourceType == "" {
 		req.ResourceType = "Patient" // Default
 	}
-	if len(req.Data) == 0 {
+	if len(req.Resource) == 0 {
 		return nil, ErrInvalidRequest
 	}
 
@@ -208,13 +208,13 @@ func (s *GatewayService) InitiatePush(req PushRequest) (*model.Transaction, erro
 	}
 
 	// Perform business rule validation (e.g., logical identifiers for Appointments)
-	if err := s.validatePushData(req.ResourceType, req.Data); err != nil {
+	if err := s.validatePushData(req.ResourceType, req.Resource); err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrInvalidRequest, err)
 	}
 
 	// Validate the data using the remote FHIR validator
 	if s.validator != nil && !s.settingsService.IsValidatorDisabled() {
-		if err := s.validator.Validate(req.ResourceType, req.Data); err != nil {
+		if err := s.validator.Validate(req.ResourceType, req.Resource); err != nil {
 			return nil, fmt.Errorf("%w: %v", ErrSchemaValidation, err)
 		}
 	}
@@ -245,7 +245,7 @@ func (s *GatewayService) InitiatePush(req PushRequest) (*model.Transaction, erro
 		TransactionID: tx.ID,
 		SenderID:      req.SenderID,
 		ResourceType:  req.ResourceType,
-		Data:          req.Data,
+		Resource:      req.Resource,
 		Reason:        req.Reason,
 		Notes:         req.Notes,
 	}

@@ -243,10 +243,10 @@ export default function TransactionFlowPage() {
         {/* Step 5: Status Check */}
         <StepCard
           stepNumber={5}
-          title="Requester Retrieves Final Data"
+          title="Requester Tracks Transaction Status"
           endpoint="GET /api/v1/transactions/{id}"
           actor="Requester → Gateway"
-          description="The Requester polls the status endpoint using the transaction_id they received in Step 2. When status is 'COMPLETED', the data is included."
+          description="The Requester polls transaction status using the transaction_id from Step 2. FHIR payload delivery is done through `/fhir/receive-results` webhook."
         >
           <CodeBlock
             code={step5_statusCheck}
@@ -255,7 +255,7 @@ export default function TransactionFlowPage() {
           />
           <Callout type="success">
             Full circle! The same <code className="text-sm font-mono">transaction_id</code> from Step 2 
-            is used to retrieve the final result. The journey is complete.
+            is used to track completion and audit metadata. The journey is complete.
           </Callout>
         </StepCard>
       </section>

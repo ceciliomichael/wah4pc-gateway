@@ -91,7 +91,7 @@ sequenceDiagram
 
     rect rgb(255, 251, 235)
         Note over GW,DB: Webhook 3 - Receive Push
-        GW->>RR: POST /fhir/receive-push with data
+        GW->>RR: POST /fhir/receive-push with resource
         RR->>DB: Store unsolicited data
         DB-->>RR: Saved
         RR-->>GW: 200 OK
@@ -125,7 +125,7 @@ interface Identifier {
 interface ProcessQueryPayload {
   transactionId: string;
   requesterId: string;
-  identifiers: Identifier[];
+  identifiers?: Identifier[];
   resourceType: string;
   gatewayReturnUrl: string;
   reason?: string;   // Optional: Purpose of the request
@@ -134,7 +134,7 @@ interface ProcessQueryPayload {
 
 interface ReceiveResultsPayload {
   transactionId: string;
-  status: 'SUCCESS' | 'REJECTED' | 'ERROR';
+  status: 'SUCCESS' | 'ERROR';
   data: Record<string, unknown>;
 }
 
@@ -142,7 +142,7 @@ interface ReceivePushPayload {
   transactionId: string;
   senderId: string;
   resourceType: string;
-  data: Record<string, unknown>;
+  resource: Record<string, unknown>;
   reason?: string;
   notes?: string;
 }
@@ -159,7 +159,7 @@ const IdentifierSchema = z.object({
 const ProcessQuerySchema = z.object({
   transactionId: z.string().uuid(),
   requesterId: z.string().uuid(),
-  identifiers: z.array(IdentifierSchema).min(1),
+  identifiers: z.array(IdentifierSchema).optional(),
   resourceType: z.string(),
   gatewayReturnUrl: z.string().url(),
   reason: z.string().optional(),
@@ -168,7 +168,7 @@ const ProcessQuerySchema = z.object({
 
 const ReceiveResultsSchema = z.object({
   transactionId: z.string().uuid(),
-  status: z.enum(['SUCCESS', 'REJECTED', 'ERROR']),
+  status: z.enum(['SUCCESS', 'ERROR']),
   data: z.record(z.unknown()).optional(),
 });
 
@@ -176,7 +176,7 @@ const ReceivePushSchema = z.object({
   transactionId: z.string().uuid(),
   senderId: z.string().uuid(),
   resourceType: z.string(),
-  data: z.record(z.unknown()),
+  resource: z.record(z.unknown()),
   reason: z.string().optional(),
   notes: z.string().optional(),
 });
@@ -266,9 +266,10 @@ app.post(
   validateSchema(ProcessQuerySchema),
   async (req: Request, res: Response) => {
     const { transactionId, identifiers, gatewayReturnUrl, reason, notes } = req.body as ProcessQueryPayload;
+    const lookupIdentifiers = identifiers ?? [];
 
     console.log(\`[Process Query] Transaction: \${transactionId}\`);
-    console.log(\`[Process Query] Identifiers: \${JSON.stringify(identifiers)}\`);
+    console.log(\`[Process Query] Lookup identifiers: \${JSON.stringify(lookupIdentifiers)}\`);
     if (reason) console.log(\`[Process Query] Reason: \${reason}\`);
     if (notes) console.log(\`[Process Query] Notes: \${notes}\`);
 
@@ -279,17 +280,23 @@ app.post(
     setImmediate(async () => {
       try {
         // 1. Find patient by any matching identifier
-        const patient = await findPatientByIdentifiers(identifiers);
+        const patient = await findPatientByIdentifiers(lookupIdentifiers);
 
         let responsePayload;
         if (!patient) {
-          // Patient not found - send REJECTED status
+          // Patient not found - send REJECTED with OperationOutcome
           responsePayload = {
             transactionId,
             status: 'REJECTED',
             data: {
-              error: 'Patient not found',
-              searchedIdentifiers: identifiers,
+              resourceType: 'OperationOutcome',
+              issue: [
+                {
+                  severity: 'error',
+                  code: 'not-found',
+                  details: { text: 'No matching patient/resource found for provided lookup fields' },
+                },
+              ],
             },
           };
         } else {
@@ -300,7 +307,7 @@ app.post(
             data: {
               resourceType: 'Patient',
               id: patient.id,
-              identifier: identifiers.filter(id => 
+              identifier: lookupIdentifiers.filter(id => 
                 patient.philhealthId === id.value || patient.mrn === id.value
               ),
               name: [{ family: patient.lastName, given: [patient.firstName] }],
@@ -387,14 +394,14 @@ app.post(
   validateGatewayAuth,
   validateSchema(ReceivePushSchema),
   async (req: Request, res: Response) => {
-    const { transactionId, senderId, resourceType, data, reason } = req.body as ReceivePushPayload;
+    const { transactionId, senderId, resourceType, resource, reason } = req.body as ReceivePushPayload;
 
     console.log(\`[Receive Push] Transaction: \${transactionId}, From: \${senderId}, Type: \${resourceType}\`);
     if (reason) console.log(\`[Receive Push] Reason: \${reason}\`);
 
     try {
       // 1. Store the unsolicited data
-      await storeReceivedData(transactionId, data);
+      await storeReceivedData(transactionId, resource);
       
       console.log(\`[Receive Push] Stored data for \${transactionId}\`);
       res.status(200).json({ message: 'Data received successfully' });
@@ -444,7 +451,7 @@ type Identifier struct {
 type ProcessQueryRequest struct {
 	TransactionID    string       \`json:"transactionId" validate:"required,uuid"\`
 	RequesterID      string       \`json:"requesterId" validate:"required,uuid"\`
-	Identifiers      []Identifier \`json:"identifiers" validate:"required,min=1,dive"\`
+	Identifiers      []Identifier \`json:"identifiers,omitempty" validate:"omitempty,dive"\`
 	ResourceType     string       \`json:"resourceType" validate:"required"\`
 	GatewayReturnURL string       \`json:"gatewayReturnUrl" validate:"required,url"\`
 	Reason           string       \`json:"reason,omitempty"\`  // Optional: Purpose of the request
@@ -453,7 +460,7 @@ type ProcessQueryRequest struct {
 
 type ReceiveResultsRequest struct {
 	TransactionID string                 \`json:"transactionId" validate:"required,uuid"\`
-	Status        string                 \`json:"status" validate:"required,oneof=SUCCESS REJECTED ERROR"\`
+	Status        string                 \`json:"status" validate:"required,oneof=SUCCESS ERROR"\`
 	Data          map[string]interface{} \`json:"data"\`
 }
 
@@ -461,7 +468,7 @@ type ReceivePushRequest struct {
 	TransactionID string                 \`json:"transactionId" validate:"required,uuid"\`
 	SenderID      string                 \`json:"senderId" validate:"required,uuid"\`
 	ResourceType  string                 \`json:"resourceType" validate:"required"\`
-	Data          map[string]interface{} \`json:"data"\`
+	Resource      map[string]interface{} \`json:"resource"\`
 	Reason        string                 \`json:"reason,omitempty"\`
 	Notes         string                 \`json:"notes,omitempty"\`
 }
@@ -570,14 +577,16 @@ func handleProcessQuery(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validate required fields
-	if req.TransactionID == "" || len(req.Identifiers) == 0 {
-		log.Printf("[Process Query] Missing required fields")
-		http.Error(w, "Missing transactionId or identifiers", http.StatusBadRequest)
+	if req.TransactionID == "" {
+		log.Printf("[Process Query] Missing transactionId")
+		http.Error(w, "Missing transactionId", http.StatusBadRequest)
 		return
 	}
 
-	log.Printf("[Process Query] Transaction: %s, Identifiers: %d", 
-		req.TransactionID, len(req.Identifiers))
+	lookupIdentifiers := req.Identifiers
+
+	log.Printf("[Process Query] Transaction: %s, Identifiers: %d",
+		req.TransactionID, len(lookupIdentifiers))
 
 	// IMPORTANT: Acknowledge immediately
 	w.Header().Set("Content-Type", "application/json")
@@ -587,7 +596,7 @@ func handleProcessQuery(w http.ResponseWriter, r *http.Request) {
 	// Process asynchronously
 	go func() {
 		// Find patient by identifiers
-		patient, err := findPatientByIdentifiers(req.Identifiers)
+		patient, err := findPatientByIdentifiers(lookupIdentifiers)
 		
 		var response GatewayResponse
 		response.TransactionID = req.TransactionID
@@ -595,13 +604,28 @@ func handleProcessQuery(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Printf("[Process Query] Database error: %v", err)
 			response.Status = "ERROR"
-			response.Data = map[string]string{"error": "Internal error"}
+			response.Data = map[string]interface{}{
+				"resourceType": "OperationOutcome",
+				"issue": []map[string]interface{}{
+					{
+						"severity": "error",
+						"code": "exception",
+						"details": map[string]string{"text": "Internal processing error"},
+					},
+				},
+			}
 		} else if patient == nil {
 			log.Printf("[Process Query] Patient not found for transaction %s", req.TransactionID)
 			response.Status = "REJECTED"
 			response.Data = map[string]interface{}{
-				"error":               "Patient not found",
-				"searchedIdentifiers": req.Identifiers,
+				"resourceType": "OperationOutcome",
+				"issue": []map[string]interface{}{
+					{
+						"severity": "error",
+						"code": "not-found",
+						"details": map[string]string{"text": "No matching patient/resource found for provided lookup fields"},
+					},
+				},
 			}
 		} else {
 			log.Printf("[Process Query] Found patient %s", patient.ID)
@@ -663,7 +687,7 @@ func handleReceivePush(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Store the unsolicited data
-	if err := storeReceivedData(req.TransactionID, req.Data); err != nil {
+	if err := storeReceivedData(req.TransactionID, req.Resource); err != nil {
 		log.Printf("[Receive Push] Failed to store data: %v", err)
 		http.Error(w, "Failed to store data", http.StatusInternalServerError)
 		return
@@ -761,17 +785,11 @@ class Identifier(BaseModel):
 class ProcessQueryPayload(BaseModel):
     transactionId: str
     requesterId: str
-    identifiers: List[Identifier]
+    identifiers: Optional[List[Identifier]] = None
     resourceType: str
     gatewayReturnUrl: str
     reason: Optional[str] = None   # Optional: Purpose of the request
     notes: Optional[str] = None    # Optional: Additional context
-
-    @validator('identifiers')
-    def identifiers_not_empty(cls, v):
-        if not v:
-            raise ValueError('At least one identifier is required')
-        return v
 
 class ReceiveResultsPayload(BaseModel):
     transactionId: str
@@ -780,8 +798,8 @@ class ReceiveResultsPayload(BaseModel):
 
     @validator('status')
     def status_valid(cls, v):
-        if v not in ['SUCCESS', 'REJECTED', 'ERROR']:
-            raise ValueError('Status must be SUCCESS, REJECTED, or ERROR')
+        if v not in ['SUCCESS', 'ERROR']:
+            raise ValueError('Status must be SUCCESS or ERROR')
         return v
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -834,7 +852,8 @@ def process_query():
         return jsonify({'error': 'Invalid request payload', 'details': str(e)}), 400
 
     logger.info(f"[Process Query] Transaction: {payload.transactionId}")
-    logger.info(f"[Process Query] Identifiers: {[f'{i.system}:{i.value}' for i in payload.identifiers]}")
+    lookup_identifiers = payload.identifiers or []
+    logger.info(f"[Process Query] Identifiers: {[f'{i.system}:{i.value}' for i in lookup_identifiers]}")
 
     # IMPORTANT: Acknowledge immediately (don't block)
     response = jsonify({'message': 'Processing'})
@@ -843,7 +862,7 @@ def process_query():
     def send_to_gateway():
         try:
             # 1. Find patient by identifiers
-            patient = find_patient_by_identifiers(payload.identifiers)
+            patient = find_patient_by_identifiers(lookup_identifiers)
 
             if patient is None:
                 # Patient not found
@@ -851,8 +870,14 @@ def process_query():
                     'transactionId': payload.transactionId,
                     'status': 'REJECTED',
                     'data': {
-                        'error': 'Patient not found',
-                        'searchedIdentifiers': [i.dict() for i in payload.identifiers]
+                        'resourceType': 'OperationOutcome',
+                        'issue': [
+                            {
+                                'severity': 'error',
+                                'code': 'not-found',
+                                'details': {'text': 'No matching patient/resource found for provided lookup fields'}
+                            }
+                        ]
                     }
                 }
                 logger.info(f"[Process Query] Patient not found for {payload.transactionId}")
@@ -976,7 +1001,7 @@ Future<Response> handleProcessQuery(Request request) async {
     final payload = jsonDecode(await request.readAsString());
     final String transactionId = payload['transactionId'];
     final String gatewayReturnUrl = payload['gatewayReturnUrl'];
-    final List identifiers = payload['identifiers'];
+    final List identifiers = payload['identifiers'] ?? [];
     final String? reason = payload['reason'];  // Optional
     final String? notes = payload['notes'];    // Optional
 
@@ -1009,8 +1034,14 @@ void _processQueryInBackground(
         'transactionId': transactionId,
         'status': 'REJECTED',
         'data': {
-          'error': 'Patient not found',
-          'searchedIdentifiers': identifiers,
+          'resourceType': 'OperationOutcome',
+          'issue': [
+            {
+              'severity': 'error',
+              'code': 'not-found',
+              'details': {'text': 'No matching patient/resource found for provided lookup fields'}
+            }
+          ]
         }
       };
     } else {
@@ -1118,6 +1149,7 @@ export const checklistItems = [
   "Save your provider ID and API key securely",
   "Implement POST /fhir/process-query endpoint",
   "Implement POST /fhir/receive-results endpoint",
+  "Implement POST /fhir/receive-push endpoint",
   "Add validation for X-Gateway-Auth header in your webhooks",
   "Add patient matching logic for FHIR identifiers",
   "Generate unique Idempotency-Key (UUID v4) for each request",
@@ -1144,7 +1176,7 @@ export const prerequisites = [
   },
   {
     title: "Webhook Endpoints",
-    description: "You must implement two webhook endpoints that the gateway will call",
+    description: "You must implement three webhook endpoints that the gateway will call",
   },
   {
     title: "FHIR-Compatible Data",

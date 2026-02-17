@@ -167,7 +167,12 @@ export const dataModels = {
   "id": "uuid",
   "requesterId": "provider-uuid",
   "targetId": "provider-uuid",
-  "patientId": "patient-123",
+  "identifiers": [
+    {
+      "system": "http://philhealth.gov.ph",
+      "value": "12-345678901-2"
+    }
+  ],
   "resourceType": "Patient",
   "status": "PENDING",
   "metadata": {

@@ -342,7 +342,7 @@ export const quickStartSteps = [
     step: 2,
     action: "Implement Webhooks",
     endpoint: "Your server",
-    result: "/fhir/process-query & /fhir/receive-results",
+    result: "/fhir/process-query, /fhir/receive-results, /fhir/receive-push",
   },
   {
     step: 3,

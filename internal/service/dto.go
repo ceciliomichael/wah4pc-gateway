@@ -88,8 +88,8 @@ const (
 type PushRequest struct {
 	SenderID     string          `json:"senderId"`
 	TargetID     string          `json:"targetId"`
-	ResourceType string          `json:"resourceType"`
-	Data         json.RawMessage `json:"data"`
+	ResourceType string          `json:"-"`
+	Resource     json.RawMessage `json:"resource"`
 	Reason       string          `json:"reason,omitempty"`
 	Notes        string          `json:"notes,omitempty"`
 }
@@ -100,7 +100,7 @@ type ProcessPushPayload struct {
 	TransactionID string          `json:"transactionId"`
 	SenderID      string          `json:"senderId"`
 	ResourceType  string          `json:"resourceType"`
-	Data          json.RawMessage `json:"data"`
+	Resource      json.RawMessage `json:"resource"`
 	Reason        string          `json:"reason,omitempty"`
 	Notes         string          `json:"notes,omitempty"`
 }

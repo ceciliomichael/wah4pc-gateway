@@ -7,7 +7,7 @@ interface LastUpdatedProps {
   date?: string;
 }
 
-export function LastUpdated({ className, date = "February 17, 2026" }: LastUpdatedProps) {
+export function LastUpdated({ className, date = "February 18, 2026" }: LastUpdatedProps) {
   return (
     <div className={cn("text-sm text-slate-500", className)}>
       <p>Latest updated: {date}</p>

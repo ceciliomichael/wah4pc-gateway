@@ -128,7 +128,8 @@ export const fhirEndpoints: EndpointCardProps[] = [
       "transactionId must match a pending transaction.",
       "status values: SUCCESS, REJECTED, ERROR.",
       "For SUCCESS, send full FHIR resource payloads (Bundle or resource JSON).",
-      "For REJECTED/ERROR, send OperationOutcome in `data`.",
+      "For REJECTED/ERROR, `data` must be a FHIR OperationOutcome.",
+      "Gateway policy currently does not relay REJECTED to requester `/fhir/receive-results`.",
       "See `/docs/request-formats` and `format/provider-return-core8.md` for concrete payload formats.",
     ],
   },
@@ -160,8 +161,7 @@ export const fhirEndpoints: EndpointCardProps[] = [
     requestBody: `{
   "senderId": "your-provider-uuid",
   "targetId": "target-provider-uuid",
-  "resourceType": "Appointment",
-  "data": {
+  "resource": {
     "resourceType": "Appointment",
     "status": "proposed",
     "start": "2026-02-20T09:00:00Z"
@@ -181,9 +181,9 @@ export const fhirEndpoints: EndpointCardProps[] = [
 }`,
     notes: [
       "Target provider must support `/fhir/receive-push`.",
-      "`data` must be valid FHIR JSON for the given resourceType.",
+      "`resource` must be valid FHIR JSON for the given resourceType.",
+      "Top-level `resourceType` in body is not used. The URL path and `resource.resourceType` must match.",
       "Push transactions are completed immediately after successful forward.",
     ],
   },
 ];
-

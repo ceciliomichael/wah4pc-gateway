@@ -8,10 +8,10 @@ import (
 
 // validatePushData performs specific business rule validation for pushed resources.
 // It enforces stricter rules than standard FHIR validation for certain resource types.
-func (s *GatewayService) validatePushData(resourceType string, data json.RawMessage) error {
+func (s *GatewayService) validatePushData(resourceType string, resource json.RawMessage) error {
 	switch resourceType {
 	case "Appointment":
-		return s.validateAppointment(data)
+		return s.validateAppointment(resource)
 	default:
 		// No specific additional validation for other types yet
 		return nil
@@ -19,7 +19,7 @@ func (s *GatewayService) validatePushData(resourceType string, data json.RawMess
 }
 
 // validateAppointment enforces that Appointment participants use logical identifiers.
-func (s *GatewayService) validateAppointment(data json.RawMessage) error {
+func (s *GatewayService) validateAppointment(resource json.RawMessage) error {
 	// Define minimal structure needed for validation
 	type identifier struct {
 		System string `json:"system"`
@@ -40,8 +40,8 @@ func (s *GatewayService) validateAppointment(data json.RawMessage) error {
 	}
 
 	var appt appointment
-	if err := json.Unmarshal(data, &appt); err != nil {
-		return fmt.Errorf("failed to parse appointment data: %w", err)
+	if err := json.Unmarshal(resource, &appt); err != nil {
+		return fmt.Errorf("failed to parse appointment resource: %w", err)
 	}
 
 	if len(appt.Participant) == 0 {

@@ -115,7 +115,7 @@ func TestPushEndpoint_Success(t *testing.T) {
 	requestBody := `{
 		"senderId":"sender-provider",
 		"targetId":"target-provider",
-		"data":{
+		"resource":{
 			"resourceType":"Patient",
 			"id":"patient-001"
 		}
@@ -174,8 +174,8 @@ func TestPushEndpoint_Success(t *testing.T) {
 		if pushed.ResourceType != "Patient" {
 			t.Fatalf("expected pushed resourceType Patient, got %s", pushed.ResourceType)
 		}
-		if len(pushed.Data) == 0 {
-			t.Fatal("expected pushed data to be present")
+		if len(pushed.Resource) == 0 {
+			t.Fatal("expected pushed resource to be present")
 		}
 	case <-time.After(2 * time.Second):
 		t.Fatal("did not receive push payload at target endpoint")

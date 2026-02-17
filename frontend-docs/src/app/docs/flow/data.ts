@@ -22,7 +22,7 @@ export const transactionFlowSequence = `sequenceDiagram
     
     Note over App,Provider: Phase 1: Request Initiation
     App->>GW: POST /api/v1/fhir/request/{resourceType}
-    Note right of App: Sends identifiers[], resource_type, provider_id
+    Note right of App: Sends resource-specific request body + provider IDs
     GW->>GW: Generate transaction_id
     GW->>GW: Validate API Key & Rate Limit
     GW->>GW: Create Transaction (status: pending)
@@ -30,10 +30,9 @@ export const transactionFlowSequence = `sequenceDiagram
     Note left of GW: Returns transaction_id immediately
     
     Note over App,Provider: Phase 2: Provider Notification
-    GW->>Provider: POST /fulfill (webhook)
+    GW->>Provider: POST /fhir/process-query (webhook)
     Note right of GW: Includes transaction_id in payload
     Provider-->>GW: 200 OK (Acknowledged)
-    GW->>GW: Update status: processing
     
     Note over App,Provider: Phase 3: Data Preparation (Async)
     Provider->>Provider: Fetch requested FHIR data
@@ -43,12 +42,12 @@ export const transactionFlowSequence = `sequenceDiagram
     Provider->>GW: POST /api/v1/fhir/receive/{resourceType}
     Note right of Provider: MUST include same transaction_id
     GW->>GW: Match transaction_id
-    GW->>GW: Store data, status: completed
+    GW->>GW: Update status via RECEIVED -> COMPLETED
     GW-->>Provider: 200 OK
     
     Note over App,Provider: Phase 5: Data Retrieval
     App->>GW: GET /api/v1/transactions/{transaction_id}
-    GW-->>App: 200 OK (Final Data)
+    GW-->>App: 200 OK (Status + metadata)
 `;
 
 export const transactionIdFlowDiagram = `flowchart LR
@@ -120,16 +119,6 @@ export const step2_gatewayResponse = `{
 export const step3_providerWebhook = `{
   "transactionId": "txn_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "resourceType": "MedicationRequest",
-  "patientIdentifiers": [
-    {
-      "system": "http://philhealth.gov.ph",
-      "value": "12-345678901-2"
-    },
-    {
-      "system": "http://hospital-metro.com/mrn",
-      "value": "patient_12345"
-    }
-  ],
   "identifiers": [
     {
       "system": "http://philhealth.gov.ph",
@@ -289,7 +278,7 @@ export const flowSteps = [
     title: "Gateway Matches and Stores",
     actor: "Gateway",
     endpoint: "Internal",
-    description: "The Gateway looks up the transaction by transaction_id, verifies the Provider matches, stores the data, and updates status to 'COMPLETED'.",
+    description: "The Gateway looks up the transaction by transaction_id, verifies the Provider, relays data to requester webhook, and updates status to 'COMPLETED'.",
     keyPoint: "The transaction_id enables instant lookup. O(1) matching instead of complex correlation logic.",
   },
   {
@@ -297,8 +286,8 @@ export const flowSteps = [
     title: "Requester Retrieves Data",
     actor: "Requester → Gateway",
     endpoint: "GET /api/v1/transactions/{id}",
-    description: "The original requester checks the status using the transaction_id they received in step 3. If completed, they get the full data payload.",
-    keyPoint: "The same transaction_id that started the journey now completes it. Full circle.",
+    description: "The original requester checks status and metadata using the same transaction_id they received in step 3.",
+    keyPoint: "FHIR data delivery happens via requester webhook `/fhir/receive-results`; transaction endpoint is for tracking.",
   },
 ];
 

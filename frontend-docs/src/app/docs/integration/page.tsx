@@ -120,7 +120,7 @@ export default function IntegrationPage() {
         id="webhooks"
         stepNumber={2}
         title="Implement Webhook Endpoints"
-        description="The gateway communicates with your system via webhooks. You must implement two endpoints on your backend that the gateway will call."
+        description="The gateway communicates with your system via webhooks. You should implement three endpoints on your backend that the gateway will call."
       >
         <DiagramContainer 
           chart={webhookHandlerDiagram} 
@@ -146,10 +146,6 @@ export default function IntegrationPage() {
     {
       "system": "http://philhealth.gov.ph",
       "value": "12-345678901-2"
-    },
-    {
-      "system": "http://your-hospital.com/mrn",
-      "value": "MRN-12345"
     }
   ],
   "resourceType": "Patient",
@@ -224,7 +220,7 @@ export default function IntegrationPage() {
           requestTitle="Incoming Data from Gateway"
           steps={[
             { num: "1.", color: "text-purple-600", text: <>Validate the <code className="bg-slate-100 px-1 rounded border border-slate-200">transactionId</code> matches a pending request</> },
-            { num: "2.", color: "text-purple-600", text: "Store or process the received FHIR data" },
+            { num: "2.", color: "text-purple-600", text: <>Handle webhook statuses as currently implemented by gateway: <code className="bg-slate-100 px-1 rounded border border-slate-200">SUCCESS</code> and <code className="bg-slate-100 px-1 rounded border border-slate-200">ERROR</code></> },
             { num: "3.", color: "text-purple-600", text: <>Respond with <code className="bg-slate-100 px-1 rounded border border-slate-200">200 OK</code> to confirm receipt</> },
           ]}
           responseCode={`{
@@ -248,7 +244,7 @@ export default function IntegrationPage() {
   "transactionId": "txn_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "senderId": "sender-provider-uuid",
   "resourceType": "Appointment",
-  "data": {
+  "resource": {
     "resourceType": "Appointment",
     "status": "proposed",
     "description": "Consultation",
@@ -443,8 +439,7 @@ export default function IntegrationPage() {
             data={`{
   "senderId": "your-provider-uuid",
   "targetId": "target-provider-uuid",
-  "resourceType": "Appointment",
-  "data": {
+  "resource": {
     "resourceType": "Appointment",
     "status": "proposed",
     "description": "Consultation",

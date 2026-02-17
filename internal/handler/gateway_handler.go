@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strings"
@@ -98,8 +99,14 @@ func (h *GatewayHandler) RequestPush(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
-	if req.ResourceType != "" && req.ResourceType != resourceType {
-		respondError(w, http.StatusBadRequest, "resourceType in body must match URL path")
+
+	resourceBodyType, err := extractResourceType(req.Resource)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if resourceBodyType != resourceType {
+		respondError(w, http.StatusBadRequest, "resource.resourceType in body must match URL path")
 		return
 	}
 
@@ -142,6 +149,24 @@ func (h *GatewayHandler) RequestPush(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondJSON(w, http.StatusOK, tx)
+}
+
+func extractResourceType(resource json.RawMessage) (string, error) {
+	if len(resource) == 0 {
+		return "", errors.New("resource is required")
+	}
+
+	var payload struct {
+		ResourceType string `json:"resourceType"`
+	}
+	if err := json.Unmarshal(resource, &payload); err != nil {
+		return "", errors.New("resource must be a valid FHIR JSON object")
+	}
+	if strings.TrimSpace(payload.ResourceType) == "" {
+		return "", errors.New("resource.resourceType is required")
+	}
+
+	return strings.TrimSpace(payload.ResourceType), nil
 }
 
 // ReceiveResult handles POST /api/v1/fhir/receive/{resourceType}

@@ -138,6 +138,35 @@ func TestGatewayHandlerRequestPush_ExtraPathSegmentRejected(t *testing.T) {
 	}
 }
 
+func TestGatewayHandlerRequestPush_MissingResourceRejected(t *testing.T) {
+	h := &GatewayHandler{}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/fhir/push/Patient", strings.NewReader(`{"senderId":"a","targetId":"b"}`))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	h.RequestPush(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected %d, got %d", http.StatusBadRequest, rec.Code)
+	}
+}
+
+func TestGatewayHandlerRequestPush_ResourceTypeMismatchRejected(t *testing.T) {
+	h := &GatewayHandler{}
+
+	body := `{"senderId":"a","targetId":"b","resource":{"resourceType":"Observation"}}`
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/fhir/push/Patient", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	h.RequestPush(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected %d, got %d", http.StatusBadRequest, rec.Code)
+	}
+}
+
 func TestGatewayHandlerRequestQuery_BodyPathResourceTypeMismatch(t *testing.T) {
 	h := &GatewayHandler{}
 

@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -123,8 +124,13 @@ func (s *LogService) GetLogsByDateFiltered(date, providerID string, isAdmin bool
 		return s.readIndexFile(indexFile, providerID, isAdmin)
 	}
 
+	// Build index from legacy log text files when missing.
+	created, err := s.buildIndexFile(dirPath, date, indexFile)
+	if err == nil && created {
+		return s.readIndexFile(indexFile, providerID, isAdmin)
+	}
+
 	if !isAdmin {
-		// Without indexed provider metadata we cannot safely scope provider logs.
 		return []model.LogSummary{}, nil
 	}
 
@@ -289,4 +295,180 @@ func (s *LogService) GetLogDetailFiltered(date, id, providerID string, isAdmin b
 		Timestamp: fullTimeStr,
 		Content:   string(content),
 	}, nil
+}
+
+func (s *LogService) buildIndexFile(dirPath, date, indexFile string) (bool, error) {
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		return false, err
+	}
+
+	var logs []model.LogSummary
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		if !strings.HasSuffix(name, ".txt") {
+			continue
+		}
+		logPath := filepath.Join(dirPath, name)
+		parsed, parseErr := parseLegacyLogFile(logPath, name, date)
+		if parseErr == nil {
+			logs = append(logs, parsed)
+		}
+	}
+
+	if len(logs) == 0 {
+		return false, nil
+	}
+
+	sort.Slice(logs, func(i, j int) bool {
+		return logs[i].Timestamp.After(logs[j].Timestamp)
+	})
+
+	file, err := os.Create(indexFile)
+	if err != nil {
+		return false, err
+	}
+	defer file.Close()
+
+	enc := json.NewEncoder(file)
+	for _, log := range logs {
+		if err := enc.Encode(log); err != nil {
+			return false, err
+		}
+	}
+
+	return true, nil
+}
+
+func parseLegacyLogFile(path, filename, date string) (model.LogSummary, error) {
+	contentBytes, err := os.ReadFile(path)
+	if err != nil {
+		return model.LogSummary{}, err
+	}
+	content := string(contentBytes)
+
+	summary := model.LogSummary{
+		ID: filename,
+	}
+
+	if ts := parseTimestampFromFilename(filename, date); !ts.IsZero() {
+		summary.Timestamp = ts
+	}
+
+	lines := strings.Split(content, "\n")
+	for _, rawLine := range lines {
+		line := strings.TrimRight(rawLine, "\r")
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" {
+			continue
+		}
+
+		if method, url, ok := parseRequestLine(trimmed); ok {
+			summary.Method = method
+			summary.URL = url
+			continue
+		}
+
+		key, value, ok := splitLegacyKeyValue(trimmed)
+		if !ok {
+			continue
+		}
+		switch key {
+		case "Request ID":
+			if value != "" && value != "-" {
+				summary.ID = value
+			}
+		case "Timestamp":
+			if parsedTS, parseErr := parseLegacyTimestamp(value); parseErr == nil {
+				summary.Timestamp = parsedTS
+			}
+		case "Duration":
+			if d, parseErr := time.ParseDuration(value); parseErr == nil {
+				summary.DurationMs = d.Milliseconds()
+			}
+		case "Status Code":
+			parts := strings.Fields(value)
+			if len(parts) > 0 {
+				if code, parseErr := strconv.Atoi(parts[0]); parseErr == nil {
+					summary.StatusCode = code
+				}
+			}
+		case "Remote Address":
+			summary.ClientIP = value
+		case "API Key ID":
+			if value != "-" {
+				summary.KeyID = value
+			}
+		case "Role":
+			if value != "-" {
+				summary.Role = value
+			}
+		case "Provider ID":
+			if value != "-" {
+				summary.ProviderID = value
+			}
+		}
+	}
+
+	if summary.Timestamp.IsZero() {
+		summary.Timestamp = time.Now().UTC()
+	}
+	if summary.Method == "" {
+		summary.Method = "GET"
+	}
+	if summary.URL == "" {
+		summary.URL = "/unknown"
+	}
+
+	return summary, nil
+}
+
+func splitLegacyKeyValue(line string) (string, string, bool) {
+	before, after, ok := strings.Cut(line, ":")
+	if !ok {
+		return "", "", false
+	}
+	return strings.TrimSpace(before), strings.TrimSpace(after), true
+}
+
+func parseRequestLine(line string) (string, string, bool) {
+	methods := []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}
+	for _, method := range methods {
+		prefix := method + " "
+		if strings.HasPrefix(line, prefix) {
+			return method, strings.TrimSpace(strings.TrimPrefix(line, prefix)), true
+		}
+	}
+	return "", "", false
+}
+
+func parseLegacyTimestamp(value string) (time.Time, error) {
+	layouts := []string{
+		"2006-01-02 15:04:05.000 -07",
+		"2006-01-02 15:04:05.000 MST",
+		time.RFC3339,
+	}
+	for _, layout := range layouts {
+		if ts, err := time.Parse(layout, value); err == nil {
+			return ts, nil
+		}
+	}
+	return time.Time{}, fmt.Errorf("unable to parse timestamp %q", value)
+}
+
+func parseTimestampFromFilename(filename, date string) time.Time {
+	base := strings.TrimSuffix(filename, ".txt")
+	parts := strings.Split(base, "_")
+	if len(parts) < 2 {
+		return time.Time{}
+	}
+	timeStr := strings.ReplaceAll(parts[0], "-", ":")
+	parsed, err := time.ParseInLocation("2006-01-02 15:04:05", fmt.Sprintf("%s %s", date, timeStr), time.UTC)
+	if err != nil {
+		return time.Time{}
+	}
+	return parsed
 }

@@ -137,6 +137,11 @@ func (m *AuditMiddleware) shouldSkipLogging(req *http.Request) bool {
 		return true
 	}
 
+	// Exclude auth identity checks to avoid login/session noise in audit logs.
+	if path == "/api/v1/auth/identity" {
+		return true
+	}
+
 	// Exclude selected operational endpoints from audit logging
 	if path == "/providers" ||
 		path == "/api/v1/providers" ||

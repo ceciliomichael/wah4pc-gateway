@@ -7,6 +7,7 @@ import (
 	neturl "net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -18,12 +19,14 @@ import (
 // LogService handles log retrieval
 type LogService struct {
 	baseDir string
+	txRepo  TransactionRepository
 }
 
 // NewLogService creates a new LogService
-func NewLogService(baseDir string) *LogService {
+func NewLogService(baseDir string, txRepo TransactionRepository) *LogService {
 	return &LogService{
 		baseDir: baseDir,
+		txRepo:  txRepo,
 	}
 }
 
@@ -156,7 +159,9 @@ func (s *LogService) readIndexFile(path, providerID string, isAdmin bool) ([]mod
 			if !isAdmin {
 				// Legacy rows may not have providerId; hide them from provider users.
 				if strings.TrimSpace(log.ProviderID) == "" || log.ProviderID != providerID {
-					continue
+					if !s.isProviderRelatedLog(path, log.ID, log.URL, providerID) {
+						continue
+					}
 				}
 			}
 			logs = append(logs, log)
@@ -471,4 +476,68 @@ func parseTimestampFromFilename(filename, date string) time.Time {
 		return time.Time{}
 	}
 	return parsed
+}
+
+func (s *LogService) isProviderRelatedLog(indexFilePath, logID, logURL, providerID string) bool {
+	dirPath := filepath.Dir(indexFilePath)
+	logFilePath, err := s.findLogFilePath(dirPath, logID)
+	if err != nil {
+		return false
+	}
+
+	contentBytes, err := os.ReadFile(logFilePath)
+	if err != nil {
+		return false
+	}
+	content := string(contentBytes)
+
+	// If request body explicitly references provider IDs, allow requester/target/sender visibility.
+	requesterID := extractJSONField(content, "requesterId")
+	targetID := extractJSONField(content, "targetId")
+	senderID := extractJSONField(content, "senderId")
+	if requesterID == providerID || targetID == providerID || senderID == providerID {
+		return true
+	}
+
+	// For receive callbacks, use transaction lookup when only transactionId is present.
+	if strings.HasPrefix(logURL, "/api/v1/fhir/receive/") && s.txRepo != nil {
+		txID := extractJSONField(content, "transactionId")
+		if strings.TrimSpace(txID) == "" {
+			return false
+		}
+		tx, txErr := s.txRepo.GetByID(txID)
+		if txErr != nil {
+			return false
+		}
+		return tx.RequesterID == providerID || tx.TargetID == providerID
+	}
+
+	return false
+}
+
+func (s *LogService) findLogFilePath(dirPath, id string) (string, error) {
+	shortID := id
+	if len(shortID) > 8 {
+		shortID = shortID[:8]
+	}
+
+	pattern := filepath.Join(dirPath, fmt.Sprintf("*_%s.txt", shortID))
+	matches, err := filepath.Glob(pattern)
+	if err != nil {
+		return "", err
+	}
+	if len(matches) == 0 {
+		return "", fmt.Errorf("log file not found")
+	}
+	return matches[0], nil
+}
+
+func extractJSONField(content, field string) string {
+	pattern := fmt.Sprintf(`"%s"\s*:\s*"([^"]+)"`, field)
+	re := regexp.MustCompile(pattern)
+	matches := re.FindStringSubmatch(content)
+	if len(matches) < 2 {
+		return ""
+	}
+	return strings.TrimSpace(matches[1])
 }

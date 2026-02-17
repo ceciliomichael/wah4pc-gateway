@@ -208,8 +208,8 @@ export function TransactionsList({
   return (
     <>
       {/* Desktop Table View */}
-      <Card padding="none" className="hidden md:block overflow-hidden">
-        <div className="overflow-x-auto">
+      <Card padding="none" className="hidden md:flex h-full flex-col overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-auto">
           <table className="w-full">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200">
@@ -297,7 +297,7 @@ export function TransactionsList({
       </Card>
 
       {/* Mobile Card View */}
-      <div className="md:hidden space-y-3">
+      <div className="md:hidden h-full overflow-y-auto space-y-3 pr-1">
         {transactions.map((tx) => (
           <TransactionCard
             key={tx.id}

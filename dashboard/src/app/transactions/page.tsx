@@ -26,11 +26,14 @@ function identifiersMatchSearch(identifiers: Identifier[], query: string): boole
 }
 
 function TransactionsContent() {
+  const ITEMS_PER_PAGE = 20;
+
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [providers, setProviders] = useState<Provider[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
@@ -90,11 +93,29 @@ function TransactionsContent() {
   });
 
   const hasActiveFilters = searchQuery !== "" || statusFilter !== "ALL";
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredTransactions.length / ITEMS_PER_PAGE)
+  );
+  const paginatedTransactions = filteredTransactions.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const handleClearFilters = () => {
     setSearchQuery("");
     setStatusFilter("ALL");
   };
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   if (isLoading) {
     return (
@@ -105,9 +126,9 @@ function TransactionsContent() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="h-full flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
         <p className="text-slate-500">
           View and monitor FHIR resource transfer transactions
         </p>
@@ -126,33 +147,65 @@ function TransactionsContent() {
       </div>
 
       {/* Filters */}
-      <TransactionFilters
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        statusFilter={statusFilter}
-        onStatusChange={setStatusFilter}
-      />
+      <div className="shrink-0 mt-5">
+        <TransactionFilters
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          statusFilter={statusFilter}
+          onStatusChange={setStatusFilter}
+        />
+      </div>
 
       {/* Error Alert */}
       {error && (
-        <div className="flex items-center gap-2 text-red-600 bg-red-50 px-4 py-3 rounded-lg">
+        <div className="flex items-center gap-2 text-red-600 bg-red-50 px-4 py-3 rounded-lg shrink-0 mt-5">
           <LuCircleAlert className="w-5 h-5 flex-shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {/* Transactions List */}
-      <TransactionsList
-        transactions={filteredTransactions}
-        providers={providers}
-        hasFilters={hasActiveFilters}
-        onClearFilters={handleClearFilters}
-      />
+      <div className="flex-1 min-h-0 mt-5">
+        <TransactionsList
+          transactions={paginatedTransactions}
+          providers={providers}
+          hasFilters={hasActiveFilters}
+          onClearFilters={handleClearFilters}
+        />
+      </div>
 
       {/* Summary */}
       {filteredTransactions.length > 0 && (
-        <div className="text-sm text-slate-500 text-center">
-          Showing {filteredTransactions.length} of {transactions.length} transactions
+        <div className="text-sm text-slate-500 text-center shrink-0 mt-4">
+          Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}-
+          {Math.min(currentPage * ITEMS_PER_PAGE, filteredTransactions.length)} of{" "}
+          {filteredTransactions.length} transactions
+        </div>
+      )}
+
+      {filteredTransactions.length > ITEMS_PER_PAGE && (
+        <div className="flex items-center justify-center gap-2 sm:gap-3 shrink-0 mt-3">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </Button>
+          <div className="text-sm text-slate-600 min-w-24 text-center">
+            Page {currentPage} of {totalPages}
+          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+            }
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </Button>
         </div>
       )}
     </div>

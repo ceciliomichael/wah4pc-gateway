@@ -36,7 +36,7 @@ export function Header({ onMenuClick }: HeaderProps) {
   const { title, subtitle } = getPageConfig();
 
   return (
-    <header className="h-16 sm:h-[72px] bg-white border-b border-slate-100 flex items-center justify-between px-4 sm:px-5 lg:px-6">
+    <header className="sticky top-0 z-30 h-16 sm:h-[72px] bg-white border-b border-slate-100 flex items-center justify-between px-4 sm:px-5 lg:px-6">
       <div className="flex items-center gap-3 sm:gap-4">
         {/* Mobile menu button - 44px minimum touch target */}
         <button

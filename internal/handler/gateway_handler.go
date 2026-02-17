@@ -203,7 +203,7 @@ func (h *GatewayHandler) ReceiveResult(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondJSON(w, http.StatusOK, map[string]string{"message": "result received and forwarded"})
+	respondJSON(w, http.StatusOK, map[string]string{"message": "result received and processed"})
 }
 
 // GetTransaction handles GET /api/v1/transactions/{id}

@@ -14,8 +14,11 @@ const (
 
 // TransactionMetadata contains additional context for the transfer
 type TransactionMetadata struct {
-	Reason string `json:"reason,omitempty" bson:"reason,omitempty"`
-	Notes  string `json:"notes,omitempty" bson:"notes,omitempty"`
+	Reason                      string   `json:"reason,omitempty" bson:"reason,omitempty"`
+	Notes                       string   `json:"notes,omitempty" bson:"notes,omitempty"`
+	OriginalProfiles            []string `json:"originalProfiles,omitempty" bson:"originalProfiles,omitempty"`
+	NormalizedProfiles          []string `json:"normalizedProfiles,omitempty" bson:"normalizedProfiles,omitempty"`
+	ProfileNormalizationApplied bool     `json:"profileNormalizationApplied,omitempty" bson:"profileNormalizationApplied,omitempty"`
 }
 
 // Transaction represents a FHIR resource transfer request

@@ -319,7 +319,7 @@ func TestGatewayServiceProcessResponse_WrapsSingleObjectAsBundle(t *testing.T) {
 	}
 }
 
-func TestGatewayServiceProcessResponse_DoesNotBundleRejectedPayload(t *testing.T) {
+func TestGatewayServiceProcessResponse_RejectedIsNotRelayedAndMarksTransactionFailed(t *testing.T) {
 	t.Parallel()
 
 	requesterReceived := make(chan ReceiveResultPayload, 1)
@@ -392,13 +392,18 @@ func TestGatewayServiceProcessResponse_DoesNotBundleRejectedPayload(t *testing.T
 		t.Fatalf("expected process response to succeed, got: %v", err)
 	}
 
+	updated, getErr := txRepo.GetByID("txn-rej")
+	if getErr != nil {
+		t.Fatalf("expected transaction to exist, got: %v", getErr)
+	}
+	if updated.Status != model.StatusFailed {
+		t.Fatalf("expected transaction status %s, got %s", model.StatusFailed, updated.Status)
+	}
+
 	select {
 	case payload := <-requesterReceived:
-		if string(payload.Data) != rejectedPayload {
-			t.Fatalf("expected payload to remain unchanged, got %s", string(payload.Data))
-		}
-	case <-time.After(2 * time.Second):
-		t.Fatal("expected requester to receive relayed payload")
+		t.Fatalf("expected no relay for rejected result, got %#v", payload)
+	case <-time.After(250 * time.Millisecond):
 	}
 }
 
@@ -492,5 +497,212 @@ func TestGatewayServiceProcessResponse_TimesOutAfterTwentyFourHoursAndFailsTrans
 		}
 	case <-time.After(2 * time.Second):
 		t.Fatal("expected requester to receive timeout payload")
+	}
+}
+
+func TestGatewayServiceProcessResponse_NormalizesPHCoreProfileAndStoresAuditMetadata(t *testing.T) {
+	t.Parallel()
+
+	requesterReceived := make(chan ReceiveResultPayload, 1)
+	requester := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/fhir/receive-results" {
+			http.NotFound(w, r)
+			return
+		}
+
+		var payload ReceiveResultPayload
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+
+		requesterReceived <- payload
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer requester.Close()
+
+	providerRepo := newProviderRepoStub()
+	now := time.Now().UTC()
+	_ = providerRepo.Create(model.Provider{
+		ID:        "requester",
+		Name:      "Requester",
+		BaseURL:   requester.URL,
+		IsActive:  true,
+		CreatedAt: now,
+		UpdatedAt: now,
+	})
+	_ = providerRepo.Create(model.Provider{
+		ID:        "target",
+		Name:      "Target",
+		BaseURL:   "http://target.local",
+		IsActive:  true,
+		CreatedAt: now,
+		UpdatedAt: now,
+	})
+
+	txRepo := newTxRepoStub()
+	txRepo.items["txn-profile-phcore"] = model.Transaction{
+		ID:           "txn-profile-phcore",
+		RequesterID:  "requester",
+		TargetID:     "target",
+		ResourceType: "Observation",
+		Status:       model.StatusPending,
+		CreatedAt:    now,
+		UpdatedAt:    now,
+		Metadata: model.TransactionMetadata{
+			Reason: "test",
+		},
+	}
+
+	svc := NewGatewayService(
+		txRepo,
+		NewProviderService(providerRepo),
+		NewSettingsService(&settingsRepoStub{}),
+		"http://gateway.local",
+		nil,
+	)
+
+	err := svc.ProcessResponse(
+		IncomingResultPayload{
+			TransactionID: "txn-profile-phcore",
+			Status:        string(ResultStatusSuccess),
+			Data:          json.RawMessage(`{"resourceType":"Observation","id":"obs-1","meta":{"profile":["http://provider.local/StructureDefinition/custom-observation"]}}`),
+		},
+		"target",
+		"Observation",
+	)
+	if err != nil {
+		t.Fatalf("expected process response to succeed, got: %v", err)
+	}
+
+	select {
+	case payload := <-requesterReceived:
+		var bundle map[string]interface{}
+		if err := json.Unmarshal(payload.Data, &bundle); err != nil {
+			t.Fatalf("expected valid json payload, got %v", err)
+		}
+
+		entry, _ := bundle["entry"].([]interface{})
+		if len(entry) != 1 {
+			t.Fatalf("expected 1 bundle entry, got %d", len(entry))
+		}
+		entryObj, _ := entry[0].(map[string]interface{})
+		resource, _ := entryObj["resource"].(map[string]interface{})
+		meta, _ := resource["meta"].(map[string]interface{})
+		profiles, _ := meta["profile"].([]interface{})
+		if len(profiles) != 1 || profiles[0] != "urn://example.com/ph-core/fhir/StructureDefinition/ph-core-observation" {
+			t.Fatalf("expected canonical PH Core profile, got %#v", profiles)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("expected requester to receive relayed payload")
+	}
+
+	updated, getErr := txRepo.GetByID("txn-profile-phcore")
+	if getErr != nil {
+		t.Fatalf("failed to fetch updated transaction: %v", getErr)
+	}
+	if !updated.Metadata.ProfileNormalizationApplied {
+		t.Fatal("expected profile normalization metadata flag to be true")
+	}
+	if len(updated.Metadata.OriginalProfiles) != 1 || updated.Metadata.OriginalProfiles[0] != "http://provider.local/StructureDefinition/custom-observation" {
+		t.Fatalf("unexpected original profiles metadata: %#v", updated.Metadata.OriginalProfiles)
+	}
+	if len(updated.Metadata.NormalizedProfiles) != 1 || updated.Metadata.NormalizedProfiles[0] != "urn://example.com/ph-core/fhir/StructureDefinition/ph-core-observation" {
+		t.Fatalf("unexpected normalized profiles metadata: %#v", updated.Metadata.NormalizedProfiles)
+	}
+}
+
+func TestGatewayServiceProcessResponse_NormalizesBaseR4FallbackProfile(t *testing.T) {
+	t.Parallel()
+
+	requesterReceived := make(chan ReceiveResultPayload, 1)
+	requester := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/fhir/receive-results" {
+			http.NotFound(w, r)
+			return
+		}
+
+		var payload ReceiveResultPayload
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+
+		requesterReceived <- payload
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer requester.Close()
+
+	providerRepo := newProviderRepoStub()
+	now := time.Now().UTC()
+	_ = providerRepo.Create(model.Provider{
+		ID:        "requester",
+		Name:      "Requester",
+		BaseURL:   requester.URL,
+		IsActive:  true,
+		CreatedAt: now,
+		UpdatedAt: now,
+	})
+	_ = providerRepo.Create(model.Provider{
+		ID:        "target",
+		Name:      "Target",
+		BaseURL:   "http://target.local",
+		IsActive:  true,
+		CreatedAt: now,
+		UpdatedAt: now,
+	})
+
+	txRepo := newTxRepoStub()
+	txRepo.items["txn-profile-base"] = model.Transaction{
+		ID:           "txn-profile-base",
+		RequesterID:  "requester",
+		TargetID:     "target",
+		ResourceType: "Condition",
+		Status:       model.StatusPending,
+		CreatedAt:    now,
+		UpdatedAt:    now,
+	}
+
+	svc := NewGatewayService(
+		txRepo,
+		NewProviderService(providerRepo),
+		NewSettingsService(&settingsRepoStub{}),
+		"http://gateway.local",
+		nil,
+	)
+
+	err := svc.ProcessResponse(
+		IncomingResultPayload{
+			TransactionID: "txn-profile-base",
+			Status:        string(ResultStatusSuccess),
+			Data:          json.RawMessage(`{"resourceType":"Condition","id":"cond-1","meta":{"profile":["http://provider.local/StructureDefinition/custom-condition"]}}`),
+		},
+		"target",
+		"Condition",
+	)
+	if err != nil {
+		t.Fatalf("expected process response to succeed, got: %v", err)
+	}
+
+	select {
+	case payload := <-requesterReceived:
+		var bundle map[string]interface{}
+		if err := json.Unmarshal(payload.Data, &bundle); err != nil {
+			t.Fatalf("expected valid json payload, got %v", err)
+		}
+
+		entry, _ := bundle["entry"].([]interface{})
+		if len(entry) != 1 {
+			t.Fatalf("expected 1 bundle entry, got %d", len(entry))
+		}
+		entryObj, _ := entry[0].(map[string]interface{})
+		resource, _ := entryObj["resource"].(map[string]interface{})
+		meta, _ := resource["meta"].(map[string]interface{})
+		profiles, _ := meta["profile"].([]interface{})
+		if len(profiles) != 1 || profiles[0] != "http://hl7.org/fhir/StructureDefinition/Condition" {
+			t.Fatalf("expected canonical base R4 profile, got %#v", profiles)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("expected requester to receive relayed payload")
 	}
 }

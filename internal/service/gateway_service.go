@@ -323,9 +323,17 @@ func (s *GatewayService) ProcessResponse(result IncomingResultPayload, senderPro
 		return ErrUnauthorizedProvider
 	}
 
+	profileAudit := profileNormalizationAudit{}
+
 	// Standardize successful query results to a FHIR Bundle for requester consistency.
 	if result.Status == string(ResultStatusSuccess) {
 		result.Data = normalizeSuccessResultDataAsBundle(result.Data)
+		result.Data, profileAudit = normalizeCanonicalProfiles(result.Data)
+		if profileAudit.Applied {
+			tx.Metadata.OriginalProfiles = profileAudit.OriginalProfiles
+			tx.Metadata.NormalizedProfiles = profileAudit.NormalizedProfiles
+			tx.Metadata.ProfileNormalizationApplied = true
+		}
 	}
 
 	// Validate the incoming data using the remote FHIR validator
@@ -338,6 +346,16 @@ func (s *GatewayService) ProcessResponse(result IncomingResultPayload, senderPro
 			_ = s.txRepo.Update(tx)
 			return fmt.Errorf("%w: %v", ErrSchemaValidation, err)
 		}
+	}
+
+	// Policy: REJECTED results are logged in transaction state but not relayed to requester.
+	if result.Status == string(ResultStatusRejected) {
+		tx.Status = model.StatusFailed
+		tx.UpdatedAt = time.Now().UTC()
+		if err := s.txRepo.Update(tx); err != nil {
+			return fmt.Errorf("failed to update rejected transaction: %w", err)
+		}
+		return nil
 	}
 
 	// Update transaction status to RECEIVED

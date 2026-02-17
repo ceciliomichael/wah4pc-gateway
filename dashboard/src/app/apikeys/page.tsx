@@ -13,6 +13,8 @@ import { SuccessDialog } from "@/components/ui/success-dialog";
 import { Button } from "@/components/ui/button";
 
 function ApiKeysContent() {
+  const ITEMS_PER_PAGE = 20;
+
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [providers, setProviders] = useState<Provider[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -28,6 +30,7 @@ function ApiKeysContent() {
   const [isRevoking, setIsRevoking] = useState(false);
   const [deleteSuccessDialogOpen, setDeleteSuccessDialogOpen] = useState(false);
   const [deleteSuccessMessage, setDeleteSuccessMessage] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Copy state
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -121,6 +124,18 @@ function ApiKeysContent() {
     });
   };
 
+  const totalPages = Math.max(1, Math.ceil(apiKeys.length / ITEMS_PER_PAGE));
+  const paginatedApiKeys = apiKeys.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -154,7 +169,7 @@ function ApiKeysContent() {
 
       {/* API Keys List */}
       <ApiKeyList
-        apiKeys={apiKeys}
+        apiKeys={paginatedApiKeys}
         providers={providers}
         copiedId={copiedId}
         onCopy={handleCopyPrefix}
@@ -166,7 +181,33 @@ function ApiKeysContent() {
       {/* Summary */}
       {apiKeys.length > 0 && (
         <div className="text-sm text-slate-500 text-center">
+          Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}-
+          {Math.min(currentPage * ITEMS_PER_PAGE, apiKeys.length)} of{" "}
           {apiKeys.length} API key{apiKeys.length !== 1 ? "s" : ""} registered
+        </div>
+      )}
+
+      {apiKeys.length > ITEMS_PER_PAGE && (
+        <div className="flex items-center justify-center gap-2 sm:gap-3">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </Button>
+          <div className="text-sm text-slate-600 min-w-24 text-center">
+            Page {currentPage} of {totalPages}
+          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </Button>
         </div>
       )}
 

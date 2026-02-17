@@ -87,20 +87,18 @@ export const consistencyDiagram = `flowchart TB
 // ============================================================================
 
 export const step1_initialRequest = `{
+  "requesterId": "prov_clinic_sunrise_002",
   "targetId": "prov_hosp_metro_001",
-  "selector": {
-    "patientIdentifiers": [
-      {
-        "system": "http://philhealth.gov.ph",
-        "value": "12-345678901-2"
-      },
-      {
-        "system": "http://hospital-metro.com/mrn",
-        "value": "patient_12345"
-      }
-    ]
-  },
-  "resourceType": "MedicationRequest",
+  "patientIdentifiers": [
+    {
+      "system": "http://philhealth.gov.ph",
+      "value": "12-345678901-2"
+    },
+    {
+      "system": "http://hospital-metro.com/mrn",
+      "value": "patient_12345"
+    }
+  ],
   "reason": "treatment",
   "notes": "Urgent request"
 }`;
@@ -122,18 +120,22 @@ export const step2_gatewayResponse = `{
 export const step3_providerWebhook = `{
   "transactionId": "txn_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "resourceType": "MedicationRequest",
-  "selector": {
-    "patientIdentifiers": [
-      {
-        "system": "http://philhealth.gov.ph",
-        "value": "12-345678901-2"
-      },
-      {
-        "system": "http://hospital-metro.com/mrn",
-        "value": "patient_12345"
-      }
-    ]
-  },
+  "patientIdentifiers": [
+    {
+      "system": "http://philhealth.gov.ph",
+      "value": "12-345678901-2"
+    },
+    {
+      "system": "http://hospital-metro.com/mrn",
+      "value": "patient_12345"
+    }
+  ],
+  "identifiers": [
+    {
+      "system": "http://philhealth.gov.ph",
+      "value": "12-345678901-2"
+    }
+  ],
   "requesterId": "prov_clinic_sunrise_002",
   "gatewayReturnUrl": "${config.gatewayUrl}/api/v1/fhir/receive/MedicationRequest"
 }`;

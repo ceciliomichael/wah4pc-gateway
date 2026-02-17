@@ -42,6 +42,7 @@ const resourceIcons: Record<string, React.ReactNode> = {
   organization: <Building2 className="h-6 w-6" />,
   practitioner: <UserCog className="h-6 w-6" />,
   // Base R4 - Financial/Administrative
+  appointment: <Calendar className="h-6 w-6" />,
   account: <CreditCard className="h-6 w-6" />,
   claim: <Receipt className="h-6 w-6" />,
   "claim-response": <FileCheck className="h-6 w-6" />,
@@ -168,8 +169,8 @@ export default function ResourcesPage() {
           <div>
             <h3 className="font-semibold text-amber-800">Profile Validation Required</h3>
             <p className="mt-1 text-sm text-amber-700">
-              All resources submitted to the gateway must include the correct <code className="px-1 py-0.5 bg-amber-100 rounded">meta.profile</code> URL. 
-              Resources that do not conform to the PH Core profiles will be rejected with HTTP 422 (Unprocessable Entity).
+              Use the profile URLs in each resource page as the recommended target format.
+              The gateway validates and normalizes SUCCESS payloads before forwarding results.
             </p>
           </div>
         </div>

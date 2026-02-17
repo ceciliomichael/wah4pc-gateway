@@ -111,7 +111,7 @@ function readResourcesOverviewPage(): string | null {
   const lines: string[] = [
     "# FHIR Resources",
     "",
-    "The WAH4PC Gateway supports 24 FHIR resource types, categorized into Philippine Core (PH Core) and Base R4 (Financial/Administrative & Clinical).",
+    "The WAH4PC Gateway supports 25 FHIR resource types, categorized into Philippine Core (PH Core) and Base R4 (Financial/Administrative & Clinical).",
     "",
     "## Supported Resources",
     "",

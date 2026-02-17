@@ -74,8 +74,8 @@ sequenceDiagram
 
     rect rgb(240, 249, 255)
         Note over GW,DB: Webhook 1 - Incoming Query
-        GW->>PQ: POST request with transactionId, selector (or legacy identifiers)
-        PQ->>DB: Resolve selector and fetch matching resources
+        GW->>PQ: POST request with transactionId and lookup fields
+        PQ->>DB: Resolve lookup fields and fetch matching resources
         DB-->>PQ: Patient record
         PQ-->>GW: 200 OK (Acknowledged)
         PQ->>GW: POST gatewayReturnUrl with data
@@ -1192,7 +1192,7 @@ export const bestPractices = [
   },
   {
     title: "Handle Duplicate Detection",
-    description: "The gateway prevents identical requests (same requester, target, selector) within 5 minutes. Handle 429 errors gracefully and avoid immediate retries.",
+    description: "The gateway prevents identical requests (same requester, target, and lookup inputs) within 5 minutes. Handle 429 errors gracefully and avoid immediate retries.",
     icon: "CheckCircle2",
   },
   {

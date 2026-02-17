@@ -13,6 +13,7 @@ import {
   Workflow,
   GitMerge,
   Database,
+  Files,
 } from "lucide-react";
 
 interface NavItem {
@@ -93,6 +94,15 @@ const navigationItems: NavItem[] = [
     ],
   },
   {
+    title: "Request Formats",
+    href: "/docs/request-formats",
+    icon: <Files className="h-4 w-4" />,
+    description: "Payload formats first",
+    items: [
+      { title: "Overview", href: "/docs/request-formats#overview" },
+    ],
+  },
+  {
     title: "API Reference",
     href: "/docs/api",
     icon: <FileCode2 className="h-4 w-4" />,
@@ -121,6 +131,7 @@ const navigationItems: NavItem[] = [
       { title: "Location", href: "/docs/resources/location" },
       { title: "Organization", href: "/docs/resources/organization" },
       { title: "Practitioner", href: "/docs/resources/practitioner" },
+      { title: "Appointment", href: "/docs/resources/appointment" },
       // Base R4 - Financial
       { title: "Account", href: "/docs/resources/account" },
       { title: "Claim", href: "/docs/resources/claim" },

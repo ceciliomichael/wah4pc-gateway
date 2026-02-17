@@ -40,6 +40,12 @@ export const PAGE_REGISTRY: Record<string, PageInfo> = {
     description:
       "Complete integration guide with webhook implementation, code examples (Node.js/TypeScript, Go), required headers, and best practices",
   },
+  "request-formats": {
+    id: "request-formats",
+    title: "Request Formats",
+    description:
+      "Format-first guide for requester payloads and provider callback payloads, including links to 25-resource request formats and Core 8 return examples",
+  },
   api: {
     id: "api",
     title: "API Reference",
@@ -50,7 +56,7 @@ export const PAGE_REGISTRY: Record<string, PageInfo> = {
     id: "resources",
     title: "FHIR Resources",
     description:
-      "Overview of all 24 supported FHIR resource types (PH Core and Base R4) with links to detailed schemas and validation rules",
+      "Overview of all 25 supported FHIR resource types (PH Core and Base R4) with links to detailed schemas and validation rules",
   },
   // PH Core Resources
   "resources/patient": {
@@ -106,6 +112,12 @@ export const PAGE_REGISTRY: Record<string, PageInfo> = {
     title: "PH Core Practitioner",
     description:
       "Practitioner resource schema with PRC license identifier support and PH Core address extensions",
+  },
+  "resources/appointment": {
+    id: "resources/appointment",
+    title: "Appointment",
+    description:
+      "Standard R4 Appointment resource for scheduling interactions between patient, practitioner, and organization",
   },
 
   // Base R4 - Financial/Administrative

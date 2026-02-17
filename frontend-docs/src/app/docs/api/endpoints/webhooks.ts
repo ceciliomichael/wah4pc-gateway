@@ -18,21 +18,13 @@ export const webhookEndpoints: EndpointCardProps[] = [
     requestBody: `{
   "transactionId": "txn_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "requesterId": "requester-provider-uuid",
+  "resourceType": "Patient",
   "identifiers": [
     {
       "system": "http://philhealth.gov.ph",
       "value": "12-345678901-2"
     }
   ],
-  "selector": {
-    "patientIdentifiers": [
-      {
-        "system": "http://philhealth.gov.ph",
-        "value": "12-345678901-2"
-      }
-    ]
-  },
-  "resourceType": "Patient",
   "gatewayReturnUrl": "https://gateway.wah4pc.com/api/v1/fhir/receive/Patient",
   "reason": "Referral consultation",
   "notes": "Patient transferring for specialized care"
@@ -47,9 +39,8 @@ export const webhookEndpoints: EndpointCardProps[] = [
       "Process the request asynchronously and send results to the gatewayReturnUrl",
       "Use the transactionId when sending results back to correlate the response",
       "Validate the X-Gateway-Auth header matches your registered gatewayAuthKey",
-      "Use selector to resolve the request (patientIdentifiers/patientReference for patient-scoped resources, resourceIdentifiers/resourceReference for resource-scoped resources)",
-      "identifiers is a legacy mirror of selector.patientIdentifiers for backward compatibility",
-      "Example policy: Organization/Practitioner requests should use resourceIdentifiers/resourceReference, not patientIdentifiers",
+      "Use the lookup data in the payload (`identifiers` and other provided fields) to resolve records in your local system",
+      "The payload format may evolve; process known lookup fields defensively",
       "The reason and notes fields provide context about why data is being requested",
     ],
   },

@@ -204,6 +204,15 @@ export const SECTION_REGISTRY: Record<string, SectionInfo[]> = {
     },
   ],
 
+  "request-formats": [
+    {
+      id: "overview",
+      name: "Overview",
+      description:
+        "Full markdown content from format/request-formats.md including all 25 request formats",
+    },
+  ],
+
   api: [
     {
       id: "base-url",
@@ -376,6 +385,20 @@ export const SECTION_REGISTRY: Record<string, SectionInfo[]> = {
       name: "JSON Template",
       description:
         "JSON example of a physician with license number and contact details",
+    },
+  ],
+  "resources/appointment": [
+    {
+      id: "structure",
+      name: "Structure Definition",
+      description:
+        "Standard R4 Appointment with status, start/end, and participant references",
+    },
+    {
+      id: "template",
+      name: "JSON Template",
+      description:
+        "JSON example of a booked appointment between patient and practitioner",
     },
   ],
 

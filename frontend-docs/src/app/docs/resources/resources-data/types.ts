@@ -14,6 +14,7 @@ export type PhCoreResourceSlug =
 
 // Base R4 resources (validated against standard HL7 FHIR R4)
 export type BaseR4ResourceSlug =
+  | "appointment"
   | "account"
   | "allergy-intolerance"
   | "charge-item"

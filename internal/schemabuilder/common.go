@@ -13,6 +13,8 @@ var canonicalProfiles = map[string]string{
 	"Observation":  "urn://example.com/ph-core/fhir/StructureDefinition/ph-core-observation",
 	"Medication":   "urn://example.com/ph-core/fhir/StructureDefinition/ph-core-medication",
 	"Practitioner": "urn://example.com/ph-core/fhir/StructureDefinition/ph-core-practitioner",
+	"Location":     "urn://example.com/ph-core/fhir/StructureDefinition/ph-core-location",
+	"Organization": "urn://example.com/ph-core/fhir/StructureDefinition/ph-core-organization",
 }
 
 func buildVanilla(resourceType string, resource map[string]interface{}) (map[string]interface{}, error) {

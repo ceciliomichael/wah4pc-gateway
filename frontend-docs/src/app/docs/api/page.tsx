@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Server, Users, FileText, Activity, Key, Webhook } from "lucide-react";
 import { DocsHeader } from "@/components/ui/docs-header";
 import { AlertBlock } from "@/components/ui/alert-block";
@@ -79,6 +80,13 @@ export default function ApiReferencePage() {
 
       {/* Endpoints by Category */}
       <section id="endpoints" className="mb-16">
+        <AlertBlock type="info" title="Start Here for Payloads">
+          For exact request bodies by resource type, use{" "}
+          <Link href="/docs/request-formats" className="text-blue-600 hover:underline">
+            /docs/request-formats
+          </Link>.
+        </AlertBlock>
+        <div className="h-4" />
         {endpoints.map((category) => (
           <div key={category.category} className="mb-12 last:mb-0">
             <div className="flex items-center gap-4 mb-8">

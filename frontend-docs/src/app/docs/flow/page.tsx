@@ -180,8 +180,8 @@ export default function TransactionFlowPage() {
             title="Request Body"
           />
           <Callout type="note">
-            The <code className="text-sm font-mono">targetId</code> identifies WHO has the data. 
-            The <code className="text-sm font-mono">patientId</code> specifies WHICH patient.
+            The <code className="text-sm font-mono">targetId</code> identifies WHO has the data.
+            The patient lookup fields (for example <code className="text-sm font-mono">patientIdentifiers</code>) specify WHICH patient.
           </Callout>
         </StepCard>
 

@@ -229,11 +229,11 @@ export default function ResourceDetailPage() {
         <p className="text-slate-600 max-w-3xl">{resource.description}</p>
 
         <div className="mt-4 inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
-          <span className="font-semibold">Request Selector:</span>
+          <span className="font-semibold">Request Lookup Inputs:</span>
           <code className="rounded bg-white px-2 py-0.5 text-xs text-slate-800 border border-slate-200">
             {resource.querySelectorRequirement === "resource"
-              ? "selector.resourceIdentifiers | selector.resourceReference"
-              : "selector.patientIdentifiers | selector.patientReference"}
+              ? "resourceIdentifiers | resourceReference"
+              : "patientIdentifiers | patientReference"}
           </code>
         </div>
 
@@ -258,10 +258,10 @@ export default function ResourceDetailPage() {
             </svg>
           </div>
           <div>
-            <h3 className="font-semibold text-amber-800">Profile Validation Required</h3>
+            <h3 className="font-semibold text-amber-800">Profile Guidance</h3>
             <p className="mt-1 text-sm text-amber-700">
-              This resource must include the correct <code className="px-1 py-0.5 bg-amber-100 rounded">meta.profile</code> URL shown above. 
-              Resources that do not conform will be rejected with HTTP 422 (Unprocessable Entity).
+              Include the recommended <code className="px-1 py-0.5 bg-amber-100 rounded">meta.profile</code> URL shown above to maximize compatibility.
+              The gateway rebuilds and validates incoming SUCCESS payloads before forwarding.
             </p>
           </div>
         </div>

@@ -24,6 +24,7 @@ import { MethodBadge } from "@/components/ui/method-badge";
 import { WebhookCard } from "@/components/integration/webhook-card";
 import { ImplementationTabs } from "@/components/integration/implementation-tabs";
 import { LastUpdated } from "@/components/ui/last-updated";
+import Link from "next/link";
 import {
   integrationFlowDiagram,
   webhookHandlerDiagram,
@@ -206,17 +207,18 @@ export default function IntegrationPage() {
   "transactionId": "txn_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "status": "SUCCESS",
   "data": {
-    "resourceType": "Patient",
-    "id": "patient-123",
-    "identifier": [
+    "resourceType": "Bundle",
+    "type": "collection",
+    "entry": [
       {
-        "system": "http://philhealth.gov.ph",
-        "value": "12-345678901-2"
+        "resource": {
+          "resourceType": "Patient",
+          "id": "patient-123",
+          "name": [{ "family": "Dela Cruz", "given": ["Juan"] }],
+          "gender": "male"
+        }
       }
-    ],
-    "name": [{ "family": "Dela Cruz", "given": ["Juan"] }],
-    "birthDate": "1990-05-15",
-    "gender": "male"
+    ]
   }
 }`}
           requestTitle="Incoming Data from Gateway"
@@ -354,12 +356,20 @@ export default function IntegrationPage() {
 
           <RequestHeaders headers={fhirRequestHeaders} />
 
+          <p className="mb-6 text-sm text-slate-600">
+            For all resource-specific request payloads, see{" "}
+            <Link href="/docs/request-formats" className="text-blue-600 hover:underline">
+              Request Formats
+            </Link>
+            .
+          </p>
+
           <JsonViewer
             title="Request Body"
             data={`{
   "requesterId": "your-provider-uuid",
   "targetId": "target-provider-uuid",
-  "identifiers": [
+  "patientIdentifiers": [
     {
       "system": "http://philhealth.gov.ph",
       "value": "12-345678901-2"
@@ -378,7 +388,7 @@ export default function IntegrationPage() {
     "id": "txn_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "requesterId": "your-provider-uuid",
     "targetId": "target-provider-uuid",
-    "identifiers": [
+    "patientIdentifiers": [
       {
         "system": "http://philhealth.gov.ph",
         "value": "12-345678901-2"

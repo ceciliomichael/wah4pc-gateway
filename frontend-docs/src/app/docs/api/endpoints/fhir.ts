@@ -4,12 +4,13 @@ export const fhirEndpoints: EndpointCardProps[] = [
   {
     method: "POST",
     path: "/api/v1/fhir/request/{resourceType}",
-    description: "Initiate a FHIR resource request to another provider. Use the selector object to target patient-scoped resources or resource-scoped lookups.",
+    description:
+      "Initiate a FHIR query to another provider. Use the resource-specific request body format for the chosen resource type.",
     pathParams: [
       {
         name: "resourceType",
         type: "string",
-        description: "FHIR resource type (e.g., Patient, Observation)",
+        description: "Supported FHIR resource type (for this gateway's 25-resource allowlist)",
       },
     ],
     headers: [
@@ -28,18 +29,12 @@ export const fhirEndpoints: EndpointCardProps[] = [
     requestBody: `{
   "requesterId": "your-provider-uuid",
   "targetId": "target-provider-uuid",
-  "selector": {
-    "patientIdentifiers": [
-      {
-        "system": "http://philhealth.gov.ph",
-        "value": "12-345678901-2"
-      },
-      {
-        "system": "http://hospital-b.com/mrn",
-        "value": "MRN-12345"
-      }
-    ]
-  },
+  "patientIdentifiers": [
+    {
+      "system": "http://philhealth.gov.ph",
+      "value": "12-345678901-2"
+    }
+  ],
   "reason": "Referral consultation",
   "notes": "Need latest lab results"
 }`,
@@ -50,57 +45,29 @@ export const fhirEndpoints: EndpointCardProps[] = [
     "id": "txn_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "requesterId": "your-provider-uuid",
     "targetId": "target-provider-uuid",
-    "identifiers": [
-      {
-        "system": "http://philhealth.gov.ph",
-        "value": "12-345678901-2"
-      },
-      {
-        "system": "http://hospital-b.com/mrn",
-        "value": "MRN-12345"
-      }
-    ],
-    "selector": {
-      "patientIdentifiers": [
-        {
-          "system": "http://philhealth.gov.ph",
-          "value": "12-345678901-2"
-        },
-        {
-          "system": "http://hospital-b.com/mrn",
-          "value": "MRN-12345"
-        }
-      ]
-    },
     "resourceType": "Patient",
     "status": "PENDING",
     "metadata": {
       "reason": "Referral consultation",
       "notes": "Need latest lab results"
     },
-    "createdAt": "2024-01-15T11:00:00Z",
-    "updatedAt": "2024-01-15T11:00:00Z"
+    "createdAt": "2026-02-17T11:00:00Z",
+    "updatedAt": "2026-02-17T11:00:00Z"
   }
 }`,
     notes: [
-      "Both requesterId and targetId must be registered providers",
-      "Use selector.patientIdentifiers/patientReference for patient-scoped resources (e.g., MedicationRequest, Observation)",
-      "Use selector.resourceIdentifiers/resourceReference for resource-scoped resources (e.g., Organization, Practitioner)",
-      "Backward compatibility: legacy identifiers is still accepted and mapped to selector.patientIdentifiers",
-      "Example (legacy): identifiers=[{system,value}] is normalized to selector.patientIdentifiers=[{system,value}]",
-      "Example policy: Organization with patientIdentifiers is rejected; use resourceIdentifiers/resourceReference for Organization",
-      "At least one valid selector input is required based on resourceType policy",
-      "The gateway forwards the request to the target's /fhir/process-query endpoint",
-      "Results will be delivered to your /fhir/receive-results endpoint asynchronously",
-      "**Idempotency**: Use `Idempotency-Key` header for safe retries. Keys are cached for 24 hours.",
-      "**Duplicate Detection**: Identical requests (same requester, target, selector) within 5 minutes return 429.",
-      "**Response Headers**: `Idempotency-Replayed: true` and `Idempotency-Original-Date` indicate cached responses.",
+      "Use `/docs/request-formats` for all 25 request body formats.",
+      "Both requesterId and targetId must be registered providers.",
+      "Idempotency is required for safe retries on POST requests.",
+      "The gateway forwards the query to target provider `/fhir/process-query`.",
+      "Results are sent asynchronously to requester `/fhir/receive-results`.",
+      "Duplicate requests inside the 5-minute window can return HTTP 429.",
     ],
   },
   {
     method: "POST",
     path: "/api/v1/fhir/receive/{resourceType}",
-    description: "Endpoint for target providers to send data back to the gateway",
+    description: "Endpoint used by target providers to send result payloads back to the gateway.",
     pathParams: [
       {
         name: "resourceType",
@@ -130,38 +97,51 @@ export const fhirEndpoints: EndpointCardProps[] = [
   "transactionId": "txn_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "status": "SUCCESS",
   "data": {
-    "resourceType": "MedicationRequest",
-    "id": "medrx-1",
-    "status": "active"
+    "resourceType": "Bundle",
+    "type": "collection",
+    "entry": [
+      {
+        "resource": {
+          "resourceType": "Observation",
+          "status": "final",
+          "code": {
+            "coding": [
+              {
+                "system": "http://loinc.org",
+                "code": "8480-6"
+              }
+            ]
+          }
+        }
+      }
+    ]
   }
 }`,
     responseStatus: 200,
     responseBody: `{
   "success": true,
   "data": {
-    "message": "result received and forwarded"
+    "message": "result received and processed"
   }
 }`,
     notes: [
-      "The transactionId must match a PENDING transaction",
-      "X-Provider-ID header is optional but recommended for security validation",
-      "Valid status values: SUCCESS, REJECTED, ERROR",
-      "For SUCCESS query responses, the gateway relays data as a FHIR Bundle (type=collection)",
-      "Example transform: SUCCESS with a single resource object is wrapped into Bundle.entry[0].resource",
-      "Example transform: SUCCESS with an array is wrapped into Bundle.entry[]",
-      "REJECTED/ERROR payloads are forwarded without Bundle wrapping",
-      "The gateway forwards the data to the requester's /fhir/receive-results endpoint",
+      "transactionId must match a pending transaction.",
+      "status values: SUCCESS, REJECTED, ERROR.",
+      "For SUCCESS, send full FHIR resource payloads (Bundle or resource JSON).",
+      "For REJECTED/ERROR, send OperationOutcome in `data`.",
+      "See `/docs/request-formats` and `format/provider-return-core8.md` for concrete payload formats.",
     ],
   },
   {
     method: "POST",
     path: "/api/v1/fhir/push/{resourceType}",
-    description: "Push a FHIR resource directly to another provider without a prior request. Useful for sending referrals, appointments, or unsolicited results.",
+    description:
+      "Push a FHIR resource directly to another provider without a prior query (unsolicited transfer).",
     pathParams: [
       {
         name: "resourceType",
         type: "string",
-        description: "FHIR resource type (e.g., Appointment, DocumentReference)",
+        description: "FHIR resource type (e.g., Appointment, Observation)",
       },
     ],
     headers: [
@@ -184,21 +164,9 @@ export const fhirEndpoints: EndpointCardProps[] = [
   "data": {
     "resourceType": "Appointment",
     "status": "proposed",
-    "description": "Consultation",
-    "participant": [
-      {
-        "actor": {
-          "type": "Patient",
-          "identifier": {
-            "system": "http://philhealth.gov.ph",
-            "value": "12-345678901-2"
-          }
-        },
-        "status": "accepted"
-      }
-    ]
+    "start": "2026-02-20T09:00:00Z"
   },
-  "reason": "New Appointment Request",
+  "reason": "New appointment",
   "notes": "Please confirm availability"
 }`,
     responseStatus: 200,
@@ -208,18 +176,14 @@ export const fhirEndpoints: EndpointCardProps[] = [
   "targetId": "target-provider-uuid",
   "resourceType": "Appointment",
   "status": "COMPLETED",
-  "metadata": {
-    "reason": "New Appointment Request",
-    "notes": "Please confirm availability"
-  },
-  "createdAt": "2024-01-15T11:00:00Z",
-  "updatedAt": "2024-01-15T11:00:00Z"
+  "createdAt": "2026-02-17T11:00:00Z",
+  "updatedAt": "2026-02-17T11:00:00Z"
 }`,
     notes: [
-      "Target provider must support receiving unsolicited pushes via /fhir/receive-push",
-      "Transaction status is immediately updated to COMPLETED upon successful delivery",
-      "Data must be a valid FHIR resource matching the resourceType",
-      "The senderId becomes the requesterId in the transaction record",
+      "Target provider must support `/fhir/receive-push`.",
+      "`data` must be valid FHIR JSON for the given resourceType.",
+      "Push transactions are completed immediately after successful forward.",
     ],
   },
 ];
+

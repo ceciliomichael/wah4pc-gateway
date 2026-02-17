@@ -21,6 +21,7 @@ export { practitionerResource } from "./practitioner";
 // Base R4 Resource Exports (validated against standard HL7 FHIR R4)
 // ============================================================================
 // Financial/Administrative
+export { appointmentResource } from "./appointment";
 export { accountResource } from "./account";
 export { claimResource } from "./claim";
 export { claimResponseResource } from "./claim-response";
@@ -54,6 +55,7 @@ import { organizationResource } from "./organization";
 import { practitionerResource } from "./practitioner";
 
 // Base R4 - Financial/Administrative
+import { appointmentResource } from "./appointment";
 import { accountResource } from "./account";
 import { claimResource } from "./claim";
 import { claimResponseResource } from "./claim-response";
@@ -76,6 +78,7 @@ import type { ResourceDefinition, ResourceSlug, CodeSystem, PageInfo } from "./t
 
 export const querySelectorRequirements: Record<string, "patient" | "resource"> = {
   Patient: "patient",
+  Appointment: "patient",
   Encounter: "patient",
   Procedure: "patient",
   Immunization: "patient",
@@ -120,6 +123,7 @@ export const phCoreResources: ResourceDefinition[] = [
 
 // Base R4 resources (validated against standard HL7 FHIR R4)
 export const baseR4Resources: ResourceDefinition[] = [
+  appointmentResource,
   // Financial/Administrative
   accountResource,
   claimResource,
@@ -149,13 +153,14 @@ export const resources: ResourceDefinition[] = [
 export const pageInfo: PageInfo = {
   title: "FHIR Resources",
   description:
-    "Comprehensive schema documentation for all FHIR resource types supported by the WAH4PC Gateway. Resources are categorized into PH Core (Philippine-specific profiles) and Base R4 (standard HL7 FHIR). All resources are validated before being forwarded between healthcare providers.",
+    "Comprehensive schema documentation for all FHIR resource types supported by the WAH4PC Gateway. Resources are categorized into PH Core (Philippine-specific profiles) and Base R4 (standard HL7 FHIR).",
   endpoint: "/receive/{resourceType}",
   supportedResources: [
     // PH Core
     "Patient", "Encounter", "Procedure", "Immunization", "Observation", "Medication",
     "Location", "Organization", "Practitioner",
     // Base R4
+    "Appointment",
     "Account", "Claim", "ClaimResponse", "ChargeItem", "ChargeItemDefinition",
     "Invoice", "PaymentNotice", "PaymentReconciliation",
     "AllergyIntolerance", "Condition", "DiagnosticReport",

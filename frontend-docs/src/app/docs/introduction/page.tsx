@@ -132,6 +132,11 @@ export default function DocsIntroductionPage() {
             description="Set up your endpoints and webhooks"
           />
           <QuickLink
+            href="/docs/request-formats"
+            title="Request Formats"
+            description="Exact request and callback payload formats"
+          />
+          <QuickLink
             href="/docs/api"
             title="API Reference"
             description="Explore available endpoints and payloads"
@@ -155,7 +160,8 @@ export default function DocsIntroductionPage() {
           )}
         </div>
         <p className="mt-4 text-sm text-slate-500">
-          The gateway supports any valid FHIR resource type defined in the R4 specification.
+          The gateway currently supports 25 resource types. See <Link href="/docs/resources" className="text-blue-600 hover:underline">Resources</Link> for schemas and{" "}
+          <Link href="/docs/request-formats" className="text-blue-600 hover:underline">Request Formats</Link> for request bodies.
         </p>
       </section>
     </article>

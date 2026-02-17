@@ -59,3 +59,23 @@ func TestNormalizeAndValidateQuerySelector_ResourceSelectorAcceptedForOrganizati
 		t.Fatalf("expected request to be valid, got %v", err)
 	}
 }
+
+func TestNormalizeAndValidateQuerySelector_MedicationCodeFilterAcceptedWithoutSelector(t *testing.T) {
+	req := QueryRequest{
+		RequesterID:  "req",
+		TargetID:     "target",
+		ResourceType: "Medication",
+		Filters: &QueryFilters{
+			Medication: &MedicationQueryFilter{
+				MedicationCode: &CodeLookup{
+					System: "http://www.nlm.nih.gov/research/umls/rxnorm",
+					Code:   "1049502",
+				},
+			},
+		},
+	}
+
+	if err := normalizeAndValidateQuerySelector(&req); err != nil {
+		t.Fatalf("expected request to be valid, got %v", err)
+	}
+}

@@ -29,6 +29,7 @@ var (
 	ErrUnauthorizedProvider = errors.New("provider not authorized for this transaction")
 	ErrDuplicateRequest     = errors.New("duplicate request: identical request was made recently")
 	ErrSchemaValidation     = errors.New("schema validation failed")
+	ErrInvalidResultPayload = errors.New("invalid result payload")
 )
 
 // duplicateWindow defines how long to check for duplicate requests
@@ -156,6 +157,7 @@ func (s *GatewayService) InitiateQuery(req QueryRequest) (*model.Transaction, er
 		Identifiers:      req.Identifiers, // Legacy mirror of selector.patientIdentifiers
 		Selector:         req.Selector,
 		ResourceType:     req.ResourceType,
+		Filters:          req.Filters,
 		GatewayReturnURL: gatewayReturnURL,
 		Reason:           req.Reason,
 		Notes:            req.Notes,
@@ -321,6 +323,12 @@ func (s *GatewayService) ProcessResponse(result IncomingResultPayload, senderPro
 	// Validate the sender is the expected target provider (security check)
 	if senderProviderID != "" && senderProviderID != tx.TargetID {
 		return ErrUnauthorizedProvider
+	}
+
+	if result.Status == string(ResultStatusRejected) || result.Status == string(ResultStatusError) {
+		if err := validateOperationOutcomeData(result.Data); err != nil {
+			return fmt.Errorf("%w: %v", ErrInvalidResultPayload, err)
+		}
 	}
 
 	profileAudit := profileNormalizationAudit{}

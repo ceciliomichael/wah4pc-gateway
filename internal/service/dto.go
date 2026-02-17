@@ -14,8 +14,34 @@ type QueryRequest struct {
 	Identifiers  []model.Identifier  `json:"identifiers"` // Legacy: mapped to selector.patientIdentifiers when selector is omitted
 	Selector     model.QuerySelector `json:"selector,omitempty"`
 	ResourceType string              `json:"resourceType"`
+	Filters      *QueryFilters       `json:"filters,omitempty"`
 	Reason       string              `json:"reason,omitempty"`
 	Notes        string              `json:"notes,omitempty"`
+}
+
+// QueryFilters contains resource-specific request filters.
+type QueryFilters struct {
+	Appointment *AppointmentQueryFilter `json:"appointment,omitempty"`
+	Medication  *MedicationQueryFilter  `json:"medication,omitempty"`
+}
+
+// AppointmentQueryFilter defines filters used when querying Appointment resources.
+type AppointmentQueryFilter struct {
+	DateFrom                string             `json:"dateFrom"`
+	DateTo                  string             `json:"dateTo"`
+	Status                  string             `json:"status,omitempty"`
+	PractitionerIdentifiers []model.Identifier `json:"practitionerIdentifiers,omitempty"`
+}
+
+// CodeLookup identifies a code from a coding system.
+type CodeLookup struct {
+	System string `json:"system"`
+	Code   string `json:"code"`
+}
+
+// MedicationQueryFilter defines filters used when querying Medication resources.
+type MedicationQueryFilter struct {
+	MedicationCode *CodeLookup `json:"medicationCode,omitempty"`
 }
 
 // ProcessQueryPayload is sent to the target provider to request patient data
@@ -26,6 +52,7 @@ type ProcessQueryPayload struct {
 	Identifiers      []model.Identifier  `json:"identifiers"` // Legacy mirror of selector.patientIdentifiers
 	Selector         model.QuerySelector `json:"selector,omitempty"`
 	ResourceType     string              `json:"resourceType"`
+	Filters          *QueryFilters       `json:"filters,omitempty"`
 	GatewayReturnURL string              `json:"gatewayReturnUrl"`
 	Reason           string              `json:"reason,omitempty"` // Optional: Purpose of the request (e.g., "Emergency", "Referral")
 	Notes            string              `json:"notes,omitempty"`  // Optional: Additional context for the target provider

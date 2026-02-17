@@ -1,0 +1,16 @@
+{
+  "requesterId": "string",
+  "targetId": "string",
+  "medicationCode": {
+    "system": "string",
+    "code": "string"
+  },
+  "medicationIdentifiers": [
+    {
+      "system": "string",
+      "value": "string"
+    }
+  ],
+  "reason": "string",
+  "notes": "string"
+}

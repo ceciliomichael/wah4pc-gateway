@@ -1,0 +1,21 @@
+{
+  "requesterId": "string",
+  "targetId": "string",
+  "patientIdentifiers": [
+    {
+      "system": "string",
+      "value": "string"
+    }
+  ],
+  "dateFrom": "YYYY-MM-DD",
+  "dateTo": "YYYY-MM-DD",
+  "status": "string",
+  "practitionerIdentifiers": [
+    {
+      "system": "string",
+      "value": "string"
+    }
+  ],
+  "reason": "string",
+  "notes": "string"
+}

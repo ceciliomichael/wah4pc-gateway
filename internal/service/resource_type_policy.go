@@ -7,6 +7,7 @@ import (
 
 var allowedResourceTypes = map[string]struct{}{
 	"Patient":                  {},
+	"Appointment":              {},
 	"Encounter":                {},
 	"Procedure":                {},
 	"Immunization":             {},

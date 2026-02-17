@@ -1,0 +1,12 @@
+{
+  "requesterId": "string",
+  "targetId": "string",
+  "patientIdentifiers": [
+    {
+      "system": "string",
+      "value": "string"
+    }
+  ],
+  "reason": "string",
+  "notes": "string"
+}

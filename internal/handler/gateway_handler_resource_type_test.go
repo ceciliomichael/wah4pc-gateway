@@ -278,6 +278,69 @@ func TestGatewayHandlerReceiveResult_TimedOutReturnsRequestTimeout(t *testing.T)
 	}
 }
 
+func TestGatewayHandlerReceiveResult_RejectedRequiresOperationOutcome(t *testing.T) {
+	now := time.Now().UTC()
+	txRepo := &testTxRepoStub{
+		items: map[string]model.Transaction{
+			"txn-rej-invalid": {
+				ID:           "txn-rej-invalid",
+				RequesterID:  "requester",
+				TargetID:     "target",
+				ResourceType: "Observation",
+				Status:       model.StatusPending,
+				CreatedAt:    now,
+				UpdatedAt:    now,
+			},
+		},
+	}
+	providerRepo := &testProviderRepoStub{
+		items: map[string]model.Provider{
+			"requester": {
+				ID:             "requester",
+				Name:           "Requester",
+				BaseURL:        "http://requester.local",
+				GatewayAuthKey: "requester-auth-key",
+				IsActive:       true,
+				CreatedAt:      now,
+				UpdatedAt:      now,
+			},
+			"target": {
+				ID:             "target",
+				Name:           "Target",
+				BaseURL:        "http://target.local",
+				GatewayAuthKey: "target-auth-key",
+				IsActive:       true,
+				CreatedAt:      now,
+				UpdatedAt:      now,
+			},
+		},
+	}
+
+	gwService := service.NewGatewayService(
+		txRepo,
+		service.NewProviderService(providerRepo),
+		service.NewSettingsService(&testSettingsRepoStub{}),
+		"http://gateway.local",
+		nil,
+	)
+	h := NewGatewayHandler(gwService)
+
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"/api/v1/fhir/receive/Observation",
+		strings.NewReader(`{"transactionId":"txn-rej-invalid","status":"REJECTED","data":{"message":"not found"}}`),
+	)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Provider-ID", "target")
+	rec := httptest.NewRecorder()
+
+	h.ReceiveResult(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected %d, got %d", http.StatusBadRequest, rec.Code)
+	}
+}
+
 func TestGatewayHandlerRequestQuery_TargetForwardingFailureReturnsRetrySummary(t *testing.T) {
 	now := time.Now().UTC()
 	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

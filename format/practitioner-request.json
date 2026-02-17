@@ -1,0 +1,12 @@
+{
+  "requesterId": "string",
+  "targetId": "string",
+  "practitionerIdentifiers": [
+    {
+      "system": "string",
+      "value": "string"
+    }
+  ],
+  "reason": "string",
+  "notes": "string"
+}

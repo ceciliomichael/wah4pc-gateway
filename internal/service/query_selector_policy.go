@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/wah4pc/wah4pc-gateway/internal/model"
 )
@@ -15,6 +16,7 @@ const (
 
 var resourceSelectorPolicy = map[string]selectorMode{
 	"Patient":                  selectorModePatient,
+	"Appointment":              selectorModePatient,
 	"Encounter":                selectorModePatient,
 	"Procedure":                selectorModePatient,
 	"Immunization":             selectorModePatient,
@@ -48,17 +50,17 @@ func normalizeAndValidateQuerySelector(req *QueryRequest) error {
 		return fmt.Errorf("%w: requesterId and targetId are required", ErrInvalidRequest)
 	}
 
-	// Backward compatibility: legacy identifiers map to patientIdentifiers.
-	if len(req.Identifiers) > 0 && len(req.Selector.PatientIdentifiers) == 0 {
-		req.Selector.PatientIdentifiers = req.Identifiers
-	}
-	// Keep identifiers mirrored for legacy downstream consumers.
-	req.Identifiers = req.Selector.PatientIdentifiers
-
 	mode, ok := resourceSelectorPolicy[req.ResourceType]
 	if !ok {
 		return fmt.Errorf("%w: unsupported selector policy for resourceType %q", ErrInvalidRequest, req.ResourceType)
 	}
+
+	// Backward compatibility: legacy identifiers map to patientIdentifiers.
+	if mode == selectorModePatient && len(req.Identifiers) > 0 && len(req.Selector.PatientIdentifiers) == 0 {
+		req.Selector.PatientIdentifiers = req.Identifiers
+	}
+	// Keep identifiers mirrored for legacy downstream consumers.
+	req.Identifiers = req.Selector.PatientIdentifiers
 
 	switch mode {
 	case selectorModePatient:
@@ -66,7 +68,7 @@ func normalizeAndValidateQuerySelector(req *QueryRequest) error {
 			return fmt.Errorf("%w: patient selector is required for resourceType %s (use selector.patientIdentifiers or selector.patientReference)", ErrInvalidRequest, req.ResourceType)
 		}
 	case selectorModeResource:
-		if !req.Selector.HasResourceSelector() {
+		if !req.Selector.HasResourceSelector() && !hasResourceScopedLookupViaFilters(req) {
 			return fmt.Errorf("%w: resource selector is required for resourceType %s (use selector.resourceIdentifiers or selector.resourceReference)", ErrInvalidRequest, req.ResourceType)
 		}
 	default:
@@ -74,6 +76,19 @@ func normalizeAndValidateQuerySelector(req *QueryRequest) error {
 	}
 
 	return nil
+}
+
+func hasResourceScopedLookupViaFilters(req *QueryRequest) bool {
+	if req == nil || req.Filters == nil {
+		return false
+	}
+
+	if req.ResourceType == "Medication" && req.Filters.Medication != nil && req.Filters.Medication.MedicationCode != nil {
+		code := req.Filters.Medication.MedicationCode
+		return strings.TrimSpace(code.System) != "" && strings.TrimSpace(code.Code) != ""
+	}
+
+	return false
 }
 
 func effectiveSelectorFromTransaction(tx model.Transaction) model.QuerySelector {

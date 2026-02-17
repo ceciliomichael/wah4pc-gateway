@@ -29,18 +29,25 @@ func (h *GatewayHandler) RequestQuery(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req service.QueryRequest
-	if err := decodeJSON(r, &req); err != nil {
+	var payload service.QueryRequestPayload
+	if err := decodeJSON(r, &payload); err != nil {
 		respondError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
-	if req.ResourceType != "" && req.ResourceType != resourceType {
+	if payload.ResourceType != "" && payload.ResourceType != resourceType {
 		respondError(w, http.StatusBadRequest, "resourceType in body must match URL path")
 		return
 	}
 
-	// Set resource type from path
-	req.ResourceType = resourceType
+	req, err := payload.ToQueryRequest(resourceType)
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidRequest) {
+			respondError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
 
 	tx, err := h.service.InitiateQuery(req)
 	if err != nil {
@@ -197,6 +204,10 @@ func (h *GatewayHandler) ReceiveResult(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, service.ErrSchemaValidation) {
 			// 422 Unprocessable Entity - resource doesn't conform to required FHIR profile
 			respondError(w, http.StatusUnprocessableEntity, "FHIR schema validation failed: "+err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrInvalidResultPayload) {
+			respondError(w, http.StatusBadRequest, err.Error())
 			return
 		}
 		respondError(w, http.StatusInternalServerError, "failed to process result: "+err.Error())

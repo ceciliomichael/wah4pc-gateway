@@ -178,7 +178,7 @@ func TestSimulationFlow_RequesterGatewayProviderGatewayRequester(t *testing.T) {
 		}`)
 		h.waitForTargetQuery(t, tx.ID)
 
-		raw := `{"message":"not found"}`
+		raw := `{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-found","details":{"text":"not found"}}]}`
 		status := h.sendProviderResult(t, "Observation", "target", service.IncomingResultPayload{
 			TransactionID: tx.ID,
 			Status:        string(service.ResultStatusRejected),
@@ -209,7 +209,7 @@ func TestSimulationFlow_RequesterGatewayProviderGatewayRequester(t *testing.T) {
 		}`)
 		h.waitForTargetQuery(t, tx.ID)
 
-		raw := `{"error":"provider failed"}`
+		raw := `{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"exception","details":{"text":"provider failed"}}]}`
 		status := h.sendProviderResult(t, "Observation", "target", service.IncomingResultPayload{
 			TransactionID: tx.ID,
 			Status:        string(service.ResultStatusError),

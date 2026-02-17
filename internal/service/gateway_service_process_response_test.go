@@ -378,7 +378,7 @@ func TestGatewayServiceProcessResponse_RejectedIsNotRelayedAndMarksTransactionFa
 		nil,
 	)
 
-	const rejectedPayload = `{"error":"not found"}`
+	const rejectedPayload = `{"resourceType":"OperationOutcome","issue":[{"severity":"error","code":"not-found","details":{"text":"not found"}}]}`
 	err := svc.ProcessResponse(
 		IncomingResultPayload{
 			TransactionID: "txn-rej",
@@ -404,6 +404,61 @@ func TestGatewayServiceProcessResponse_RejectedIsNotRelayedAndMarksTransactionFa
 	case payload := <-requesterReceived:
 		t.Fatalf("expected no relay for rejected result, got %#v", payload)
 	case <-time.After(250 * time.Millisecond):
+	}
+}
+
+func TestGatewayServiceProcessResponse_RejectedRequiresOperationOutcome(t *testing.T) {
+	t.Parallel()
+
+	providerRepo := newProviderRepoStub()
+	now := time.Now().UTC()
+	_ = providerRepo.Create(model.Provider{
+		ID:        "requester",
+		Name:      "Requester",
+		BaseURL:   "http://requester.local",
+		IsActive:  true,
+		CreatedAt: now,
+		UpdatedAt: now,
+	})
+	_ = providerRepo.Create(model.Provider{
+		ID:        "target",
+		Name:      "Target",
+		BaseURL:   "http://target.local",
+		IsActive:  true,
+		CreatedAt: now,
+		UpdatedAt: now,
+	})
+
+	txRepo := newTxRepoStub()
+	txRepo.items["txn-rej-invalid"] = model.Transaction{
+		ID:           "txn-rej-invalid",
+		RequesterID:  "requester",
+		TargetID:     "target",
+		ResourceType: "Observation",
+		Status:       model.StatusPending,
+		CreatedAt:    now,
+		UpdatedAt:    now,
+	}
+
+	svc := NewGatewayService(
+		txRepo,
+		NewProviderService(providerRepo),
+		NewSettingsService(&settingsRepoStub{}),
+		"http://gateway.local",
+		nil,
+	)
+
+	err := svc.ProcessResponse(
+		IncomingResultPayload{
+			TransactionID: "txn-rej-invalid",
+			Status:        string(ResultStatusRejected),
+			Data:          json.RawMessage(`{"message":"not found"}`),
+		},
+		"target",
+		"Observation",
+	)
+	if !errors.Is(err, ErrInvalidResultPayload) {
+		t.Fatalf("expected ErrInvalidResultPayload, got: %v", err)
 	}
 }
 

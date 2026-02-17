@@ -1,0 +1,16 @@
+{
+  "transactionId": "string",
+  "status": "ERROR",
+  "data": {
+    "resourceType": "OperationOutcome",
+    "issue": [
+      {
+        "severity": "string",
+        "code": "string",
+        "details": {
+          "text": "string"
+        }
+      }
+    ]
+  }
+}

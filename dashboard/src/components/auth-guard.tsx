@@ -7,17 +7,24 @@ import { LuLoaderCircle } from "react-icons/lu";
 
 interface AuthGuardProps {
   children: React.ReactNode;
+  allowedRoles?: Array<"admin" | "user">;
 }
 
-export function AuthGuard({ children }: AuthGuardProps) {
-  const { isAuthenticated, isLoading } = useAuth();
+export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
+  const { isAuthenticated, isLoading, identity } = useAuth();
   const router = useRouter();
+  const isRoleAllowed =
+    !allowedRoles || (identity ? allowedRoles.includes(identity.role) : false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push("/login");
+      return;
     }
-  }, [isAuthenticated, isLoading, router]);
+    if (!isLoading && isAuthenticated && !isRoleAllowed) {
+      router.push("/");
+    }
+  }, [isAuthenticated, isLoading, isRoleAllowed, router]);
 
   if (isLoading) {
     return (
@@ -30,7 +37,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !isRoleAllowed) {
     return null;
   }
 

@@ -66,7 +66,7 @@ function LogsContent() {
       }
     } catch (err) {
       console.error("Failed to fetch log dates:", err);
-      setError("Failed to load available dates. Ensure you have admin permissions.");
+      setError("Failed to load available dates.");
     } finally {
       setLoadingDates(false);
     }

@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { LuMenu } from "react-icons/lu";
+import { useAuth } from "@/stores/auth-store";
 
 const pageConfig: Record<string, { title: string; subtitle: string }> = {
   "/": { title: "Dashboard", subtitle: "Overview of your gateway" },
@@ -18,6 +19,7 @@ interface HeaderProps {
 
 export function Header({ onMenuClick }: HeaderProps) {
   const pathname = usePathname();
+  const { identity } = useAuth();
 
   const getPageConfig = () => {
     // Exact match first
@@ -34,6 +36,10 @@ export function Header({ onMenuClick }: HeaderProps) {
   };
 
   const { title, subtitle } = getPageConfig();
+  const isAdmin = identity?.role === "admin";
+  const displayName = isAdmin ? "Admin" : identity?.providerId || "Provider";
+  const displayRole = isAdmin ? "Gateway Manager" : "Provider";
+  const avatarLabel = isAdmin ? "A" : "P";
 
   return (
     <header className="sticky top-0 z-30 h-16 sm:h-[72px] bg-white border-b border-slate-100 flex items-center justify-between px-4 sm:px-5 lg:px-6">
@@ -57,12 +63,12 @@ export function Header({ onMenuClick }: HeaderProps) {
       {/* User Avatar */}
       <div className="flex items-center gap-3">
         <div className="hidden md:flex flex-col items-end">
-          <span className="text-sm font-semibold text-slate-700">Admin</span>
-          <span className="text-[10px] text-slate-400">Gateway Manager</span>
+          <span className="text-sm font-semibold text-slate-700">{displayName}</span>
+          <span className="text-[10px] text-slate-400">{displayRole}</span>
         </div>
         <div className="relative">
           <div className="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center border-2 border-primary-200">
-            <span className="text-sm font-bold text-primary-700">A</span>
+            <span className="text-sm font-bold text-primary-700">{avatarLabel}</span>
           </div>
           <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full" />
         </div>

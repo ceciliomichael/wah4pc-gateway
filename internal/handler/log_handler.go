@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/wah4pc/wah4pc-gateway/internal/middleware"
+	"github.com/wah4pc/wah4pc-gateway/internal/model"
 	"github.com/wah4pc/wah4pc-gateway/internal/service"
 )
 
@@ -19,7 +21,11 @@ func NewLogHandler(logService *service.LogService) *LogHandler {
 
 // GetDates returns available log dates
 func (h *LogHandler) GetDates(w http.ResponseWriter, r *http.Request) {
-	dates, err := h.logService.GetLogDates()
+	role := middleware.GetRoleFromContext(r.Context())
+	providerID := middleware.GetProviderIDFromContext(r.Context())
+	isAdmin := role == model.ApiKeyRoleAdmin
+
+	dates, err := h.logService.GetLogDatesFiltered(providerID, isAdmin)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -37,7 +43,11 @@ func (h *LogHandler) GetLogs(w http.ResponseWriter, r *http.Request) {
 	}
 	date := parts[4]
 
-	logs, err := h.logService.GetLogsByDate(date)
+	role := middleware.GetRoleFromContext(r.Context())
+	providerID := middleware.GetProviderIDFromContext(r.Context())
+	isAdmin := role == model.ApiKeyRoleAdmin
+
+	logs, err := h.logService.GetLogsByDateFiltered(date, providerID, isAdmin)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -56,7 +66,11 @@ func (h *LogHandler) GetLogDetail(w http.ResponseWriter, r *http.Request) {
 	date := parts[4]
 	id := parts[5]
 
-	detail, err := h.logService.GetLogDetail(date, id)
+	role := middleware.GetRoleFromContext(r.Context())
+	providerID := middleware.GetProviderIDFromContext(r.Context())
+	isAdmin := role == model.ApiKeyRoleAdmin
+
+	detail, err := h.logService.GetLogDetailFiltered(date, id, providerID, isAdmin)
 	if err != nil {
 		respondError(w, http.StatusNotFound, "log not found")
 		return

@@ -12,6 +12,7 @@ import type {
   LogDetail,
   SystemSettings,
 } from "@/types";
+import { loadStoredSession, type AuthIdentity } from "@/lib/auth-session";
 
 interface ProviderApiShape {
   id: string;
@@ -48,10 +49,35 @@ export class ApiRequestError extends Error {
   }
 }
 
-// Get the stored auth key
-function getAuthKey(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("admin_key");
+interface IdentityApiResponse {
+  role: "admin" | "user";
+  providerId?: string;
+  keyId?: string;
+  owner?: string;
+}
+
+function parseIdentity(data: unknown): AuthIdentity | null {
+  if (!data || typeof data !== "object") return null;
+  const obj = data as Record<string, unknown>;
+  if (obj.role !== "admin" && obj.role !== "user") return null;
+  return {
+    role: obj.role,
+    providerId: typeof obj.providerId === "string" ? obj.providerId : undefined,
+    keyId: typeof obj.keyId === "string" ? obj.keyId : undefined,
+    owner: typeof obj.owner === "string" ? obj.owner : undefined,
+  };
+}
+
+// Resolve auth headers from stored session.
+function getAuthHeadersFromSession(): Record<string, string> {
+  const session = loadStoredSession();
+  if (!session) return {};
+
+  if (session.mode === "admin") {
+    return { "X-Master-Key": session.credential };
+  }
+
+  return { "X-API-Key": session.credential };
 }
 
 // Base fetch wrapper with auth headers
@@ -59,16 +85,11 @@ async function fetchWithAuth<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const authKey = getAuthKey();
-
   const headers: HeadersInit = {
     "Content-Type": "application/json",
+    ...getAuthHeadersFromSession(),
     ...options.headers,
   };
-
-  if (authKey) {
-    (headers as Record<string, string>)["X-Master-Key"] = authKey;
-  }
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
@@ -207,16 +228,36 @@ export const settingsApi = {
     }),
 };
 
-// Auth validation - test if key is valid via Next.js API route
-export async function validateAuthKey(key: string): Promise<boolean> {
+export async function fetchAuthIdentityWithMasterKey(key: string): Promise<AuthIdentity | null> {
   try {
-    const response = await fetch(`${API_BASE_URL}/providers`, {
+    const response = await fetch(`${API_BASE_URL}/auth/identity`, {
       headers: {
         "X-Master-Key": key,
       },
     });
-    return response.ok;
+    if (!response.ok) return null;
+
+    const payload: ApiResponse<IdentityApiResponse> = await response.json();
+    if (!payload.success) return null;
+    return parseIdentity(payload.data);
   } catch {
-    return false;
+    return null;
+  }
+}
+
+export async function fetchAuthIdentityWithApiKey(apiKey: string): Promise<AuthIdentity | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/identity`, {
+      headers: {
+        "X-API-Key": apiKey,
+      },
+    });
+    if (!response.ok) return null;
+
+    const payload: ApiResponse<IdentityApiResponse> = await response.json();
+    if (!payload.success) return null;
+    return parseIdentity(payload.data);
+  } catch {
+    return null;
   }
 }

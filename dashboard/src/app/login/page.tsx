@@ -16,30 +16,48 @@ import {
 } from "react-icons/lu";
 
 export default function LoginPage() {
-  const [key, setKey] = useState("");
-  const [keyError, setKeyError] = useState("");
+  const [loginType, setLoginType] = useState<"admin" | "provider">("admin");
+  const [adminKey, setAdminKey] = useState("");
+  const [providerId, setProviderId] = useState("");
+  const [apiKey, setApiKey] = useState("");
+  const [fieldError, setFieldError] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { login } = useAuth();
+  const { loginAdmin, loginProvider } = useAuth();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setKeyError("");
+    setFieldError("");
 
-    if (!key.trim()) {
-      setKeyError("Admin key is required");
-      return;
+    if (loginType === "admin") {
+      if (!adminKey.trim()) {
+        setFieldError("Admin key is required");
+        return;
+      }
+    } else {
+      if (!providerId.trim()) {
+        setFieldError("Provider ID is required");
+        return;
+      }
+      if (!apiKey.trim()) {
+        setFieldError("API key is required");
+        return;
+      }
     }
 
     setIsSubmitting(true);
     try {
-      const success = await login(key.trim());
-      if (success) {
+      const result =
+        loginType === "admin"
+          ? await loginAdmin(adminKey.trim())
+          : await loginProvider(providerId.trim(), apiKey.trim());
+
+      if (result.success) {
         router.push("/");
       } else {
-        setError("Invalid admin key. Please check and try again.");
+        setError(result.error || "Authentication failed.");
       }
     } catch {
       setError("Connection failed. Please check if the API is running.");
@@ -128,44 +146,147 @@ export default function LoginPage() {
           {/* Login Form */}
           <div className="bg-white rounded-2xl border border-slate-100 p-6 sm:p-8 shadow-soft">
             <form onSubmit={handleSubmit} className="space-y-5">
-              <div>
-                <label
-                  htmlFor="adminKey"
-                  className="block text-sm font-semibold text-slate-700 mb-2"
+              <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLoginType("admin");
+                    setFieldError("");
+                    setError("");
+                  }}
+                  className={`px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                    loginType === "admin"
+                      ? "bg-white text-slate-800 shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                  disabled={isSubmitting}
                 >
-                  Admin Key
-                  <span className="ml-1 text-red-600" aria-hidden="true">
-                    **
-                  </span>
-                </label>
-                <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                    <LuLock className="w-5 h-5" />
-                  </div>
-                  <input
-                    id="adminKey"
-                    type="password"
-                    value={key}
-                    onChange={(e) => {
-                      setKey(e.target.value);
-                      setKeyError("");
-                      setError("");
-                    }}
-                    placeholder="Enter your master key"
-                    className={`w-full pl-12 pr-4 py-3 bg-slate-50 border rounded-xl text-slate-800 placeholder:text-slate-400 transition-all hover:bg-white ${
-                      keyError
-                        ? "border-red-300 hover:border-red-400"
-                        : "border-slate-200 hover:border-slate-300"
-                    }`}
-                    disabled={isSubmitting}
-                    autoFocus
-                    required
-                  />
-                </div>
-                {keyError && (
-                  <p className="mt-1.5 text-xs text-red-600">{keyError}</p>
-                )}
+                  Admin Login
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLoginType("provider");
+                    setFieldError("");
+                    setError("");
+                  }}
+                  className={`px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                    loginType === "provider"
+                      ? "bg-white text-slate-800 shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                  disabled={isSubmitting}
+                >
+                  Provider Login
+                </button>
               </div>
+
+              {loginType === "admin" ? (
+                <div>
+                  <label
+                    htmlFor="adminKey"
+                    className="block text-sm font-semibold text-slate-700 mb-2"
+                  >
+                    Admin Key
+                    <span className="ml-1 text-red-600" aria-hidden="true">
+                      *
+                    </span>
+                  </label>
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                      <LuLock className="w-5 h-5" />
+                    </div>
+                    <input
+                      id="adminKey"
+                      type="password"
+                      value={adminKey}
+                      onChange={(e) => {
+                        setAdminKey(e.target.value);
+                        setFieldError("");
+                        setError("");
+                      }}
+                      placeholder="Enter your master key"
+                      className={`w-full pl-12 pr-4 py-3 bg-slate-50 border rounded-xl text-slate-800 placeholder:text-slate-400 transition-all hover:bg-white ${
+                        fieldError
+                          ? "border-red-300 hover:border-red-400"
+                          : "border-slate-200 hover:border-slate-300"
+                      }`}
+                      disabled={isSubmitting}
+                      autoFocus
+                      required
+                    />
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <label
+                      htmlFor="providerId"
+                      className="block text-sm font-semibold text-slate-700 mb-2"
+                    >
+                      Provider ID
+                      <span className="ml-1 text-red-600" aria-hidden="true">
+                        *
+                      </span>
+                    </label>
+                    <input
+                      id="providerId"
+                      type="text"
+                      value={providerId}
+                      onChange={(e) => {
+                        setProviderId(e.target.value);
+                        setFieldError("");
+                        setError("");
+                      }}
+                      placeholder="Enter your provider ID"
+                      className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-slate-800 placeholder:text-slate-400 transition-all hover:bg-white ${
+                        fieldError
+                          ? "border-red-300 hover:border-red-400"
+                          : "border-slate-200 hover:border-slate-300"
+                      }`}
+                      disabled={isSubmitting}
+                      autoFocus
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="providerApiKey"
+                      className="block text-sm font-semibold text-slate-700 mb-2"
+                    >
+                      API Key
+                      <span className="ml-1 text-red-600" aria-hidden="true">
+                        *
+                      </span>
+                    </label>
+                    <div className="relative">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                        <LuLock className="w-5 h-5" />
+                      </div>
+                      <input
+                        id="providerApiKey"
+                        type="password"
+                        value={apiKey}
+                        onChange={(e) => {
+                          setApiKey(e.target.value);
+                          setFieldError("");
+                          setError("");
+                        }}
+                        placeholder="Enter your provider API key"
+                        className={`w-full pl-12 pr-4 py-3 bg-slate-50 border rounded-xl text-slate-800 placeholder:text-slate-400 transition-all hover:bg-white ${
+                          fieldError
+                            ? "border-red-300 hover:border-red-400"
+                            : "border-slate-200 hover:border-slate-300"
+                        }`}
+                        disabled={isSubmitting}
+                        required
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+              {fieldError && <p className="mt-1.5 text-xs text-red-600">{fieldError}</p>}
 
               {error && (
                 <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 px-4 py-3 rounded-xl border border-red-100">
@@ -197,7 +318,14 @@ export default function LoginPage() {
           {/* Help Text */}
           <div className="mt-6 text-center">
             <p className="text-sm text-slate-500">
-              Use your master key from <code className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-600 text-xs">config.yaml</code>
+              {loginType === "admin"
+                ? "Use your master key from "
+                : "Use your provider ID and user API key provisioned by admin"}
+              {loginType === "admin" && (
+                <code className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-600 text-xs">
+                  config.yaml
+                </code>
+              )}
             </p>
           </div>
 

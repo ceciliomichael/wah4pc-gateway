@@ -28,6 +28,11 @@ func NewLogService(baseDir string) *LogService {
 
 // GetLogDates returns a list of dates available in the logs
 func (s *LogService) GetLogDates() ([]model.LogDate, error) {
+	return s.GetLogDatesFiltered("", true)
+}
+
+// GetLogDatesFiltered returns visible log dates based on caller scope.
+func (s *LogService) GetLogDatesFiltered(providerID string, isAdmin bool) ([]model.LogDate, error) {
 	entries, err := os.ReadDir(s.baseDir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -42,13 +47,28 @@ func (s *LogService) GetLogDates() ([]model.LogDate, error) {
 			name := entry.Name()
 			// Basic validation that it looks like a date (YYYY-MM-DD)
 			if _, err := time.Parse("2006-01-02", name); err == nil {
-				// Estimate count/size
-				info, _ := s.getDirStats(filepath.Join(s.baseDir, name))
-				dates = append(dates, model.LogDate{
-					Date:      name,
-					Count:     info.count,
-					SizeBytes: info.size,
-				})
+				if isAdmin {
+					// Estimate count/size
+					info, _ := s.getDirStats(filepath.Join(s.baseDir, name))
+					dates = append(dates, model.LogDate{
+						Date:      name,
+						Count:     info.count,
+						SizeBytes: info.size,
+					})
+					continue
+				}
+
+				logs, logsErr := s.GetLogsByDateFiltered(name, providerID, false)
+				if logsErr != nil {
+					continue
+				}
+				if len(logs) > 0 {
+					dates = append(dates, model.LogDate{
+						Date:      name,
+						Count:     len(logs),
+						SizeBytes: 0,
+					})
+				}
 			}
 		}
 	}
@@ -90,19 +110,29 @@ func (s *LogService) getDirStats(path string) (dirStats, error) {
 
 // GetLogsByDate returns log summaries for a specific date
 func (s *LogService) GetLogsByDate(date string) ([]model.LogSummary, error) {
+	return s.GetLogsByDateFiltered(date, "", true)
+}
+
+// GetLogsByDateFiltered returns visible log summaries for a specific date based on caller scope.
+func (s *LogService) GetLogsByDateFiltered(date, providerID string, isAdmin bool) ([]model.LogSummary, error) {
 	dirPath := filepath.Join(s.baseDir, date)
 	indexFile := filepath.Join(dirPath, "index.jsonl")
 
 	// Check if index exists
 	if _, err := os.Stat(indexFile); err == nil {
-		return s.readIndexFile(indexFile)
+		return s.readIndexFile(indexFile, providerID, isAdmin)
+	}
+
+	if !isAdmin {
+		// Without indexed provider metadata we cannot safely scope provider logs.
+		return []model.LogSummary{}, nil
 	}
 
 	// Fallback: list files (less efficient, less data)
 	return s.scanLogFiles(dirPath, date)
 }
 
-func (s *LogService) readIndexFile(path string) ([]model.LogSummary, error) {
+func (s *LogService) readIndexFile(path, providerID string, isAdmin bool) ([]model.LogSummary, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -116,6 +146,12 @@ func (s *LogService) readIndexFile(path string) ([]model.LogSummary, error) {
 		if err := json.Unmarshal(scanner.Bytes(), &log); err == nil {
 			if shouldHideLogURL(log.URL) {
 				continue
+			}
+			if !isAdmin {
+				// Legacy rows may not have providerId; hide them from provider users.
+				if strings.TrimSpace(log.ProviderID) == "" || log.ProviderID != providerID {
+					continue
+				}
 			}
 			logs = append(logs, log)
 		}
@@ -196,6 +232,28 @@ func (s *LogService) scanLogFiles(dirPath, dateStr string) ([]model.LogSummary, 
 
 // GetLogDetail reads the full content of a log file
 func (s *LogService) GetLogDetail(date, id string) (*model.LogDetail, error) {
+	return s.GetLogDetailFiltered(date, id, "", true)
+}
+
+// GetLogDetailFiltered reads a single log detail if visible within caller scope.
+func (s *LogService) GetLogDetailFiltered(date, id, providerID string, isAdmin bool) (*model.LogDetail, error) {
+	if !isAdmin {
+		visibleLogs, err := s.GetLogsByDateFiltered(date, providerID, false)
+		if err != nil {
+			return nil, err
+		}
+		found := false
+		for _, log := range visibleLogs {
+			if log.ID == id {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return nil, fmt.Errorf("log file not found")
+		}
+	}
+
 	dirPath := filepath.Join(s.baseDir, date)
 	
 	// We need to find the file. It starts with a timestamp we don't know, but ends with the short ID.

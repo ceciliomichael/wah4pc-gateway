@@ -55,6 +55,8 @@ type LogIndexEntry struct {
 	DurationMs int64     `json:"durationMs"`
 	ClientIP   string    `json:"clientIp"`
 	KeyID      string    `json:"keyId,omitempty"`
+	Role       string    `json:"role,omitempty"`
+	ProviderID string    `json:"providerId,omitempty"`
 }
 
 // FileLogger handles asynchronous file-based logging with individual files per request
@@ -163,6 +165,8 @@ func (l *FileLogger) writeEntry(entry DetailedLogEntry) {
 		DurationMs: entry.Duration.Milliseconds(),
 		ClientIP:   entry.RemoteAddr,
 		KeyID:      entry.KeyID,
+		Role:       entry.Role,
+		ProviderID: entry.ProviderID,
 	}
 
 	indexBytes, err := json.Marshal(indexEntry)

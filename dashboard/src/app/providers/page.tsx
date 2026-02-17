@@ -270,7 +270,7 @@ function ProvidersContent() {
 
 export default function ProvidersPage() {
   return (
-    <AuthGuard>
+    <AuthGuard allowedRoles={["admin"]}>
       <DashboardShell>
         <ProvidersContent />
       </DashboardShell>

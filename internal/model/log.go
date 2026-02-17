@@ -12,6 +12,8 @@ type LogSummary struct {
 	DurationMs int64     `json:"durationMs"`
 	ClientIP   string    `json:"clientIp"`
 	KeyID      string    `json:"keyId,omitempty"`
+	Role       string    `json:"role,omitempty"`
+	ProviderID string    `json:"providerId,omitempty"`
 }
 
 // LogDetail represents the full content of a log file

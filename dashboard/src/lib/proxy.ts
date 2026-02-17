@@ -8,11 +8,16 @@ interface ProxyOptions {
   params?: Record<string, string>;
 }
 
-/**
- * Extracts the admin key from request headers
- */
-function getAuthKey(request: NextRequest): string | null {
-  return request.headers.get("X-Master-Key");
+interface ProxyAuthHeaders {
+  masterKey: string | null;
+  apiKey: string | null;
+}
+
+function getAuthHeaders(request: NextRequest): ProxyAuthHeaders {
+  return {
+    masterKey: request.headers.get("X-Master-Key"),
+    apiKey: request.headers.get("X-API-Key"),
+  };
 }
 
 /**
@@ -37,14 +42,17 @@ export async function proxyRequest(
   request: NextRequest,
   options: ProxyOptions
 ): Promise<NextResponse> {
-  const authKey = getAuthKey(request);
+  const authHeaders = getAuthHeaders(request);
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",
   };
 
-  if (authKey) {
-    headers["X-Master-Key"] = authKey;
+  if (authHeaders.masterKey) {
+    headers["X-Master-Key"] = authHeaders.masterKey;
+  }
+  if (authHeaders.apiKey) {
+    headers["X-API-Key"] = authHeaders.apiKey;
   }
 
   const fetchOptions: RequestInit = {

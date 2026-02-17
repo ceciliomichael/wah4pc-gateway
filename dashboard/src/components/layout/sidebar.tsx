@@ -24,15 +24,16 @@ interface NavItem {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   description?: string;
+  roles: Array<"admin" | "user">;
 }
 
 const navItems: NavItem[] = [
-  { href: "/", label: "Dashboard", icon: LuLayoutDashboard, description: "Overview & stats" },
-  { href: "/providers", label: "Providers", icon: LuBuilding2, description: "Healthcare providers" },
-  { href: "/apikeys", label: "API Keys", icon: LuKeyRound, description: "Access credentials" },
-  { href: "/transactions", label: "Transactions", icon: LuArrowLeftRight, description: "FHIR transfers" },
-  { href: "/logs", label: "System Logs", icon: LuFileText, description: "Audit trail" },
-  { href: "/settings", label: "Settings", icon: LuSettings, description: "Configuration" },
+  { href: "/", label: "Dashboard", icon: LuLayoutDashboard, description: "Overview & stats", roles: ["admin", "user"] },
+  { href: "/providers", label: "Providers", icon: LuBuilding2, description: "Healthcare providers", roles: ["admin"] },
+  { href: "/apikeys", label: "API Keys", icon: LuKeyRound, description: "Access credentials", roles: ["admin"] },
+  { href: "/transactions", label: "Transactions", icon: LuArrowLeftRight, description: "FHIR transfers", roles: ["admin", "user"] },
+  { href: "/logs", label: "System Logs", icon: LuFileText, description: "Audit trail", roles: ["admin", "user"] },
+  { href: "/settings", label: "Settings", icon: LuSettings, description: "Configuration", roles: ["admin"] },
 ];
 
 interface SidebarProps {
@@ -41,8 +42,10 @@ interface SidebarProps {
 
 export function Sidebar({ onClose }: SidebarProps) {
   const pathname = usePathname();
-  const { logout } = useAuth();
+  const { logout, identity } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
+  const userRole = identity?.role ?? "admin";
+  const visibleNavItems = navItems.filter((item) => item.roles.includes(userRole));
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
@@ -138,7 +141,7 @@ export function Sidebar({ onClose }: SidebarProps) {
         "flex-1 space-y-1 overflow-y-auto overflow-x-hidden px-3 pb-4 transition-all duration-300 ease-in-out",
         collapsed ? "pt-2" : ""
       )}>
-        {navItems.map((item) => {
+        {visibleNavItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.href);
 

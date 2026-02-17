@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AuthGuard } from "@/components/auth-guard";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { providerApi, apiKeyApi, transactionApi } from "@/lib/api";
+import { useAuth } from "@/stores/auth-store";
 import type { Provider, ApiKey, Transaction, DashboardStats } from "@/types";
 import {
   LuBuilding2,
@@ -99,6 +100,7 @@ function calculateStats(
 }
 
 function DashboardContent() {
+  const { identity } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -107,13 +109,16 @@ function DashboardContent() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [providers, apiKeys, transactions] = await Promise.all([
-          providerApi.getAll(),
-          apiKeyApi.getAll(),
-          transactionApi.getAll(),
-        ]);
-
-        setStats(calculateStats(providers, apiKeys, transactions));
+        const transactions = await transactionApi.getAll();
+        if (identity?.role === "admin") {
+          const [providers, apiKeys] = await Promise.all([
+            providerApi.getAll(),
+            apiKeyApi.getAll(),
+          ]);
+          setStats(calculateStats(providers, apiKeys, transactions));
+        } else {
+          setStats(calculateStats([], [], transactions));
+        }
         setRecentTransactions(transactions.slice(0, 5));
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load dashboard data");
@@ -123,7 +128,7 @@ function DashboardContent() {
     }
 
     fetchData();
-  }, []);
+  }, [identity?.role]);
 
   if (isLoading) {
     return (
@@ -180,37 +185,57 @@ function DashboardContent() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label="Healthcare Providers"
-          value={stats.totalProviders}
-          icon={LuBuilding2}
-          color="primary"
-          description={`${stats.activeProviders} active`}
-        />
-        <StatCard
-          label="Active API Keys"
-          value={stats.activeApiKeys}
-          icon={LuKeyRound}
-          color="emerald"
-          description={`${stats.totalApiKeys} total`}
-        />
-        <StatCard
-          label="Total Transactions"
-          value={stats.totalTransactions}
-          icon={LuArrowLeftRight}
-          color="amber"
-          description="All time"
-        />
-        <StatCard
-          label="Success Rate"
-          value={stats.totalTransactions > 0 ? Math.round((stats.completedTransactions / stats.totalTransactions) * 100) : 0}
-          icon={LuZap}
-          color="violet"
-          description={`${stats.completedTransactions} completed`}
-          trend={stats.totalTransactions > 0 ? `${Math.round((stats.completedTransactions / stats.totalTransactions) * 100)}%` : undefined}
-        />
-      </div>
+      {identity?.role === "admin" ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            label="Healthcare Providers"
+            value={stats.totalProviders}
+            icon={LuBuilding2}
+            color="primary"
+            description={`${stats.activeProviders} active`}
+          />
+          <StatCard
+            label="Active API Keys"
+            value={stats.activeApiKeys}
+            icon={LuKeyRound}
+            color="emerald"
+            description={`${stats.totalApiKeys} total`}
+          />
+          <StatCard
+            label="Total Transactions"
+            value={stats.totalTransactions}
+            icon={LuArrowLeftRight}
+            color="amber"
+            description="All time"
+          />
+          <StatCard
+            label="Success Rate"
+            value={stats.totalTransactions > 0 ? Math.round((stats.completedTransactions / stats.totalTransactions) * 100) : 0}
+            icon={LuZap}
+            color="violet"
+            description={`${stats.completedTransactions} completed`}
+            trend={stats.totalTransactions > 0 ? `${Math.round((stats.completedTransactions / stats.totalTransactions) * 100)}%` : undefined}
+          />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <StatCard
+            label="Total Transactions"
+            value={stats.totalTransactions}
+            icon={LuArrowLeftRight}
+            color="amber"
+            description="Your provider scope"
+          />
+          <StatCard
+            label="Success Rate"
+            value={stats.totalTransactions > 0 ? Math.round((stats.completedTransactions / stats.totalTransactions) * 100) : 0}
+            icon={LuZap}
+            color="violet"
+            description={`${stats.completedTransactions} completed`}
+            trend={stats.totalTransactions > 0 ? `${Math.round((stats.completedTransactions / stats.totalTransactions) * 100)}%` : undefined}
+          />
+        </div>
+      )}
 
       {/* Transaction Status Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

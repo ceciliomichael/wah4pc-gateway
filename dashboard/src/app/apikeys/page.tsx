@@ -305,7 +305,7 @@ function ApiKeysContent() {
 
 export default function ApiKeysPage() {
   return (
-    <AuthGuard>
+    <AuthGuard allowedRoles={["admin"]}>
       <DashboardShell>
         <ApiKeysContent />
       </DashboardShell>

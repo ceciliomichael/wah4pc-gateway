@@ -13,6 +13,7 @@ import (
 // Router is the HTTP router for the gateway
 type Router struct {
 	mux                   *http.ServeMux
+	authHandler           *handler.AuthHandler
 	providerHandler       *handler.ProviderHandler
 	gatewayHandler        *handler.GatewayHandler
 	apiKeyHandler         *handler.ApiKeyHandler
@@ -27,6 +28,7 @@ type Router struct {
 
 // NewRouter creates a new router with all handlers
 func NewRouter(
+	authHandler *handler.AuthHandler,
 	providerHandler *handler.ProviderHandler,
 	gatewayHandler *handler.GatewayHandler,
 	apiKeyHandler *handler.ApiKeyHandler,
@@ -47,6 +49,7 @@ func NewRouter(
 
 	r := &Router{
 		mux:                   http.NewServeMux(),
+		authHandler:           authHandler,
 		providerHandler:       providerHandler,
 		gatewayHandler:        gatewayHandler,
 		apiKeyHandler:         apiKeyHandler,
@@ -74,6 +77,7 @@ func (r *Router) registerRoutes() {
 	// API Key routes
 	r.mux.HandleFunc("/api/v1/apikeys", r.handleApiKeys)
 	r.mux.HandleFunc("/api/v1/apikeys/", r.handleApiKeyByID)
+	r.mux.HandleFunc("/api/v1/auth/identity", r.handleAuthIdentity)
 
 	// Provider routes
 	r.mux.HandleFunc("/api/v1/providers", r.handleProviders)
@@ -94,6 +98,15 @@ func (r *Router) registerRoutes() {
 
 	// Settings routes
 	r.mux.HandleFunc("/api/v1/settings", r.handleSettings)
+}
+
+// handleAuthIdentity routes /api/v1/auth/identity
+func (r *Router) handleAuthIdentity(w http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	r.authHandler.Identity(w, req)
 }
 
 // Handler returns the HTTP handler with middleware chain
@@ -255,11 +268,6 @@ func (r *Router) handleLogDates(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	// Verify admin role (logs contain sensitive info)
-	if middleware.GetRoleFromContext(req.Context()) != "admin" {
-		http.Error(w, "forbidden", http.StatusForbidden)
-		return
-	}
 	r.logHandler.GetDates(w, req)
 }
 
@@ -267,11 +275,6 @@ func (r *Router) handleLogDates(w http.ResponseWriter, req *http.Request) {
 func (r *Router) handleLogs(w http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	// Verify admin role
-	if middleware.GetRoleFromContext(req.Context()) != "admin" {
-		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 

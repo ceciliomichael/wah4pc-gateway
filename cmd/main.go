@@ -88,6 +88,7 @@ func main() {
 	logService := service.NewLogService(logBaseDir)
 
 	// Initialize handlers
+	authHandler := handler.NewAuthHandler()
 	providerHandler := handler.NewProviderHandler(providerService)
 	gatewayHandler := handler.NewGatewayHandler(gatewayService)
 	apiKeyHandler := handler.NewApiKeyHandler(apiKeyService)
@@ -95,7 +96,7 @@ func main() {
 	settingsHandler := handler.NewSettingsHandler(settingsService)
 
 	// Initialize router with middleware
-	r := router.NewRouter(providerHandler, gatewayHandler, apiKeyHandler, logHandler, settingsHandler, apiKeyService, cfg.Security.MasterKey, auditLogger)
+	r := router.NewRouter(authHandler, providerHandler, gatewayHandler, apiKeyHandler, logHandler, settingsHandler, apiKeyService, cfg.Security.MasterKey, auditLogger)
 
 	// Start server
 	addr := cfg.Address()

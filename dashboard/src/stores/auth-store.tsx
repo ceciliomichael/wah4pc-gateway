@@ -8,61 +8,149 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { validateAuthKey } from "@/lib/api";
+import {
+  clearStoredSession,
+  loadStoredSession,
+  saveStoredSession,
+  type AuthIdentity,
+  type SessionMode,
+} from "@/lib/auth-session";
+import { fetchAuthIdentityWithApiKey, fetchAuthIdentityWithMasterKey } from "@/lib/api";
+
+interface LoginResult {
+  success: boolean;
+  error?: string;
+}
 
 interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (key: string) => Promise<boolean>;
+  identity: AuthIdentity | null;
+  sessionMode: SessionMode | null;
+  loginAdmin: (key: string) => Promise<LoginResult>;
+  loginProvider: (providerId: string, apiKey: string) => Promise<LoginResult>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
 
-const AUTH_KEY_STORAGE = "admin_key";
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [identity, setIdentity] = useState<AuthIdentity | null>(null);
+  const [sessionMode, setSessionMode] = useState<SessionMode | null>(null);
 
-  // Check for existing auth on mount
+  const clearAuthState = useCallback(() => {
+    clearStoredSession();
+    setIsAuthenticated(false);
+    setIdentity(null);
+    setSessionMode(null);
+  }, []);
+
   useEffect(() => {
-    const storedKey = localStorage.getItem(AUTH_KEY_STORAGE);
-    if (storedKey) {
-      validateAuthKey(storedKey)
-        .then((valid) => {
-          setIsAuthenticated(valid);
-          if (!valid) {
-            localStorage.removeItem(AUTH_KEY_STORAGE);
-          }
-        })
-        .finally(() => setIsLoading(false));
-    } else {
+    const session = loadStoredSession();
+    if (!session) {
       setIsLoading(false);
+      return;
     }
+
+    const validate = async () => {
+      if (session.mode === "admin") {
+        const foundIdentity = await fetchAuthIdentityWithMasterKey(session.credential);
+        if (foundIdentity && foundIdentity.role === "admin") {
+          setIsAuthenticated(true);
+          setIdentity(foundIdentity);
+          setSessionMode("admin");
+          setIsLoading(false);
+          return;
+        }
+      } else {
+        const foundIdentity = await fetchAuthIdentityWithApiKey(session.credential);
+        if (
+          foundIdentity &&
+          foundIdentity.role === "user" &&
+          foundIdentity.providerId &&
+          foundIdentity.providerId === session.providerId
+        ) {
+          setIsAuthenticated(true);
+          setIdentity(foundIdentity);
+          setSessionMode("provider");
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      clearAuthState();
+      setIsLoading(false);
+    };
+
+    validate();
+  }, [clearAuthState]);
+
+  const loginAdmin = useCallback(async (key: string): Promise<LoginResult> => {
+    setIsLoading(true);
+    const foundIdentity = await fetchAuthIdentityWithMasterKey(key);
+    if (!foundIdentity || foundIdentity.role !== "admin") {
+      setIsLoading(false);
+      return { success: false, error: "Invalid admin key." };
+    }
+
+    saveStoredSession({
+      version: 2,
+      mode: "admin",
+      credential: key,
+    });
+    setIsAuthenticated(true);
+    setIdentity(foundIdentity);
+    setSessionMode("admin");
+    setIsLoading(false);
+    return { success: true };
   }, []);
 
-  const login = useCallback(async (key: string): Promise<boolean> => {
-    setIsLoading(true);
-    try {
-      const valid = await validateAuthKey(key);
-      if (valid) {
-        localStorage.setItem(AUTH_KEY_STORAGE, key);
-        setIsAuthenticated(true);
+  const loginProvider = useCallback(
+    async (providerId: string, apiKey: string): Promise<LoginResult> => {
+      setIsLoading(true);
+      const foundIdentity = await fetchAuthIdentityWithApiKey(apiKey);
+      if (!foundIdentity || foundIdentity.role !== "user") {
+        setIsLoading(false);
+        return { success: false, error: "Invalid provider API key." };
       }
-      return valid;
-    } finally {
+      if (!foundIdentity.providerId || foundIdentity.providerId !== providerId) {
+        setIsLoading(false);
+        return { success: false, error: "Provider ID does not match this API key." };
+      }
+
+      saveStoredSession({
+        version: 2,
+        mode: "provider",
+        credential: apiKey,
+        providerId,
+      });
+      setIsAuthenticated(true);
+      setIdentity(foundIdentity);
+      setSessionMode("provider");
       setIsLoading(false);
-    }
-  }, []);
+      return { success: true };
+    },
+    []
+  );
 
   const logout = useCallback(() => {
-    localStorage.removeItem(AUTH_KEY_STORAGE);
-    setIsAuthenticated(false);
-  }, []);
+    clearAuthState();
+  }, [clearAuthState]);
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isLoading, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated,
+        isLoading,
+        identity,
+        sessionMode,
+        loginAdmin,
+        loginProvider,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -75,3 +163,4 @@ export function useAuth(): AuthState {
   }
   return context;
 }
+

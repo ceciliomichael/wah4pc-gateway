@@ -131,6 +131,8 @@ export interface LogSummary {
   durationMs: number;
   clientIp: string;
   keyId?: string;
+  role?: string;
+  providerId?: string;
 }
 
 export interface LogDetail {

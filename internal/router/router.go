@@ -110,13 +110,13 @@ func (r *Router) handleAuthIdentity(w http.ResponseWriter, req *http.Request) {
 }
 
 // Handler returns the HTTP handler with middleware chain
-// Order: Audit -> CORS -> Auth -> RateLimit -> Idempotency -> Handler
+// Order: CORS -> Auth -> RateLimit -> Idempotency -> Audit -> Handler
 func (r *Router) Handler() http.Handler {
-	return r.auditMiddleware.Middleware(
-		r.corsMiddleware(
-			r.authMiddleware.Middleware(
-				r.rateLimitMiddleware.Middleware(
-					r.idempotencyMiddleware.Middleware(r.mux),
+	return r.corsMiddleware(
+		r.authMiddleware.Middleware(
+			r.rateLimitMiddleware.Middleware(
+				r.idempotencyMiddleware.Middleware(
+					r.auditMiddleware.Middleware(r.mux),
 				),
 			),
 		),

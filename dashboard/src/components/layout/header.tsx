@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { LuMenu } from "react-icons/lu";
 import { useAuth } from "@/stores/auth-store";
+import { providerApi } from "@/lib/api";
 
 const pageConfig: Record<string, { title: string; subtitle: string }> = {
   "/": { title: "Dashboard", subtitle: "Overview of your gateway" },
@@ -20,6 +22,7 @@ interface HeaderProps {
 export function Header({ onMenuClick }: HeaderProps) {
   const pathname = usePathname();
   const { identity } = useAuth();
+  const [providerName, setProviderName] = useState<string>("");
 
   const getPageConfig = () => {
     // Exact match first
@@ -37,8 +40,33 @@ export function Header({ onMenuClick }: HeaderProps) {
 
   const { title, subtitle } = getPageConfig();
   const isAdmin = identity?.role === "admin";
-  const displayName = isAdmin ? "Admin" : identity?.providerId || "Provider";
-  const displayRole = isAdmin ? "Gateway Manager" : "Provider";
+  
+  useEffect(() => {
+    let mounted = true;
+    async function loadProviderName() {
+      if (identity?.role !== "user" || !identity.providerId) {
+        setProviderName("");
+        return;
+      }
+      try {
+        const provider = await providerApi.getById(identity.providerId);
+        if (mounted) {
+          setProviderName(provider.name || "");
+        }
+      } catch {
+        if (mounted) {
+          setProviderName("");
+        }
+      }
+    }
+    loadProviderName();
+    return () => {
+      mounted = false;
+    };
+  }, [identity?.role, identity?.providerId]);
+
+  const displayName = isAdmin ? "Admin" : providerName || "Provider";
+  const displayRole = isAdmin ? "Gateway Manager" : identity?.providerId || "Provider";
   const avatarLabel = isAdmin ? "A" : "P";
 
   return (

@@ -229,25 +229,30 @@ export default function LoginPage() {
                         *
                       </span>
                     </label>
-                    <input
-                      id="providerId"
-                      type="text"
-                      value={providerId}
-                      onChange={(e) => {
-                        setProviderId(e.target.value);
-                        setFieldError("");
-                        setError("");
-                      }}
-                      placeholder="Enter your provider ID"
-                      className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-slate-800 placeholder:text-slate-400 transition-all hover:bg-white ${
-                        fieldError
-                          ? "border-red-300 hover:border-red-400"
-                          : "border-slate-200 hover:border-slate-300"
-                      }`}
-                      disabled={isSubmitting}
-                      autoFocus
-                      required
-                    />
+                    <div className="relative">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                        <LuBuilding2 className="w-5 h-5" />
+                      </div>
+                      <input
+                        id="providerId"
+                        type="text"
+                        value={providerId}
+                        onChange={(e) => {
+                          setProviderId(e.target.value);
+                          setFieldError("");
+                          setError("");
+                        }}
+                        placeholder="Enter your provider ID"
+                        className={`w-full pl-12 pr-4 py-3 bg-slate-50 border rounded-xl text-slate-800 placeholder:text-slate-400 transition-all hover:bg-white ${
+                          fieldError
+                            ? "border-red-300 hover:border-red-400"
+                            : "border-slate-200 hover:border-slate-300"
+                        }`}
+                        disabled={isSubmitting}
+                        autoFocus
+                        required
+                      />
+                    </div>
                   </div>
 
                   <div>

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -274,5 +275,70 @@ func TestGatewayHandlerReceiveResult_TimedOutReturnsRequestTimeout(t *testing.T)
 	}
 	if updated.Status != model.StatusFailed {
 		t.Fatalf("expected status %s, got %s", model.StatusFailed, updated.Status)
+	}
+}
+
+func TestGatewayHandlerRequestQuery_TargetForwardingFailureReturnsRetrySummary(t *testing.T) {
+	now := time.Now().UTC()
+	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	targetURL := target.URL
+	target.Close()
+
+	txRepo := &testTxRepoStub{
+		items: map[string]model.Transaction{},
+	}
+	providerRepo := &testProviderRepoStub{
+		items: map[string]model.Provider{
+			"requester": {
+				ID:             "requester",
+				Name:           "Requester",
+				BaseURL:        "http://requester.local",
+				GatewayAuthKey: "requester-auth-key",
+				IsActive:       true,
+				CreatedAt:      now,
+				UpdatedAt:      now,
+			},
+			"target": {
+				ID:             "target",
+				Name:           "Target",
+				BaseURL:        targetURL,
+				GatewayAuthKey: "target-auth-key",
+				IsActive:       true,
+				CreatedAt:      now,
+				UpdatedAt:      now,
+			},
+		},
+	}
+
+	gwService := service.NewGatewayService(
+		txRepo,
+		service.NewProviderService(providerRepo),
+		service.NewSettingsService(&testSettingsRepoStub{}),
+		"http://gateway.local",
+		nil,
+	)
+	h := NewGatewayHandler(gwService)
+
+	body := `{"requesterId":"requester","targetId":"target","identifiers":[{"system":"sys","value":"123"}]}`
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/fhir/request/Patient", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	h.RequestQuery(rec, req)
+
+	if rec.Code != http.StatusBadGateway {
+		t.Fatalf("expected %d, got %d", http.StatusBadGateway, rec.Code)
+	}
+
+	var response APIResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+		t.Fatalf("expected json response body, got error: %v", err)
+	}
+
+	msg := strings.ToLower(response.Error)
+	if !strings.Contains(msg, "after 3 attempt") {
+		t.Fatalf("expected retry summary in error response, got: %q", response.Error)
 	}
 }

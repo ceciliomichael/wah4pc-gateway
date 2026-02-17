@@ -35,6 +35,7 @@ var (
 const duplicateWindow = 5 * time.Minute
 const requestTimeoutWindow = 24 * time.Hour
 const upstreamErrorBodyLimit = 512
+const maxForwardAttempts = 3
 
 var duplicateBlockingStatuses = []model.TransactionStatus{
 	model.StatusPending,
@@ -441,33 +442,7 @@ func (s *GatewayService) forwardToTarget(url string, payload ProcessQueryPayload
 	if err != nil {
 		return fmt.Errorf("failed to marshal payload: %w", err)
 	}
-
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
-	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	if authKey != "" {
-		req.Header.Set("X-Gateway-Auth", authKey)
-	}
-
-	resp, err := s.httpClient.Do(req)
-	if err != nil {
-		return ErrTargetUnreachable
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 400 {
-		detail := extractUpstreamErrorDetail(resp.Body)
-		return &UpstreamHTTPError{
-			Upstream:     "target provider",
-			StatusCode:   resp.StatusCode,
-			ResponseBody: detail,
-		}
-	}
-
-	return nil
+	return s.forwardJSONWithRetry(url, body, authKey, "target provider", ErrTargetUnreachable)
 }
 
 // forwardPushToTarget sends the push payload to the target provider
@@ -476,33 +451,7 @@ func (s *GatewayService) forwardPushToTarget(url string, payload ProcessPushPayl
 	if err != nil {
 		return fmt.Errorf("failed to marshal payload: %w", err)
 	}
-
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
-	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	if authKey != "" {
-		req.Header.Set("X-Gateway-Auth", authKey)
-	}
-
-	resp, err := s.httpClient.Do(req)
-	if err != nil {
-		return ErrTargetUnreachable
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 400 {
-		detail := extractUpstreamErrorDetail(resp.Body)
-		return &UpstreamHTTPError{
-			Upstream:     "target provider",
-			StatusCode:   resp.StatusCode,
-			ResponseBody: detail,
-		}
-	}
-
-	return nil
+	return s.forwardJSONWithRetry(url, body, authKey, "target provider", ErrTargetUnreachable)
 }
 
 // forwardToRequester sends the result data to the requester
@@ -511,33 +460,77 @@ func (s *GatewayService) forwardToRequester(url string, payload ReceiveResultPay
 	if err != nil {
 		return fmt.Errorf("failed to marshal payload: %w", err)
 	}
+	return s.forwardJSONWithRetry(url, body, authKey, "requester provider", ErrRequesterUnreachable)
+}
 
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
-	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
-	}
+func (s *GatewayService) forwardJSONWithRetry(url string, body []byte, authKey string, upstream string, sentinel error) error {
+	var lastTransportErr error
 
-	req.Header.Set("Content-Type", "application/json")
-	if authKey != "" {
-		req.Header.Set("X-Gateway-Auth", authKey)
-	}
+	for attempt := 1; attempt <= maxForwardAttempts; attempt++ {
+		req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
+		if err != nil {
+			return fmt.Errorf("failed to create request: %w", err)
+		}
 
-	resp, err := s.httpClient.Do(req)
-	if err != nil {
-		return ErrRequesterUnreachable
-	}
-	defer resp.Body.Close()
+		req.Header.Set("Content-Type", "application/json")
+		if authKey != "" {
+			req.Header.Set("X-Gateway-Auth", authKey)
+		}
 
-	if resp.StatusCode >= 400 {
+		resp, err := s.httpClient.Do(req)
+		if err != nil {
+			lastTransportErr = err
+			if attempt == maxForwardAttempts {
+				return errors.Join(sentinel, &UpstreamForwardingError{
+					Upstream:   upstream,
+					Attempts:   attempt,
+					TargetURL:  url,
+					LastReason: err.Error(),
+				})
+			}
+			continue
+		}
+
 		detail := extractUpstreamErrorDetail(resp.Body)
-		return &UpstreamHTTPError{
-			Upstream:     "requester provider",
-			StatusCode:   resp.StatusCode,
-			ResponseBody: detail,
+		resp.Body.Close()
+
+		if resp.StatusCode < 400 {
+			return nil
+		}
+
+		if !isRetryableUpstreamStatus(resp.StatusCode) || attempt == maxForwardAttempts {
+			return &UpstreamHTTPError{
+				Upstream:     upstream,
+				StatusCode:   resp.StatusCode,
+				ResponseBody: detail,
+				Attempts:     attempt,
+				TargetURL:    url,
+			}
 		}
 	}
 
-	return nil
+	if lastTransportErr != nil {
+		return errors.Join(sentinel, &UpstreamForwardingError{
+			Upstream:   upstream,
+			Attempts:   maxForwardAttempts,
+			TargetURL:  url,
+			LastReason: lastTransportErr.Error(),
+		})
+	}
+
+	return errors.Join(sentinel, &UpstreamForwardingError{
+		Upstream:   upstream,
+		Attempts:   maxForwardAttempts,
+		TargetURL:  url,
+		LastReason: "unknown transport failure",
+	})
+}
+
+func isRetryableUpstreamStatus(statusCode int) bool {
+	if statusCode == http.StatusRequestTimeout || statusCode == http.StatusTooManyRequests {
+		return true
+	}
+	return statusCode >= http.StatusInternalServerError
 }
 
 // extractUpstreamErrorDetail returns a compact, bounded upstream response body for diagnostics.

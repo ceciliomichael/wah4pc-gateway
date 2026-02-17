@@ -49,6 +49,11 @@ func (h *GatewayHandler) RequestQuery(w http.ResponseWriter, r *http.Request) {
 			respondError(w, http.StatusBadGateway, upstreamErr.Summary())
 			return
 		}
+		var upstreamForwardErr *service.UpstreamForwardingError
+		if errors.As(err, &upstreamForwardErr) && upstreamForwardErr.Upstream == "target provider" {
+			respondError(w, http.StatusBadGateway, upstreamForwardErr.Summary())
+			return
+		}
 		if errors.Is(err, service.ErrInvalidRequest) {
 			respondError(w, http.StatusBadRequest, err.Error())
 			return
@@ -101,6 +106,11 @@ func (h *GatewayHandler) RequestPush(w http.ResponseWriter, r *http.Request) {
 			respondError(w, http.StatusBadGateway, upstreamErr.Summary())
 			return
 		}
+		var upstreamForwardErr *service.UpstreamForwardingError
+		if errors.As(err, &upstreamForwardErr) && upstreamForwardErr.Upstream == "target provider" {
+			respondError(w, http.StatusBadGateway, upstreamForwardErr.Summary())
+			return
+		}
 		if errors.Is(err, service.ErrInvalidRequest) {
 			// Pass through the actual validation error message
 			respondError(w, http.StatusBadRequest, err.Error())
@@ -149,6 +159,11 @@ func (h *GatewayHandler) ReceiveResult(w http.ResponseWriter, r *http.Request) {
 		var upstreamErr *service.UpstreamHTTPError
 		if errors.As(err, &upstreamErr) && upstreamErr.Upstream == "requester provider" {
 			respondError(w, http.StatusBadGateway, upstreamErr.Summary())
+			return
+		}
+		var upstreamForwardErr *service.UpstreamForwardingError
+		if errors.As(err, &upstreamForwardErr) && upstreamForwardErr.Upstream == "requester provider" {
+			respondError(w, http.StatusBadGateway, upstreamForwardErr.Summary())
 			return
 		}
 		if errors.Is(err, service.ErrInvalidResourceType) {

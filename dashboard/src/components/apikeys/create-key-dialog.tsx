@@ -30,6 +30,13 @@ interface CreateApiKeyDialogProps {
   providers: Provider[];
 }
 
+interface ApiKeyFormErrors {
+  owner?: string;
+  role?: string;
+  providerId?: string;
+  rateLimit?: string;
+}
+
 export function CreateApiKeyDialog({
   open,
   onClose,
@@ -44,6 +51,7 @@ export function CreateApiKeyDialog({
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<ApiKeyFormErrors>({});
   const [createdKey, setCreatedKey] = useState<ApiKeyCreateResponse | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -55,8 +63,35 @@ export function CreateApiKeyDialog({
       rateLimit: 100,
     });
     setError(null);
+    setFieldErrors({});
     setCreatedKey(null);
     setCopied(false);
+  };
+
+  const validateForm = (): boolean => {
+    const nextErrors: ApiKeyFormErrors = {};
+    const owner = formData.owner.trim();
+    const rateLimit = formData.rateLimit ?? 0;
+
+    if (!owner) {
+      nextErrors.owner = "Owner name is required";
+    }
+    if (!formData.role) {
+      nextErrors.role = "Role is required";
+    }
+    if (formData.role === "user" && !formData.providerId) {
+      nextErrors.providerId = "Provider is required for user role keys";
+    }
+    if (
+      !Number.isInteger(rateLimit) ||
+      rateLimit < 0 ||
+      rateLimit > 10000
+    ) {
+      nextErrors.rateLimit = "Rate limit must be a whole number between 0 and 10000";
+    }
+
+    setFieldErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
   };
 
   const handleClose = () => {
@@ -86,15 +121,7 @@ export function CreateApiKeyDialog({
     e.preventDefault();
     setError(null);
 
-    // Validation
-    if (!formData.owner.trim()) {
-      setError("Owner name is required");
-      return;
-    }
-
-    // User role requires a provider
-    if (formData.role === "user" && !formData.providerId) {
-      setError("Provider is required for user role keys");
+    if (!validateForm()) {
       return;
     }
 
@@ -103,7 +130,7 @@ export function CreateApiKeyDialog({
       const payload: ApiKeyCreateRequest = {
         owner: formData.owner.trim(),
         role: formData.role,
-        rateLimit: formData.rateLimit,
+        rateLimit: formData.rateLimit ?? 0,
       };
 
       // Only include providerId for user role
@@ -125,6 +152,26 @@ export function CreateApiKeyDialog({
     { value: "", label: "Select a provider...", disabled: true },
     ...providers.map((p) => ({ value: p.id, label: p.name })),
   ];
+
+  const handleRoleChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      role: value as ApiKeyRole,
+      providerId: value === "admin" ? "" : prev.providerId,
+    }));
+    setFieldErrors((prev) => ({
+      ...prev,
+      role: undefined,
+      providerId: undefined,
+    }));
+    setError(null);
+  };
+
+  const handleProviderChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, providerId: value }));
+    setFieldErrors((prev) => ({ ...prev, providerId: undefined }));
+    setError(null);
+  };
 
   return (
     <Dialog open={open} onClose={handleClose}>
@@ -221,11 +268,15 @@ export function CreateApiKeyDialog({
               name="owner"
               type="text"
               value={formData.owner}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, owner: e.target.value }))
-              }
+              onChange={(e) => {
+                setFormData((prev) => ({ ...prev, owner: e.target.value }));
+                setFieldErrors((prev) => ({ ...prev, owner: undefined }));
+                setError(null);
+              }}
               placeholder="e.g., Integration Service"
               disabled={isSubmitting}
+              required
+              error={fieldErrors.owner}
             />
 
             {/* Role */}
@@ -233,14 +284,7 @@ export function CreateApiKeyDialog({
               label="Role"
               name="role"
               value={formData.role}
-              onChange={(value) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  role: value as ApiKeyRole,
-                  // Clear provider if switching to admin
-                  providerId: value === "admin" ? "" : prev.providerId,
-                }))
-              }
+              onChange={handleRoleChange}
               options={ROLE_OPTIONS}
               hint={
                 formData.role === "admin"
@@ -248,6 +292,8 @@ export function CreateApiKeyDialog({
                   : "User keys are scoped to a specific provider"
               }
               disabled={isSubmitting}
+              required
+              error={fieldErrors.role}
             />
 
             {/* Provider (only for user role) */}
@@ -257,11 +303,11 @@ export function CreateApiKeyDialog({
                   label="Provider"
                   name="providerId"
                   value={formData.providerId || ""}
-                  onChange={(value) =>
-                    setFormData((prev) => ({ ...prev, providerId: value }))
-                  }
+                  onChange={handleProviderChange}
                   options={providerOptions}
                   disabled={isSubmitting}
+                  required
+                  error={fieldErrors.providerId}
                 />
                 {providers.length === 0 && (
                   <p className="mt-1.5 text-xs text-amber-600">
@@ -278,15 +324,20 @@ export function CreateApiKeyDialog({
               type="number"
               min={0}
               max={10000}
-              value={formData.rateLimit}
-              onChange={(e) =>
+              value={formData.rateLimit ?? 0}
+              onChange={(e) => {
+                const parsed = Number.parseInt(e.target.value, 10);
                 setFormData((prev) => ({
                   ...prev,
-                  rateLimit: parseInt(e.target.value, 10) || 0,
-                }))
-              }
+                  rateLimit: Number.isNaN(parsed) ? 0 : parsed,
+                }));
+                setFieldErrors((prev) => ({ ...prev, rateLimit: undefined }));
+                setError(null);
+              }}
               hint="Set to 0 for unlimited requests"
               disabled={isSubmitting}
+              required
+              error={fieldErrors.rateLimit}
             />
           </DialogContent>
 

@@ -37,6 +37,10 @@ func (r *ProviderRepository) ensureIndexes() error {
 			Keys:    bson.D{{Key: "id", Value: 1}},
 			Options: options.Index().SetUnique(true),
 		},
+		{
+			Keys:    bson.D{{Key: "facility_code", Value: 1}},
+			Options: options.Index().SetUnique(true).SetSparse(true),
+		},
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create provider indexes: %w", err)
@@ -80,6 +84,18 @@ func (r *ProviderRepository) GetByID(id string) (model.Provider, error) {
 		return model.Provider{}, mapMongoError(err)
 	}
 
+	return provider, nil
+}
+
+func (r *ProviderRepository) GetByFacilityCode(facilityCode string) (model.Provider, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	var provider model.Provider
+	err := r.collection.FindOne(ctx, bson.D{{Key: "facility_code", Value: facilityCode}}).Decode(&provider)
+	if err != nil {
+		return model.Provider{}, mapMongoError(err)
+	}
 	return provider, nil
 }
 

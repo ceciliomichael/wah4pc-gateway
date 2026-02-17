@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -12,13 +13,16 @@ import (
 var (
 	ErrProviderNotFound      = errors.New("provider not found")
 	ErrProviderAlreadyExists = errors.New("provider already exists")
+	ErrDuplicateFacilityCode = errors.New("facility code already exists")
 	ErrInvalidProvider       = errors.New("invalid provider data")
+	ErrMissingRequiredField  = errors.New("missing required provider field")
 )
 
 // ProviderRepository defines the interface for provider data access
 type ProviderRepository interface {
 	GetAll() ([]model.Provider, error)
 	GetByID(id string) (model.Provider, error)
+	GetByFacilityCode(facilityCode string) (model.Provider, error)
 	Create(provider model.Provider) error
 	Update(provider model.Provider) error
 	Delete(id string) error
@@ -47,20 +51,31 @@ type RegisterInput struct {
 
 // Register adds a new provider to the registry
 func (s *ProviderService) Register(input RegisterInput) (*model.Provider, error) {
+	name := strings.TrimSpace(input.Name)
+	facilityCode := normalizeFacilityCode(input.FacilityCode)
+	location := strings.TrimSpace(input.Location)
+	gatewayAuthKey := strings.TrimSpace(input.GatewayAuthKey)
+
 	normalizedBaseURL, err := normalizeProviderBaseURL(input.BaseURL)
-	if input.Name == "" || err != nil {
+	if name == "" || err != nil {
 		return nil, ErrInvalidProvider
+	}
+	if facilityCode == "" || location == "" || gatewayAuthKey == "" || input.Type == "" {
+		return nil, ErrMissingRequiredField
+	}
+	if err := s.ensureFacilityCodeUnique(facilityCode, ""); err != nil {
+		return nil, err
 	}
 
 	now := time.Now().UTC()
 	provider := model.Provider{
 		ID:             uuid.New().String(),
-		Name:           input.Name,
+		Name:           name,
 		Type:           input.Type,
-		FacilityCode:   input.FacilityCode,
-		Location:       input.Location,
+		FacilityCode:   facilityCode,
+		Location:       location,
 		BaseURL:        normalizedBaseURL,
-		GatewayAuthKey: input.GatewayAuthKey,
+		GatewayAuthKey: gatewayAuthKey,
 		IsActive:       true,
 		CreatedAt:      now,
 		UpdatedAt:      now,
@@ -113,7 +128,7 @@ func (s *ProviderService) Update(id string, input RegisterInput) (*model.Provide
 	}
 
 	if input.Name != "" {
-		provider.Name = input.Name
+		provider.Name = strings.TrimSpace(input.Name)
 	}
 	if input.Type != "" {
 		provider.Type = input.Type
@@ -126,13 +141,28 @@ func (s *ProviderService) Update(id string, input RegisterInput) (*model.Provide
 		provider.BaseURL = normalizedBaseURL
 	}
 	if input.FacilityCode != "" {
-		provider.FacilityCode = input.FacilityCode
+		facilityCode := normalizeFacilityCode(input.FacilityCode)
+		if facilityCode == "" {
+			return nil, ErrMissingRequiredField
+		}
+		if err := s.ensureFacilityCodeUnique(facilityCode, provider.ID); err != nil {
+			return nil, err
+		}
+		provider.FacilityCode = facilityCode
 	}
 	if input.Location != "" {
-		provider.Location = input.Location
+		location := strings.TrimSpace(input.Location)
+		if location == "" {
+			return nil, ErrMissingRequiredField
+		}
+		provider.Location = location
 	}
 	if input.GatewayAuthKey != "" {
-		provider.GatewayAuthKey = input.GatewayAuthKey
+		gatewayAuthKey := strings.TrimSpace(input.GatewayAuthKey)
+		if gatewayAuthKey == "" {
+			return nil, ErrMissingRequiredField
+		}
+		provider.GatewayAuthKey = gatewayAuthKey
 	}
 	provider.UpdatedAt = time.Now().UTC()
 
@@ -177,4 +207,22 @@ func (s *ProviderService) SetActive(id string, active bool) (*model.Provider, er
 // Exists checks if a provider exists
 func (s *ProviderService) Exists(id string) (bool, error) {
 	return s.repo.Exists(id)
+}
+
+func (s *ProviderService) ensureFacilityCodeUnique(facilityCode string, currentProviderID string) error {
+	existing, err := s.repo.GetByFacilityCode(facilityCode)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return nil
+		}
+		return err
+	}
+	if existing.ID != currentProviderID {
+		return ErrDuplicateFacilityCode
+	}
+	return nil
+}
+
+func normalizeFacilityCode(code string) string {
+	return strings.ToUpper(strings.TrimSpace(code))
 }

@@ -17,8 +17,8 @@ type Provider struct {
 	ID             string       `json:"id" bson:"id"`
 	Name           string       `json:"name" bson:"name"`
 	Type           ProviderType `json:"type" bson:"type"`
-	FacilityCode   string       `json:"facility_code" bson:"facility_code"`
-	Location       string       `json:"location" bson:"location"`
+	FacilityCode   string       `json:"facility_code" bson:"facility_code,omitempty"`
+	Location       string       `json:"location" bson:"location,omitempty"`
 	BaseURL        string       `json:"baseUrl" bson:"baseUrl"`               // Base URL for receiving FHIR resources
 	GatewayAuthKey string       `json:"gatewayAuthKey" bson:"gatewayAuthKey"` // Secret key for Gateway->Provider authentication
 	IsActive       bool         `json:"isActive" bson:"isActive"`

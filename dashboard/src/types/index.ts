@@ -20,7 +20,7 @@ export interface ProviderCreateRequest {
   facilityCode: string;
   location: string;
   baseUrl: string;
-  gatewayAuthKey?: string;
+  gatewayAuthKey: string;
 }
 
 // API Key types matching Go backend

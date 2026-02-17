@@ -72,8 +72,16 @@ func (h *ProviderHandler) Register(w http.ResponseWriter, r *http.Request) {
 			respondError(w, http.StatusBadRequest, "invalid provider data: name and a valid baseUrl are required")
 			return
 		}
+		if errors.Is(err, service.ErrMissingRequiredField) {
+			respondError(w, http.StatusBadRequest, "invalid provider data: type, facility_code, location, and gatewayAuthKey are required")
+			return
+		}
 		if errors.Is(err, service.ErrProviderAlreadyExists) {
 			respondError(w, http.StatusConflict, "provider already exists")
+			return
+		}
+		if errors.Is(err, service.ErrDuplicateFacilityCode) {
+			respondError(w, http.StatusConflict, "facility code already exists")
 			return
 		}
 		respondError(w, http.StatusInternalServerError, "failed to register provider")
@@ -167,6 +175,14 @@ func (h *ProviderHandler) Update(w http.ResponseWriter, r *http.Request) {
 		}
 		if errors.Is(err, service.ErrInvalidProvider) {
 			respondError(w, http.StatusBadRequest, "invalid provider data: baseUrl must be a valid URL")
+			return
+		}
+		if errors.Is(err, service.ErrMissingRequiredField) {
+			respondError(w, http.StatusBadRequest, "invalid provider data: required fields cannot be empty")
+			return
+		}
+		if errors.Is(err, service.ErrDuplicateFacilityCode) {
+			respondError(w, http.StatusConflict, "facility code already exists")
 			return
 		}
 		respondError(w, http.StatusInternalServerError, "failed to update provider")

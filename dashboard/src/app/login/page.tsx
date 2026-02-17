@@ -17,6 +17,7 @@ import {
 
 export default function LoginPage() {
   const [key, setKey] = useState("");
+  const [keyError, setKeyError] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login } = useAuth();
@@ -25,9 +26,10 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setKeyError("");
 
     if (!key.trim()) {
-      setError("Please enter your admin key");
+      setKeyError("Admin key is required");
       return;
     }
 
@@ -132,6 +134,9 @@ export default function LoginPage() {
                   className="block text-sm font-semibold text-slate-700 mb-2"
                 >
                   Admin Key
+                  <span className="ml-1 text-red-600" aria-hidden="true">
+                    **
+                  </span>
                 </label>
                 <div className="relative">
                   <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
@@ -141,13 +146,25 @@ export default function LoginPage() {
                     id="adminKey"
                     type="password"
                     value={key}
-                    onChange={(e) => setKey(e.target.value)}
+                    onChange={(e) => {
+                      setKey(e.target.value);
+                      setKeyError("");
+                      setError("");
+                    }}
                     placeholder="Enter your master key"
-                    className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder:text-slate-400 transition-all hover:border-slate-300 hover:bg-white"
+                    className={`w-full pl-12 pr-4 py-3 bg-slate-50 border rounded-xl text-slate-800 placeholder:text-slate-400 transition-all hover:bg-white ${
+                      keyError
+                        ? "border-red-300 hover:border-red-400"
+                        : "border-slate-200 hover:border-slate-300"
+                    }`}
                     disabled={isSubmitting}
                     autoFocus
+                    required
                   />
                 </div>
+                {keyError && (
+                  <p className="mt-1.5 text-xs text-red-600">{keyError}</p>
+                )}
               </div>
 
               {error && (

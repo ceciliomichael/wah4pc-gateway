@@ -15,6 +15,7 @@ export interface SelectProps {
   onChange: (value: string) => void;
   options: SelectOption[];
   label?: string;
+  required?: boolean;
   hint?: string;
   error?: string;
   placeholder?: string;
@@ -28,6 +29,7 @@ export function Select({
   onChange,
   options,
   label,
+  required = false,
   hint,
   error,
   placeholder = "Select an option...",
@@ -126,6 +128,7 @@ export function Select({
           name={name}
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          required={required}
           className="sr-only"
           tabIndex={-1}
           aria-hidden="true"
@@ -142,6 +145,11 @@ export function Select({
       {label && (
         <label className="block text-sm font-medium text-slate-700 mb-1.5">
           {label}
+          {required && (
+            <span className="ml-1 text-red-600" aria-hidden="true">
+              **
+            </span>
+          )}
         </label>
       )}
 

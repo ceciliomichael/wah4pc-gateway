@@ -80,6 +80,15 @@ func (r *testProviderRepoStub) GetByID(id string) (model.Provider, error) {
 	return provider, nil
 }
 
+func (r *testProviderRepoStub) GetByFacilityCode(facilityCode string) (model.Provider, error) {
+	for _, provider := range r.items {
+		if provider.FacilityCode == facilityCode {
+			return provider, nil
+		}
+	}
+	return model.Provider{}, repository.ErrNotFound
+}
+
 func (r *testProviderRepoStub) Create(provider model.Provider) error {
 	r.items[provider.ID] = provider
 	return nil

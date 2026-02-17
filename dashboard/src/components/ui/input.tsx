@@ -28,6 +28,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
   ) => {
     const inputId = id || props.name;
     const hasError = !!error;
+    const isRequired = !!props.required;
 
     return (
       <div className="w-full">
@@ -37,6 +38,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             className="block text-sm font-medium text-slate-700 mb-1.5"
           >
             {label}
+            {isRequired && (
+              <span className="ml-1 text-red-600" aria-hidden="true">
+                **
+              </span>
+            )}
           </label>
         )}
         <div className="relative">

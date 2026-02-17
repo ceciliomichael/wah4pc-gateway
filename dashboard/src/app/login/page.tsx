@@ -324,13 +324,8 @@ export default function LoginPage() {
           <div className="mt-6 text-center">
             <p className="text-sm text-slate-500">
               {loginType === "admin"
-                ? "Use your master key from "
+                ? "Enter the master admin key to access the dashboard"
                 : "Use your provider ID and user API key provisioned by admin"}
-              {loginType === "admin" && (
-                <code className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-600 text-xs">
-                  config.yaml
-                </code>
-              )}
             </p>
           </div>
 

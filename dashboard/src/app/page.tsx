@@ -25,7 +25,7 @@ import { StatusBadge } from "@/components/ui/badge";
 
 interface StatCardProps {
   label: string;
-  value: number;
+  value: number | string;
   icon: React.ComponentType<{ className?: string }>;
   color: "primary" | "emerald" | "amber" | "violet";
   trend?: string;
@@ -210,7 +210,7 @@ function DashboardContent() {
           />
           <StatCard
             label="Success Rate"
-            value={stats.totalTransactions > 0 ? Math.round((stats.completedTransactions / stats.totalTransactions) * 100) : 0}
+            value={stats.totalTransactions > 0 ? `${Math.round((stats.completedTransactions / stats.totalTransactions) * 100)}%` : "0%"}
             icon={LuZap}
             color="violet"
             description={`${stats.completedTransactions} completed`}
@@ -228,7 +228,7 @@ function DashboardContent() {
           />
           <StatCard
             label="Success Rate"
-            value={stats.totalTransactions > 0 ? Math.round((stats.completedTransactions / stats.totalTransactions) * 100) : 0}
+            value={stats.totalTransactions > 0 ? `${Math.round((stats.completedTransactions / stats.totalTransactions) * 100)}%` : "0%"}
             icon={LuZap}
             color="violet"
             description={`${stats.completedTransactions} completed`}

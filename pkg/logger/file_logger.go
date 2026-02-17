@@ -318,7 +318,8 @@ func isSensitiveHeader(key string) bool {
 }
 
 func indentBody(body string) string {
-	lines := strings.Split(body, "\n")
+	formattedBody := prettyPrintJSONBody(body)
+	lines := strings.Split(formattedBody, "\n")
 	var sb strings.Builder
 	for _, line := range lines {
 		sb.WriteString("  ")
@@ -326,6 +327,38 @@ func indentBody(body string) string {
 		sb.WriteString("\n")
 	}
 	return strings.TrimSuffix(sb.String(), "\n")
+}
+
+func prettyPrintJSONBody(body string) string {
+	trimmedBody := strings.TrimSpace(body)
+	if trimmedBody == "" {
+		return body
+	}
+
+	const truncationMarkerPrefix = "\n\n[TRUNCATED - Original size:"
+
+	bodyToParse := body
+	truncationSuffix := ""
+	if markerIndex := strings.Index(body, truncationMarkerPrefix); markerIndex >= 0 {
+		bodyToParse = body[:markerIndex]
+		truncationSuffix = body[markerIndex:]
+	}
+
+	var parsed interface{}
+	if err := json.Unmarshal([]byte(strings.TrimSpace(bodyToParse)), &parsed); err != nil {
+		return body
+	}
+
+	pretty, err := json.MarshalIndent(parsed, "", "  ")
+	if err != nil {
+		return body
+	}
+
+	if truncationSuffix != "" {
+		return string(pretty) + truncationSuffix
+	}
+
+	return string(pretty)
 }
 
 // TruncateBody truncates body content if it exceeds MaxBodySize

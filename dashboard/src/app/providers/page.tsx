@@ -9,6 +9,7 @@ import { LuPlus, LuLoaderCircle, LuCircleAlert } from "react-icons/lu";
 import { ProviderDialog } from "@/components/providers/provider-dialog";
 import { ProviderList } from "@/components/providers/provider-list";
 import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
+import { SuccessDialog } from "@/components/ui/success-dialog";
 import { Button } from "@/components/ui/button";
 
 function ProvidersContent() {
@@ -22,6 +23,8 @@ function ProvidersContent() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingProvider, setDeletingProvider] = useState<Provider | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [saveSuccessDialogOpen, setSaveSuccessDialogOpen] = useState(false);
+  const [saveSuccessMessage, setSaveSuccessMessage] = useState("");
 
   const fetchProviders = useCallback(async () => {
     try {
@@ -91,7 +94,12 @@ function ProvidersContent() {
   };
 
   const handleDialogSuccess = () => {
+    const message = editingProvider
+      ? "Provider changes were saved successfully."
+      : "Provider was added successfully.";
     handleDialogClose();
+    setSaveSuccessMessage(message);
+    setSaveSuccessDialogOpen(true);
     fetchProviders();
   };
 
@@ -158,6 +166,13 @@ function ProvidersContent() {
         isDeleting={isDeleting}
         title="Delete Provider"
         message={`Are you sure you want to delete "${deletingProvider?.name}"? This action cannot be undone.`}
+      />
+
+      <SuccessDialog
+        open={saveSuccessDialogOpen}
+        onClose={() => setSaveSuccessDialogOpen(false)}
+        title="Saved Successfully"
+        message={saveSuccessMessage}
       />
     </div>
   );

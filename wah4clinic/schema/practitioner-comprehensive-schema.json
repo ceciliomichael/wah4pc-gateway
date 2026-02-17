@@ -1,0 +1,265 @@
+{
+  "resourceType": "Practitioner",
+  "id": "practitioner-comprehensive-example",
+  "meta": {
+    "profile": [
+      "urn://example.com/ph-core/fhir/StructureDefinition/ph-core-practitioner"
+    ]
+  },
+  "identifier": [
+    {
+      "type": {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
+            "code": "MD",
+            "display": "Medical License number"
+          }
+        ]
+      },
+      "system": "http://prc.gov.ph/fhir/Identifier/prc-license",
+      "value": "PRC-1234567"
+    },
+    {
+      "type": {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
+            "code": "TAX",
+            "display": "Tax ID number"
+          }
+        ]
+      },
+      "system": "http://bir.gov.ph/fhir/Identifier/tin",
+      "value": "123-456-789-000"
+    }
+  ],
+  "active": true,
+  "name": [
+    {
+      "use": "official",
+      "prefix": [
+        "Dr."
+      ],
+      "family": "Dela Cruz",
+      "given": [
+        "Maria",
+        "Santos"
+      ],
+      "suffix": [
+        "MD"
+      ]
+    },
+    {
+      "use": "nickname",
+      "given": [
+        "Mia"
+      ]
+    }
+  ],
+  "telecom": [
+    {
+      "system": "phone",
+      "value": "09171234567",
+      "use": "mobile",
+      "rank": 1
+    },
+    {
+      "system": "phone",
+      "value": "+63 2 8123 4567",
+      "use": "work",
+      "rank": 2
+    },
+    {
+      "system": "email",
+      "value": "dr.maria.delacruz@hospital.ph",
+      "use": "work"
+    },
+    {
+      "system": "email",
+      "value": "maria.santos@personal.com",
+      "use": "home"
+    }
+  ],
+  "address": [
+    {
+      "extension": [
+        {
+          "url": "urn://example.com/ph-core/fhir/StructureDefinition/region",
+          "valueCoding": {
+            "system": "urn://example.com/ph-core/fhir/CodeSystem/PSGC",
+            "code": "130000000",
+            "display": "NCR"
+          }
+        },
+        {
+          "url": "urn://example.com/ph-core/fhir/StructureDefinition/city-municipality",
+          "valueCoding": {
+            "system": "urn://example.com/ph-core/fhir/CodeSystem/PSGC",
+            "code": "137602000",
+            "display": "City of Makati"
+          }
+        },
+        {
+          "url": "urn://example.com/ph-core/fhir/StructureDefinition/barangay",
+          "valueCoding": {
+            "system": "urn://example.com/ph-core/fhir/CodeSystem/PSGC",
+            "code": "137602002",
+            "display": "Bel-Air"
+          }
+        }
+      ],
+      "use": "home",
+      "type": "physical",
+      "line": [
+        "456 Ayala Avenue",
+        "Tower B, Unit 2501"
+      ],
+      "city": "Makati",
+      "district": "NCR",
+      "postalCode": "1209",
+      "country": "PH",
+      "text": "456 Ayala Avenue, Tower B, Unit 2501, Bel-Air, Makati, NCR, Philippines"
+    },
+    {
+      "extension": [
+        {
+          "url": "urn://example.com/ph-core/fhir/StructureDefinition/region",
+          "valueCoding": {
+            "system": "urn://example.com/ph-core/fhir/CodeSystem/PSGC",
+            "code": "130000000",
+            "display": "NCR"
+          }
+        },
+        {
+          "url": "urn://example.com/ph-core/fhir/StructureDefinition/city-municipality",
+          "valueCoding": {
+            "system": "urn://example.com/ph-core/fhir/CodeSystem/PSGC",
+            "code": "137602000",
+            "display": "City of Makati"
+          }
+        },
+        {
+          "url": "urn://example.com/ph-core/fhir/StructureDefinition/barangay",
+          "valueCoding": {
+            "system": "urn://example.com/ph-core/fhir/CodeSystem/PSGC",
+            "code": "137602020",
+            "display": "Poblacion"
+          }
+        }
+      ],
+      "use": "work",
+      "type": "physical",
+      "line": [
+        "St. Luke's Medical Center",
+        "279 E. Rodriguez Sr. Avenue"
+      ],
+      "city": "Quezon City",
+      "district": "NCR",
+      "postalCode": "1112",
+      "country": "PH",
+      "text": "St. Luke's Medical Center, 279 E. Rodriguez Sr. Avenue, Poblacion, Quezon City, NCR, Philippines"
+    }
+  ],
+  "gender": "female",
+  "birthDate": "1985-03-15",
+  "photo": [
+    {
+      "contentType": "image/jpeg",
+      "url": "https://example.com/photos/dr-maria-delacruz.jpg",
+      "title": "Dr. Maria Santos Dela Cruz"
+    }
+  ],
+  "qualification": [
+    {
+      "identifier": [
+        {
+          "system": "http://prc.gov.ph/fhir/Identifier/prc-license",
+          "value": "PRC-1234567"
+        }
+      ],
+      "code": {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/v2-0360",
+            "code": "MD",
+            "display": "Doctor of Medicine"
+          }
+        ],
+        "text": "Doctor of Medicine"
+      },
+      "period": {
+        "start": "2010-05-15"
+      },
+      "issuer": {
+        "display": "Professional Regulation Commission"
+      }
+    },
+    {
+      "code": {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "394579002",
+            "display": "Cardiology"
+          }
+        ],
+        "text": "Board Certified Cardiologist"
+      },
+      "period": {
+        "start": "2015-06-20"
+      },
+      "issuer": {
+        "display": "Philippine College of Cardiology"
+      }
+    },
+    {
+      "code": {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/v2-0360",
+            "code": "BS",
+            "display": "Bachelor of Science"
+          }
+        ],
+        "text": "Bachelor of Science in Biology"
+      },
+      "period": {
+        "start": "2002-03-15",
+        "end": "2006-05-20"
+      },
+      "issuer": {
+        "display": "University of the Philippines"
+      }
+    }
+  ],
+  "communication": [
+    {
+      "coding": [
+        {
+          "system": "urn:ietf:bcp:47",
+          "code": "tl",
+          "display": "Tagalog"
+        }
+      ]
+    },
+    {
+      "coding": [
+        {
+          "system": "urn:ietf:bcp:47",
+          "code": "en",
+          "display": "English"
+        }
+      ]
+    },
+    {
+      "coding": [
+        {
+          "system": "urn:ietf:bcp:47",
+          "code": "ceb",
+          "display": "Cebuano"
+        }
+      ]
+    }
+  ]
+}

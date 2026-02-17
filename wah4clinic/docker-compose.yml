@@ -1,0 +1,28 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wah4clinic-web
+    restart: always
+    ports:
+      - "3056:3056"
+    environment:
+      - NODE_ENV=production
+      - PORT=3056
+    volumes:
+      # Mount the data directory to persist JSON storage
+      # Ensure this directory exists and has write permissions for the container user (UID 1001)
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD", "test", "-w", "/app/data"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - wah4clinic-network
+
+networks:
+  wah4clinic-network:
+    driver: bridge

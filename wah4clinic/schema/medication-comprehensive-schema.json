@@ -1,0 +1,90 @@
+{
+  "resourceType": "Medication",
+  "id": "medication-comprehensive-example",
+  "meta": {
+    "profile": [
+      "urn://example.com/ph-core/fhir/StructureDefinition/ph-core-medication"
+    ]
+  },
+  "identifier": [
+    {
+      "system": "http://hospital.example.ph/fhir/Identifier/medication",
+      "value": "MED-2024-001"
+    }
+  ],
+  "code": {
+    "coding": [
+      {
+        "system": "urn://example.com/ph-core/fhir/ValueSet/drugs",
+        "code": "AMOX500",
+        "display": "Amoxicillin 500mg Capsule"
+      },
+      {
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "code": "196503",
+        "display": "Amoxicillin 500 MG Oral Capsule"
+      }
+    ],
+    "text": "Amoxicillin 500mg Capsule"
+  },
+  "status": "active",
+  "manufacturer": {
+    "reference": "Organization/pharma-example",
+    "display": "Generic Pharma Corp."
+  },
+  "form": {
+    "coding": [
+      {
+        "system": "http://terminology.hl7.org/CodeSystem/v3-orderableDrugForm",
+        "code": "CAP",
+        "display": "Capsule"
+      }
+    ]
+  },
+  "amount": {
+    "numerator": {
+      "value": 500,
+      "unit": "mg",
+      "system": "http://unitsofmeasure.org",
+      "code": "mg"
+    },
+    "denominator": {
+      "value": 1,
+      "unit": "capsule",
+      "system": "http://terminology.hl7.org/CodeSystem/v3-orderableDrugForm",
+      "code": "CAP"
+    }
+  },
+  "ingredient": [
+    {
+      "itemCodeableConcept": {
+        "coding": [
+          {
+            "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+            "code": "723",
+            "display": "Amoxicillin"
+          }
+        ]
+      },
+      "isActive": true,
+      "strength": {
+        "numerator": {
+          "value": 500,
+          "unit": "mg",
+          "system": "http://unitsofmeasure.org",
+          "code": "mg"
+        },
+        "denominator": {
+          "value": 1,
+          "unit": "capsule",
+          "system": "http://terminology.hl7.org/CodeSystem/v3-orderableDrugForm",
+          "code": "CAP"
+        }
+      }
+    }
+  ],
+  "batch": {
+    "lotNumber": "BATCH-2024-X99",
+    "expirationDate": "2026-12-31"
+  }
+}

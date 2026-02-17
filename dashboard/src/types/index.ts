@@ -5,6 +5,8 @@ export interface Provider {
   id: string;
   name: string;
   type: ProviderType;
+  facilityCode: string;
+  location: string;
   baseUrl: string;
   gatewayAuthKey?: string;
   isActive: boolean;
@@ -15,6 +17,8 @@ export interface Provider {
 export interface ProviderCreateRequest {
   name: string;
   type: ProviderType;
+  facilityCode: string;
+  location: string;
   baseUrl: string;
   gatewayAuthKey?: string;
 }

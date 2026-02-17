@@ -39,6 +39,8 @@ func NewProviderService(repo ProviderRepository) *ProviderService {
 type RegisterInput struct {
 	Name           string
 	Type           model.ProviderType
+	FacilityCode   string
+	Location       string
 	BaseURL        string
 	GatewayAuthKey string
 }
@@ -55,6 +57,8 @@ func (s *ProviderService) Register(input RegisterInput) (*model.Provider, error)
 		ID:             uuid.New().String(),
 		Name:           input.Name,
 		Type:           input.Type,
+		FacilityCode:   input.FacilityCode,
+		Location:       input.Location,
 		BaseURL:        normalizedBaseURL,
 		GatewayAuthKey: input.GatewayAuthKey,
 		IsActive:       true,
@@ -120,6 +124,12 @@ func (s *ProviderService) Update(id string, input RegisterInput) (*model.Provide
 			return nil, ErrInvalidProvider
 		}
 		provider.BaseURL = normalizedBaseURL
+	}
+	if input.FacilityCode != "" {
+		provider.FacilityCode = input.FacilityCode
+	}
+	if input.Location != "" {
+		provider.Location = input.Location
 	}
 	if input.GatewayAuthKey != "" {
 		provider.GatewayAuthKey = input.GatewayAuthKey

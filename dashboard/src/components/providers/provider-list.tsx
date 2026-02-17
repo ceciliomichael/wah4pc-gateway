@@ -97,6 +97,17 @@ function ProviderCard({
 
         {/* Base URL */}
         <div>
+          <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Facility Code</p>
+          <p className="text-sm text-slate-700 break-all">{provider.facilityCode || "-"}</p>
+        </div>
+
+        <div>
+          <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Location</p>
+          <p className="text-sm text-slate-700 break-all">{provider.location || "-"}</p>
+        </div>
+
+        {/* Base URL */}
+        <div>
           <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Base URL</p>
           <a
             href={provider.baseUrl}
@@ -173,6 +184,12 @@ export function ProviderList({
                   Type
                 </th>
                 <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  Facility Code
+                </th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  Location
+                </th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Base URL
                 </th>
                 <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
@@ -194,6 +211,12 @@ export function ProviderList({
                   </td>
                   <td className="px-5 py-4">
                     <ProviderTypeBadge type={provider.type} />
+                  </td>
+                  <td className="px-5 py-4">
+                    <p className="text-sm text-slate-700">{provider.facilityCode || "-"}</p>
+                  </td>
+                  <td className="px-5 py-4">
+                    <p className="text-sm text-slate-700">{provider.location || "-"}</p>
                   </td>
                   <td className="px-5 py-4">
                     <a

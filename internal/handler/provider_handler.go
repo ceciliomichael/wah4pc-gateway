@@ -22,18 +22,24 @@ func NewProviderHandler(svc *service.ProviderService) *ProviderHandler {
 
 // RegisterRequest is the request body for provider registration
 type RegisterRequest struct {
-	Name           string `json:"name"`
-	Type           string `json:"type"`
-	BaseURL        string `json:"baseUrl"`
-	GatewayAuthKey string `json:"gatewayAuthKey"`
+	Name              string `json:"name"`
+	Type              string `json:"type"`
+	FacilityCode      string `json:"facility_code"`
+	FacilityCodeCamel string `json:"facilityCode"`
+	Location          string `json:"location"`
+	BaseURL           string `json:"baseUrl"`
+	GatewayAuthKey    string `json:"gatewayAuthKey"`
 }
 
 // PublicProviderResponse represents the public view of a provider
 type PublicProviderResponse struct {
-	ID       string             `json:"id"`
-	Name     string             `json:"name"`
-	Type     model.ProviderType `json:"type"`
-	IsActive bool               `json:"isActive"`
+	ID           string             `json:"id"`
+	Name         string             `json:"name"`
+	Type         model.ProviderType `json:"type"`
+	FacilityCode string             `json:"facility_code"`
+	Location     string             `json:"location"`
+	BaseURL      string             `json:"baseUrl"`
+	IsActive     bool               `json:"isActive"`
 }
 
 // Register handles POST /api/v1/providers
@@ -54,6 +60,8 @@ func (h *ProviderHandler) Register(w http.ResponseWriter, r *http.Request) {
 	input := service.RegisterInput{
 		Name:           req.Name,
 		Type:           model.ProviderType(req.Type),
+		FacilityCode:   firstNonEmpty(req.FacilityCode, req.FacilityCodeCamel),
+		Location:       req.Location,
 		BaseURL:        req.BaseURL,
 		GatewayAuthKey: req.GatewayAuthKey,
 	}
@@ -87,10 +95,13 @@ func (h *ProviderHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	response := make([]PublicProviderResponse, len(providers))
 	for i, p := range providers {
 		response[i] = PublicProviderResponse{
-			ID:       p.ID,
-			Name:     p.Name,
-			Type:     p.Type,
-			IsActive: p.IsActive,
+			ID:           p.ID,
+			Name:         p.Name,
+			Type:         p.Type,
+			FacilityCode: p.FacilityCode,
+			Location:     p.Location,
+			BaseURL:      p.BaseURL,
+			IsActive:     p.IsActive,
 		}
 	}
 
@@ -142,6 +153,8 @@ func (h *ProviderHandler) Update(w http.ResponseWriter, r *http.Request) {
 	input := service.RegisterInput{
 		Name:           req.Name,
 		Type:           model.ProviderType(req.Type),
+		FacilityCode:   firstNonEmpty(req.FacilityCode, req.FacilityCodeCamel),
+		Location:       req.Location,
 		BaseURL:        req.BaseURL,
 		GatewayAuthKey: req.GatewayAuthKey,
 	}
@@ -243,4 +256,13 @@ func extractPathParam(path, prefix string) string {
 	// Remove trailing slash if present
 	param = strings.TrimSuffix(param, "/")
 	return param
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, v := range values {
+		if strings.TrimSpace(v) != "" {
+			return v
+		}
+	}
+	return ""
 }

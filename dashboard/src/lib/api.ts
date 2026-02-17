@@ -17,6 +17,9 @@ interface ProviderApiShape {
   id: string;
   name: string;
   type: Provider["type"];
+  facilityCode?: string;
+  facility_code?: string;
+  location?: string;
   baseUrl?: string;
   base_url?: string;
   gatewayAuthKey?: string;
@@ -110,6 +113,8 @@ function normalizeProvider(data: ProviderApiShape): Provider {
     id: data.id,
     name: data.name,
     type: data.type,
+    facilityCode: data.facilityCode ?? data.facility_code ?? "",
+    location: data.location ?? "",
     baseUrl: data.baseUrl ?? data.base_url ?? "",
     gatewayAuthKey: data.gatewayAuthKey ?? data.gateway_auth_key ?? "",
     isActive: data.isActive ?? data.is_active ?? false,

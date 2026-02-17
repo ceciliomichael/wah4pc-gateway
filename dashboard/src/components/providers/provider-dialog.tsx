@@ -43,6 +43,8 @@ export function ProviderDialog({
   const [formData, setFormData] = useState<ProviderCreateRequest>({
     name: "",
     type: "hospital",
+    facilityCode: "",
+    location: "",
     baseUrl: "",
     gatewayAuthKey: "",
   });
@@ -56,6 +58,8 @@ export function ProviderDialog({
         setFormData({
           name: provider.name,
           type: provider.type,
+          facilityCode: provider.facilityCode || "",
+          location: provider.location || "",
           baseUrl: provider.baseUrl,
           gatewayAuthKey: provider.gatewayAuthKey || "",
         });
@@ -63,6 +67,8 @@ export function ProviderDialog({
         setFormData({
           name: "",
           type: "hospital",
+          facilityCode: "",
+          location: "",
           baseUrl: "",
           gatewayAuthKey: "",
         });
@@ -142,6 +148,30 @@ export function ProviderDialog({
               setFormData((prev) => ({ ...prev, name: e.target.value }))
             }
             placeholder="e.g., City General Hospital"
+            disabled={isSubmitting}
+          />
+
+          <Input
+            label="Facility Code"
+            name="facilityCode"
+            type="text"
+            value={formData.facilityCode}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, facilityCode: e.target.value }))
+            }
+            placeholder="e.g., HOSP-001"
+            disabled={isSubmitting}
+          />
+
+          <Input
+            label="Location"
+            name="location"
+            type="text"
+            value={formData.location}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, location: e.target.value }))
+            }
+            placeholder="e.g., Quezon City"
             disabled={isSubmitting}
           />
 

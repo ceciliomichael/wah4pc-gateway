@@ -18,6 +18,7 @@ mongodb:
   transactions_collection: "transactions"
   api_keys_collection: "api_keys"
   settings_collection: "settings"
+  logs_collection: "logs"
 
 logging:
   level: "info"  # debug, info, warn, error

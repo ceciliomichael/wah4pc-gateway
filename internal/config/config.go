@@ -41,6 +41,7 @@ type MongoDBConfig struct {
 	TransactionsCollection string `yaml:"transactions_collection"`
 	ApiKeysCollection      string `yaml:"api_keys_collection"`
 	SettingsCollection     string `yaml:"settings_collection"`
+	LogsCollection         string `yaml:"logs_collection"`
 }
 
 type LoggingConfig struct {
@@ -103,6 +104,9 @@ func loadFromEnv(cfg *Config) {
 	if settingsCollection := os.Getenv("MONGODB_SETTINGS_COLLECTION"); settingsCollection != "" {
 		cfg.MongoDB.SettingsCollection = settingsCollection
 	}
+	if logsCollection := os.Getenv("MONGODB_LOGS_COLLECTION"); logsCollection != "" {
+		cfg.MongoDB.LogsCollection = logsCollection
+	}
 	if validatorURL := os.Getenv("VALIDATOR_URL"); validatorURL != "" {
 		cfg.Validator.URL = validatorURL
 	}
@@ -149,6 +153,9 @@ func setDefaults(cfg *Config) {
 	}
 	if cfg.MongoDB.SettingsCollection == "" {
 		cfg.MongoDB.SettingsCollection = "settings"
+	}
+	if cfg.MongoDB.LogsCollection == "" {
+		cfg.MongoDB.LogsCollection = "logs"
 	}
 	if cfg.Logging.Level == "" {
 		cfg.Logging.Level = "info"

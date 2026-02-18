@@ -1,178 +1,102 @@
 package service
 
 import (
-	"bufio"
-	"encoding/json"
 	"fmt"
 	neturl "net/url"
-	"os"
-	"path/filepath"
 	"regexp"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/wah4pc/wah4pc-gateway/internal/model"
+	"github.com/wah4pc/wah4pc-gateway/pkg/logger"
 )
 
-// LogService handles log retrieval
+// AuditLogRepository defines storage access for audit logs.
+type AuditLogRepository interface {
+	ListDates() ([]string, error)
+	ListByDate(date string) ([]logger.StoredLogEntry, error)
+	GetByID(id string) (logger.StoredLogEntry, error)
+}
+
+// LogService handles log retrieval.
 type LogService struct {
-	baseDir string
-	txRepo  TransactionRepository
+	repo   AuditLogRepository
+	txRepo TransactionRepository
 }
 
-// NewLogService creates a new LogService
-func NewLogService(baseDir string, txRepo TransactionRepository) *LogService {
-	return &LogService{
-		baseDir: baseDir,
-		txRepo:  txRepo,
-	}
+// NewLogService creates a new LogService.
+func NewLogService(repo AuditLogRepository, txRepo TransactionRepository) *LogService {
+	return &LogService{repo: repo, txRepo: txRepo}
 }
 
-// GetLogDates returns a list of dates available in the logs
+// GetLogDates returns a list of dates available in the logs.
 func (s *LogService) GetLogDates() ([]model.LogDate, error) {
 	return s.GetLogDatesFiltered("", true)
 }
 
 // GetLogDatesFiltered returns visible log dates based on caller scope.
 func (s *LogService) GetLogDatesFiltered(providerID string, isAdmin bool) ([]model.LogDate, error) {
-	entries, err := os.ReadDir(s.baseDir)
+	dates, err := s.repo.ListDates()
 	if err != nil {
-		if os.IsNotExist(err) {
-			return []model.LogDate{}, nil
-		}
-		return nil, fmt.Errorf("failed to read log directory: %w", err)
+		return nil, err
 	}
 
-	var dates []model.LogDate
-	for _, entry := range entries {
-		if entry.IsDir() {
-			name := entry.Name()
-			// Basic validation that it looks like a date (YYYY-MM-DD)
-			if _, err := time.Parse("2006-01-02", name); err == nil {
-				if isAdmin {
-					// Estimate count/size
-					info, _ := s.getDirStats(filepath.Join(s.baseDir, name))
-					dates = append(dates, model.LogDate{
-						Date:      name,
-						Count:     info.count,
-						SizeBytes: info.size,
-					})
-					continue
-				}
-
-				logs, logsErr := s.GetLogsByDateFiltered(name, providerID, false)
-				if logsErr != nil {
-					continue
-				}
-				if len(logs) > 0 {
-					dates = append(dates, model.LogDate{
-						Date:      name,
-						Count:     len(logs),
-						SizeBytes: 0,
-					})
-				}
-			}
+	out := make([]model.LogDate, 0, len(dates))
+	for _, date := range dates {
+		logs, logsErr := s.GetLogsByDateFiltered(date, providerID, isAdmin)
+		if logsErr != nil || len(logs) == 0 {
+			continue
 		}
+		out = append(out, model.LogDate{
+			Date:      date,
+			Count:     len(logs),
+			SizeBytes: 0,
+		})
 	}
 
-	// Sort descending (newest first)
-	sort.Slice(dates, func(i, j int) bool {
-		return dates[i].Date > dates[j].Date
+	sort.Slice(out, func(i, j int) bool {
+		return out[i].Date > out[j].Date
 	})
 
-	return dates, nil
+	return out, nil
 }
 
-type dirStats struct {
-	count int
-	size  int64
-}
-
-func (s *LogService) getDirStats(path string) (dirStats, error) {
-	entries, err := os.ReadDir(path)
-	if err != nil {
-		return dirStats{}, err
-	}
-	var stats dirStats
-	for _, e := range entries {
-		if !e.IsDir() {
-			stats.count++
-			info, err := e.Info()
-			if err == nil {
-				stats.size += info.Size()
-			}
-		}
-	}
-	// Adjust count if index.jsonl exists (it's not a log file itself)
-	if _, err := os.Stat(filepath.Join(path, "index.jsonl")); err == nil {
-		stats.count--
-	}
-	return stats, nil
-}
-
-// GetLogsByDate returns log summaries for a specific date
+// GetLogsByDate returns log summaries for a specific date.
 func (s *LogService) GetLogsByDate(date string) ([]model.LogSummary, error) {
 	return s.GetLogsByDateFiltered(date, "", true)
 }
 
 // GetLogsByDateFiltered returns visible log summaries for a specific date based on caller scope.
 func (s *LogService) GetLogsByDateFiltered(date, providerID string, isAdmin bool) ([]model.LogSummary, error) {
-	dirPath := filepath.Join(s.baseDir, date)
-	indexFile := filepath.Join(dirPath, "index.jsonl")
-
-	// Check if index exists
-	if _, err := os.Stat(indexFile); err == nil {
-		return s.readIndexFile(indexFile, providerID, isAdmin)
-	}
-
-	// Build index from legacy log text files when missing.
-	created, err := s.buildIndexFile(dirPath, date, indexFile)
-	if err == nil && created {
-		return s.readIndexFile(indexFile, providerID, isAdmin)
-	}
-
-	if !isAdmin {
-		return []model.LogSummary{}, nil
-	}
-
-	// Fallback: list files (less efficient, less data)
-	return s.scanLogFiles(dirPath, date)
-}
-
-func (s *LogService) readIndexFile(path, providerID string, isAdmin bool) ([]model.LogSummary, error) {
-	file, err := os.Open(path)
+	entries, err := s.repo.ListByDate(date)
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
 
-	var logs []model.LogSummary
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		var log model.LogSummary
-		if err := json.Unmarshal(scanner.Bytes(), &log); err == nil {
-			if shouldHideLogURL(log.URL) {
-				continue
-			}
-			if !isAdmin {
-				// Legacy rows may not have providerId; hide them from provider users.
-				if strings.TrimSpace(log.ProviderID) == "" || log.ProviderID != providerID {
-					if !s.isProviderRelatedLog(path, log.ID, log.URL, providerID) {
-						continue
-					}
-				}
-			}
-			logs = append(logs, log)
+	logs := make([]model.LogSummary, 0, len(entries))
+	for _, entry := range entries {
+		if shouldHideLogURL(entry.URL) {
+			continue
 		}
+		if !isAdmin && !s.isProviderVisible(entry, providerID) {
+			continue
+		}
+
+		logs = append(logs, model.LogSummary{
+			ID:         entry.ID,
+			Timestamp:  entry.Timestamp,
+			Method:     entry.Method,
+			URL:        entry.URL,
+			StatusCode: entry.StatusCode,
+			DurationMs: entry.DurationMs,
+			ClientIP:   entry.RemoteAddr,
+			KeyID:      entry.KeyID,
+			Role:       entry.Role,
+			ProviderID: entry.ProviderID,
+		})
 	}
 
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
-
-	// Sort by timestamp descending
 	sort.Slice(logs, func(i, j int) bool {
 		return logs[i].Timestamp.After(logs[j].Timestamp)
 	})
@@ -200,308 +124,53 @@ func shouldHideLogURL(rawURL string) bool {
 		strings.HasPrefix(path, "/api/v1/transactions/")
 }
 
-func (s *LogService) scanLogFiles(dirPath, dateStr string) ([]model.LogSummary, error) {
-	entries, err := os.ReadDir(dirPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("date not found")
-		}
-		return nil, err
-	}
-
-	var logs []model.LogSummary
-	for _, entry := range entries {
-		name := entry.Name()
-		if strings.HasSuffix(name, ".txt") {
-			// Filename format: HH-MM-SS_SHORTID.txt
-			parts := strings.Split(strings.TrimSuffix(name, ".txt"), "_")
-			if len(parts) >= 2 {
-				timeStr := parts[0]
-				shortID := parts[1]
-
-				// Construct timestamp
-				fullTimeStr := fmt.Sprintf("%s %s", dateStr, strings.ReplaceAll(timeStr, "-", ":"))
-				ts, _ := time.ParseInLocation("2006-01-02 15:04:05", fullTimeStr, time.UTC)
-
-				logs = append(logs, model.LogSummary{
-					ID:        shortID, // We only have short ID here
-					Timestamp: ts,
-					Method:    "???", // Unknown without reading file
-					URL:       "???",
-				})
-			}
-		}
-	}
-	
-	// Sort by timestamp descending
-	sort.Slice(logs, func(i, j int) bool {
-		return logs[i].Timestamp.After(logs[j].Timestamp)
-	})
-
-	return logs, nil
-}
-
-// GetLogDetail reads the full content of a log file
+// GetLogDetail reads the full content of a log entry.
 func (s *LogService) GetLogDetail(date, id string) (*model.LogDetail, error) {
 	return s.GetLogDetailFiltered(date, id, "", true)
 }
 
 // GetLogDetailFiltered reads a single log detail if visible within caller scope.
 func (s *LogService) GetLogDetailFiltered(date, id, providerID string, isAdmin bool) (*model.LogDetail, error) {
-	if !isAdmin {
-		visibleLogs, err := s.GetLogsByDateFiltered(date, providerID, false)
-		if err != nil {
-			return nil, err
-		}
-		found := false
-		for _, log := range visibleLogs {
-			if log.ID == id {
-				found = true
-				break
-			}
-		}
-		if !found {
-			return nil, fmt.Errorf("log file not found")
-		}
-	}
-
-	dirPath := filepath.Join(s.baseDir, date)
-	
-	// We need to find the file. It starts with a timestamp we don't know, but ends with the short ID.
-	// The ID passed might be full UUID or short ID.
-	shortID := id
-	if len(id) > 8 {
-		shortID = id[:8]
-	}
-
-	pattern := filepath.Join(dirPath, fmt.Sprintf("*_%s.txt", shortID))
-	matches, err := filepath.Glob(pattern)
+	entry, err := s.repo.GetByID(id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to search for log file: %w", err)
+		return nil, err
 	}
-
-	if len(matches) == 0 {
+	if entry.Date != date {
+		return nil, fmt.Errorf("log file not found")
+	}
+	if shouldHideLogURL(entry.URL) {
+		return nil, fmt.Errorf("log file not found")
+	}
+	if !isAdmin && !s.isProviderVisible(entry, providerID) {
 		return nil, fmt.Errorf("log file not found")
 	}
 
-	// Read the first match (should be unique per ID)
-	content, err := os.ReadFile(matches[0])
-	if err != nil {
-		return nil, fmt.Errorf("failed to read log file: %w", err)
-	}
-
-	// Parse timestamp from filename
-	fileName := filepath.Base(matches[0])
-	timeStr := strings.Split(fileName, "_")[0]
-	fullTimeStr := fmt.Sprintf("%s %s", date, strings.ReplaceAll(timeStr, "-", ":"))
-
 	return &model.LogDetail{
-		ID:        id,
-		Timestamp: fullTimeStr,
-		Content:   string(content),
+		ID:        entry.ID,
+		Timestamp: entry.Timestamp.UTC().Format(time.RFC3339),
+		Content:   entry.Content,
 	}, nil
 }
 
-func (s *LogService) buildIndexFile(dirPath, date, indexFile string) (bool, error) {
-	entries, err := os.ReadDir(dirPath)
-	if err != nil {
-		return false, err
-	}
-
-	var logs []model.LogSummary
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		name := entry.Name()
-		if !strings.HasSuffix(name, ".txt") {
-			continue
-		}
-		logPath := filepath.Join(dirPath, name)
-		parsed, parseErr := parseLegacyLogFile(logPath, name, date)
-		if parseErr == nil {
-			logs = append(logs, parsed)
-		}
-	}
-
-	if len(logs) == 0 {
-		return false, nil
-	}
-
-	sort.Slice(logs, func(i, j int) bool {
-		return logs[i].Timestamp.After(logs[j].Timestamp)
-	})
-
-	file, err := os.Create(indexFile)
-	if err != nil {
-		return false, err
-	}
-	defer file.Close()
-
-	enc := json.NewEncoder(file)
-	for _, log := range logs {
-		if err := enc.Encode(log); err != nil {
-			return false, err
-		}
-	}
-
-	return true, nil
-}
-
-func parseLegacyLogFile(path, filename, date string) (model.LogSummary, error) {
-	contentBytes, err := os.ReadFile(path)
-	if err != nil {
-		return model.LogSummary{}, err
-	}
-	content := string(contentBytes)
-
-	summary := model.LogSummary{
-		ID: filename,
-	}
-
-	if ts := parseTimestampFromFilename(filename, date); !ts.IsZero() {
-		summary.Timestamp = ts
-	}
-
-	lines := strings.Split(content, "\n")
-	for _, rawLine := range lines {
-		line := strings.TrimRight(rawLine, "\r")
-		trimmed := strings.TrimSpace(line)
-		if trimmed == "" {
-			continue
-		}
-
-		if method, url, ok := parseRequestLine(trimmed); ok {
-			summary.Method = method
-			summary.URL = url
-			continue
-		}
-
-		key, value, ok := splitLegacyKeyValue(trimmed)
-		if !ok {
-			continue
-		}
-		switch key {
-		case "Request ID":
-			if value != "" && value != "-" {
-				summary.ID = value
-			}
-		case "Timestamp":
-			if parsedTS, parseErr := parseLegacyTimestamp(value); parseErr == nil {
-				summary.Timestamp = parsedTS
-			}
-		case "Duration":
-			if d, parseErr := time.ParseDuration(value); parseErr == nil {
-				summary.DurationMs = d.Milliseconds()
-			}
-		case "Status Code":
-			parts := strings.Fields(value)
-			if len(parts) > 0 {
-				if code, parseErr := strconv.Atoi(parts[0]); parseErr == nil {
-					summary.StatusCode = code
-				}
-			}
-		case "Remote Address":
-			summary.ClientIP = value
-		case "API Key ID":
-			if value != "-" {
-				summary.KeyID = value
-			}
-		case "Role":
-			if value != "-" {
-				summary.Role = value
-			}
-		case "Provider ID":
-			if value != "-" {
-				summary.ProviderID = value
-			}
-		}
-	}
-
-	if summary.Timestamp.IsZero() {
-		summary.Timestamp = time.Now().UTC()
-	}
-	if summary.Method == "" {
-		summary.Method = "GET"
-	}
-	if summary.URL == "" {
-		summary.URL = "/unknown"
-	}
-
-	return summary, nil
-}
-
-func splitLegacyKeyValue(line string) (string, string, bool) {
-	before, after, ok := strings.Cut(line, ":")
-	if !ok {
-		return "", "", false
-	}
-	return strings.TrimSpace(before), strings.TrimSpace(after), true
-}
-
-func parseRequestLine(line string) (string, string, bool) {
-	methods := []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}
-	for _, method := range methods {
-		prefix := method + " "
-		if strings.HasPrefix(line, prefix) {
-			return method, strings.TrimSpace(strings.TrimPrefix(line, prefix)), true
-		}
-	}
-	return "", "", false
-}
-
-func parseLegacyTimestamp(value string) (time.Time, error) {
-	layouts := []string{
-		"2006-01-02 15:04:05.000 -07",
-		"2006-01-02 15:04:05.000 MST",
-		time.RFC3339,
-	}
-	for _, layout := range layouts {
-		if ts, err := time.Parse(layout, value); err == nil {
-			return ts, nil
-		}
-	}
-	return time.Time{}, fmt.Errorf("unable to parse timestamp %q", value)
-}
-
-func parseTimestampFromFilename(filename, date string) time.Time {
-	base := strings.TrimSuffix(filename, ".txt")
-	parts := strings.Split(base, "_")
-	if len(parts) < 2 {
-		return time.Time{}
-	}
-	timeStr := strings.ReplaceAll(parts[0], "-", ":")
-	parsed, err := time.ParseInLocation("2006-01-02 15:04:05", fmt.Sprintf("%s %s", date, timeStr), time.UTC)
-	if err != nil {
-		return time.Time{}
-	}
-	return parsed
-}
-
-func (s *LogService) isProviderRelatedLog(indexFilePath, logID, logURL, providerID string) bool {
-	dirPath := filepath.Dir(indexFilePath)
-	logFilePath, err := s.findLogFilePath(dirPath, logID)
-	if err != nil {
+func (s *LogService) isProviderVisible(entry logger.StoredLogEntry, providerID string) bool {
+	if providerID == "" {
 		return false
 	}
 
-	contentBytes, err := os.ReadFile(logFilePath)
-	if err != nil {
-		return false
+	if strings.TrimSpace(entry.ProviderID) == providerID {
+		return true
 	}
-	content := string(contentBytes)
 
-	// If request body explicitly references provider IDs, allow requester/target/sender visibility.
-	requesterID := extractJSONField(content, "requesterId")
-	targetID := extractJSONField(content, "targetId")
-	senderID := extractJSONField(content, "senderId")
+	combined := strings.Join([]string{entry.RequestBody, entry.ResponseBody, entry.Content}, "\n")
+	requesterID := extractJSONField(combined, "requesterId")
+	targetID := extractJSONField(combined, "targetId")
+	senderID := extractJSONField(combined, "senderId")
 	if requesterID == providerID || targetID == providerID || senderID == providerID {
 		return true
 	}
 
-	// For receive callbacks, use transaction lookup when only transactionId is present.
-	if strings.HasPrefix(logURL, "/api/v1/fhir/receive/") && s.txRepo != nil {
-		txID := extractJSONField(content, "transactionId")
+	if strings.HasPrefix(entry.URL, "/api/v1/fhir/receive/") && s.txRepo != nil {
+		txID := extractJSONField(combined, "transactionId")
 		if strings.TrimSpace(txID) == "" {
 			return false
 		}
@@ -513,23 +182,6 @@ func (s *LogService) isProviderRelatedLog(indexFilePath, logID, logURL, provider
 	}
 
 	return false
-}
-
-func (s *LogService) findLogFilePath(dirPath, id string) (string, error) {
-	shortID := id
-	if len(shortID) > 8 {
-		shortID = shortID[:8]
-	}
-
-	pattern := filepath.Join(dirPath, fmt.Sprintf("*_%s.txt", shortID))
-	matches, err := filepath.Glob(pattern)
-	if err != nil {
-		return "", err
-	}
-	if len(matches) == 0 {
-		return "", fmt.Errorf("log file not found")
-	}
-	return matches[0], nil
 }
 
 func extractJSONField(content, field string) string {

@@ -11,7 +11,7 @@ import (
 	"github.com/wah4pc/wah4pc-gateway/pkg/logger"
 )
 
-// AuditMiddleware logs all HTTP requests to the file-based audit log with full details
+// AuditMiddleware logs all HTTP requests to the audit log store with full details.
 type AuditMiddleware struct {
 	logger *logger.FileLogger
 }

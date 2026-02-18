@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -14,64 +13,80 @@ import (
 // MaxBodySize is the maximum size of request/response body to log (16KB)
 const MaxBodySize = 16 * 1024
 
-// DetailedLogEntry represents a comprehensive audit log entry
+// DetailedLogEntry represents a comprehensive audit log entry.
 type DetailedLogEntry struct {
-	// Identifiers
 	ID        string
 	Timestamp time.Time
 	Duration  time.Duration
 
-	// Request details
 	Method     string
 	URL        string
 	Host       string
 	RemoteAddr string
 	UserAgent  string
 
-	// Request headers and body
 	RequestHeaders  http.Header
 	RequestBody     string
 	RequestBodySize int
 
-	// Response details
 	StatusCode       int
 	ResponseHeaders  http.Header
 	ResponseBody     string
 	ResponseBodySize int
 
-	// Authentication context
 	KeyID      string
 	Role       string
 	ProviderID string
 }
 
-// LogIndexEntry represents a summary of the log entry for indexing (JSONL)
-type LogIndexEntry struct {
-	ID         string    `json:"id"`
-	Timestamp  time.Time `json:"timestamp"`
-	Method     string    `json:"method"`
-	URL        string    `json:"url"`
-	StatusCode int       `json:"statusCode"`
-	DurationMs int64     `json:"durationMs"`
-	ClientIP   string    `json:"clientIp"`
-	KeyID      string    `json:"keyId,omitempty"`
-	Role       string    `json:"role,omitempty"`
-	ProviderID string    `json:"providerId,omitempty"`
+// StoredLogEntry is the MongoDB representation of a log entry.
+type StoredLogEntry struct {
+	ID string `json:"id" bson:"id"`
+
+	Timestamp  time.Time `json:"timestamp" bson:"timestamp"`
+	Date       string    `json:"date" bson:"date"`
+	DurationMs int64     `json:"durationMs" bson:"durationMs"`
+
+	Method     string `json:"method" bson:"method"`
+	URL        string `json:"url" bson:"url"`
+	Host       string `json:"host" bson:"host"`
+	RemoteAddr string `json:"remoteAddr" bson:"remoteAddr"`
+	UserAgent  string `json:"userAgent" bson:"userAgent"`
+
+	RequestHeaders  http.Header `json:"requestHeaders" bson:"requestHeaders"`
+	RequestBody     string      `json:"requestBody" bson:"requestBody"`
+	RequestBodySize int         `json:"requestBodySize" bson:"requestBodySize"`
+
+	StatusCode       int         `json:"statusCode" bson:"statusCode"`
+	ResponseHeaders  http.Header `json:"responseHeaders" bson:"responseHeaders"`
+	ResponseBody     string      `json:"responseBody" bson:"responseBody"`
+	ResponseBodySize int         `json:"responseBodySize" bson:"responseBodySize"`
+
+	KeyID      string `json:"keyId,omitempty" bson:"keyId,omitempty"`
+	Role       string `json:"role,omitempty" bson:"role,omitempty"`
+	ProviderID string `json:"providerId,omitempty" bson:"providerId,omitempty"`
+
+	Content string `json:"content" bson:"content"`
 }
 
-// FileLogger handles asynchronous file-based logging with individual files per request
+// AuditLogStorage defines the storage contract used by the async logger.
+type AuditLogStorage interface {
+	Upsert(entry StoredLogEntry) error
+}
+
+// FileLogger keeps the existing type name for compatibility with current wiring.
 type FileLogger struct {
-	baseDir    string
+	storage    AuditLogStorage
 	logChannel chan DetailedLogEntry
 	done       chan struct{}
 	wg         sync.WaitGroup
 }
 
-// NewFileLogger creates a new FileLogger and starts the background worker
-func NewFileLogger(baseDir string) *FileLogger {
+// NewFileLogger creates an async logger that persists logs to the provided storage.
+func NewFileLogger(storage AuditLogStorage) *FileLogger {
 	l := &FileLogger{
-		baseDir:    baseDir,
-		logChannel: make(chan DetailedLogEntry, 1000), // Buffer for non-blocking writes
+		storage:    storage,
+		logChannel: make(chan DetailedLogEntry, 1000),
 		done:       make(chan struct{}),
 	}
 
@@ -81,24 +96,21 @@ func NewFileLogger(baseDir string) *FileLogger {
 	return l
 }
 
-// Log sends a detailed log entry to the worker (non-blocking)
+// Log queues a detailed log entry for async persistence.
 func (l *FileLogger) Log(entry DetailedLogEntry) {
 	select {
 	case l.logChannel <- entry:
-		// Successfully queued
 	default:
-		// Channel full, log to stderr to avoid blocking
 		fmt.Fprintf(os.Stderr, "[AUDIT OVERFLOW] Request %s could not be logged\n", entry.ID)
 	}
 }
 
-// Close gracefully shuts down the logger, flushing all pending entries
+// Close gracefully shuts down the logger and flushes queued entries.
 func (l *FileLogger) Close() {
 	close(l.done)
 	l.wg.Wait()
 }
 
-// worker is the background goroutine that handles file writes
 func (l *FileLogger) worker() {
 	defer l.wg.Done()
 
@@ -107,7 +119,6 @@ func (l *FileLogger) worker() {
 		case entry := <-l.logChannel:
 			l.writeEntry(entry)
 		case <-l.done:
-			// Drain remaining entries before exiting
 			for {
 				select {
 				case entry := <-l.logChannel:
@@ -120,81 +131,47 @@ func (l *FileLogger) worker() {
 	}
 }
 
-// writeEntry handles the actual file write operation - creates a separate file for each request
 func (l *FileLogger) writeEntry(entry DetailedLogEntry) {
-	// Create date-based directory path
-	dateStr := entry.Timestamp.Format("2006-01-02")
-	dirPath := filepath.Join(l.baseDir, dateStr)
-
-	// Ensure directory exists
-	if err := os.MkdirAll(dirPath, 0755); err != nil {
-		fmt.Fprintf(os.Stderr, "[AUDIT ERROR] Failed to create directory %s: %v\n", dirPath, err)
+	if l.storage == nil {
 		return
 	}
 
-	// Create unique filename: HH-MM-SS_UUID.txt
-	timeStr := entry.Timestamp.Format("15-04-05")
-	shortID := entry.ID
-	if len(shortID) > 8 {
-		shortID = shortID[:8] // Use first 8 chars of UUID for shorter filenames
-	}
-	fileName := fmt.Sprintf("%s_%s.txt", timeStr, shortID)
-	filePath := filepath.Join(dirPath, fileName)
-
-	// Create the file
-	file, err := os.Create(filePath)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "[AUDIT ERROR] Failed to create file %s: %v\n", filePath, err)
-		return
-	}
-	defer file.Close()
-
-	// Write formatted content
-	content := l.formatEntry(entry)
-	if _, err := file.WriteString(content); err != nil {
-		fmt.Fprintf(os.Stderr, "[AUDIT ERROR] Failed to write to %s: %v\n", filePath, err)
-	}
-
-	// Write to index.jsonl
-	indexEntry := LogIndexEntry{
-		ID:         entry.ID,
-		Timestamp:  entry.Timestamp,
-		Method:     entry.Method,
-		URL:        entry.URL,
-		StatusCode: entry.StatusCode,
-		DurationMs: entry.Duration.Milliseconds(),
-		ClientIP:   entry.RemoteAddr,
-		KeyID:      entry.KeyID,
-		Role:       entry.Role,
-		ProviderID: entry.ProviderID,
+	stored := StoredLogEntry{
+		ID:               entry.ID,
+		Timestamp:        entry.Timestamp.UTC(),
+		Date:             entry.Timestamp.UTC().Format("2006-01-02"),
+		DurationMs:       entry.Duration.Milliseconds(),
+		Method:           entry.Method,
+		URL:              entry.URL,
+		Host:             entry.Host,
+		RemoteAddr:       entry.RemoteAddr,
+		UserAgent:        entry.UserAgent,
+		RequestHeaders:   entry.RequestHeaders,
+		RequestBody:      entry.RequestBody,
+		RequestBodySize:  entry.RequestBodySize,
+		StatusCode:       entry.StatusCode,
+		ResponseHeaders:  entry.ResponseHeaders,
+		ResponseBody:     entry.ResponseBody,
+		ResponseBodySize: entry.ResponseBodySize,
+		KeyID:            entry.KeyID,
+		Role:             entry.Role,
+		ProviderID:       entry.ProviderID,
+		Content:          l.formatEntry(entry),
 	}
 
-	indexBytes, err := json.Marshal(indexEntry)
-	if err == nil {
-		indexFilePath := filepath.Join(dirPath, "index.jsonl")
-		// Append to index file
-		f, err := os.OpenFile(indexFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "[AUDIT ERROR] Failed to open index file %s: %v\n", indexFilePath, err)
-		} else {
-			defer f.Close()
-			if _, err := f.Write(append(indexBytes, '\n')); err != nil {
-				fmt.Fprintf(os.Stderr, "[AUDIT ERROR] Failed to write to index file %s: %v\n", indexFilePath, err)
-			}
-		}
+	if err := l.storage.Upsert(stored); err != nil {
+		fmt.Fprintf(os.Stderr, "[AUDIT ERROR] Failed to persist log %s: %v\n", entry.ID, err)
 	}
 }
 
-// formatEntry creates a human-readable log file content
+// formatEntry creates a human-readable audit log body.
 func (l *FileLogger) formatEntry(entry DetailedLogEntry) string {
 	var sb strings.Builder
 
-	// Header section
 	sb.WriteString("╔══════════════════════════════════════════════════════════════════════════════╗\n")
 	sb.WriteString("║                           AUDIT LOG ENTRY                                    ║\n")
 	sb.WriteString("╚══════════════════════════════════════════════════════════════════════════════╝\n\n")
 
-	// Request ID and Timestamp
 	sb.WriteString("┌─────────────────────────────────────────────────────────────────────────────┐\n")
 	sb.WriteString("│ METADATA                                                                    │\n")
 	sb.WriteString("├─────────────────────────────────────────────────────────────────────────────┤\n")
@@ -204,7 +181,6 @@ func (l *FileLogger) formatEntry(entry DetailedLogEntry) string {
 	sb.WriteString(fmt.Sprintf("  Status Code   : %d %s\n", entry.StatusCode, http.StatusText(entry.StatusCode)))
 	sb.WriteString("└─────────────────────────────────────────────────────────────────────────────┘\n\n")
 
-	// Client Information
 	sb.WriteString("┌─────────────────────────────────────────────────────────────────────────────┐\n")
 	sb.WriteString("│ CLIENT INFORMATION                                                          │\n")
 	sb.WriteString("├─────────────────────────────────────────────────────────────────────────────┤\n")
@@ -215,7 +191,6 @@ func (l *FileLogger) formatEntry(entry DetailedLogEntry) string {
 	sb.WriteString(fmt.Sprintf("  Provider ID   : %s\n", valueOrDash(entry.ProviderID)))
 	sb.WriteString("└─────────────────────────────────────────────────────────────────────────────┘\n\n")
 
-	// Request Section
 	sb.WriteString("┌─────────────────────────────────────────────────────────────────────────────┐\n")
 	sb.WriteString("│ REQUEST                                                                     │\n")
 	sb.WriteString("├─────────────────────────────────────────────────────────────────────────────┤\n")
@@ -223,13 +198,11 @@ func (l *FileLogger) formatEntry(entry DetailedLogEntry) string {
 	sb.WriteString(fmt.Sprintf("  Host: %s\n", entry.Host))
 	sb.WriteString("└─────────────────────────────────────────────────────────────────────────────┘\n\n")
 
-	// Request Headers
 	sb.WriteString("┌─────────────────────────────────────────────────────────────────────────────┐\n")
 	sb.WriteString("│ REQUEST HEADERS                                                             │\n")
 	sb.WriteString("├─────────────────────────────────────────────────────────────────────────────┤\n")
 	if len(entry.RequestHeaders) > 0 {
 		for key, values := range entry.RequestHeaders {
-			// Mask sensitive headers
 			displayValue := strings.Join(values, ", ")
 			if isSensitiveHeader(key) {
 				displayValue = "[REDACTED]"
@@ -241,7 +214,6 @@ func (l *FileLogger) formatEntry(entry DetailedLogEntry) string {
 	}
 	sb.WriteString("└─────────────────────────────────────────────────────────────────────────────┘\n\n")
 
-	// Request Body
 	sb.WriteString("┌─────────────────────────────────────────────────────────────────────────────┐\n")
 	sb.WriteString("│ REQUEST BODY                                                                │\n")
 	sb.WriteString("├─────────────────────────────────────────────────────────────────────────────┤\n")
@@ -254,7 +226,6 @@ func (l *FileLogger) formatEntry(entry DetailedLogEntry) string {
 	}
 	sb.WriteString("└─────────────────────────────────────────────────────────────────────────────┘\n\n")
 
-	// Response Headers
 	sb.WriteString("┌─────────────────────────────────────────────────────────────────────────────┐\n")
 	sb.WriteString("│ RESPONSE HEADERS                                                            │\n")
 	sb.WriteString("├─────────────────────────────────────────────────────────────────────────────┤\n")
@@ -267,7 +238,6 @@ func (l *FileLogger) formatEntry(entry DetailedLogEntry) string {
 	}
 	sb.WriteString("└─────────────────────────────────────────────────────────────────────────────┘\n\n")
 
-	// Response Body
 	sb.WriteString("┌─────────────────────────────────────────────────────────────────────────────┐\n")
 	sb.WriteString("│ RESPONSE BODY                                                               │\n")
 	sb.WriteString("├─────────────────────────────────────────────────────────────────────────────┤\n")
@@ -280,15 +250,12 @@ func (l *FileLogger) formatEntry(entry DetailedLogEntry) string {
 	}
 	sb.WriteString("└─────────────────────────────────────────────────────────────────────────────┘\n\n")
 
-	// Footer
 	sb.WriteString("══════════════════════════════════════════════════════════════════════════════\n")
 	sb.WriteString(fmt.Sprintf("  END OF AUDIT LOG - %s\n", entry.ID))
 	sb.WriteString("══════════════════════════════════════════════════════════════════════════════\n")
 
 	return sb.String()
 }
-
-// Helper functions
 
 func valueOrDash(s string) string {
 	if s == "" {
@@ -306,13 +273,7 @@ func truncateString(s string, maxLen int) string {
 
 func isSensitiveHeader(key string) bool {
 	lower := strings.ToLower(key)
-	sensitiveKeys := []string{
-		"authorization",
-		"x-api-key",
-		"x-master-key",
-		"cookie",
-		"set-cookie",
-	}
+	sensitiveKeys := []string{"authorization", "x-api-key", "x-master-key", "cookie", "set-cookie"}
 	for _, k := range sensitiveKeys {
 		if lower == k {
 			return true
@@ -365,7 +326,7 @@ func prettyPrintJSONBody(body string) string {
 	return string(pretty)
 }
 
-// TruncateBody truncates body content if it exceeds MaxBodySize
+// TruncateBody truncates body content if it exceeds MaxBodySize.
 func TruncateBody(body []byte) (string, int, bool) {
 	originalSize := len(body)
 	if originalSize > MaxBodySize {

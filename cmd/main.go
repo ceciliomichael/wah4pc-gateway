@@ -75,17 +75,25 @@ func main() {
 		log.Printf("Remote Validator: Configured to use %s", cfg.Validator.URL)
 	}
 
-	// Initialize audit logger (writes to log/YYYY-MM-DD/audit.log)
-	logBaseDir := "log"
-	auditLogger := logger.NewFileLogger(logBaseDir)
+	logRepo, err := mongoRepo.NewLogRepository(db, cfg.MongoDB.LogsCollection)
+	if err != nil {
+		log.Fatalf("Failed to initialize log repository: %v", err)
+	}
+
+	// Initialize audit logger (persists entries to MongoDB)
+	auditLogger := logger.NewFileLogger(logRepo)
 	defer auditLogger.Close()
+
+	if err := service.MigrateLegacyLogs("log", "logs.txt", logRepo); err != nil {
+		log.Printf("Legacy log migration warning: %v", err)
+	}
 
 	// Initialize services
 	providerService := service.NewProviderService(providerRepo)
 	settingsService := service.NewSettingsService(settingsRepo)
 	gatewayService := service.NewGatewayService(txRepo, providerService, settingsService, cfg.Server.BaseURL, remoteValidator, auditLogger)
 	apiKeyService := service.NewApiKeyService(apiKeyRepo, providerService)
-	logService := service.NewLogService(logBaseDir, txRepo)
+	logService := service.NewLogService(logRepo, txRepo)
 
 	// Initialize handlers
 	authHandler := handler.NewAuthHandler()

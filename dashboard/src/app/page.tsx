@@ -216,7 +216,7 @@ function DashboardContent() {
   if (!stats) return null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-5 lg:pb-0">
       {/* Welcome Banner */}
       <div className="bg-primary-600 rounded-2xl p-6 shadow-soft relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">

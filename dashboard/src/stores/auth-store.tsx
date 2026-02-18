@@ -16,6 +16,7 @@ import {
   type SessionMode,
 } from "@/lib/auth-session";
 import { fetchAuthIdentityWithApiKey, fetchAuthIdentityWithMasterKey } from "@/lib/api";
+import { clearCachedValues } from "@/lib/indexed-cache";
 
 interface LoginResult {
   success: boolean;
@@ -42,6 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const clearAuthState = useCallback(() => {
     clearStoredSession();
+    void clearCachedValues();
     setIsAuthenticated(false);
     setIdentity(null);
     setSessionMode(null);
@@ -163,4 +165,3 @@ export function useAuth(): AuthState {
   }
   return context;
 }
-

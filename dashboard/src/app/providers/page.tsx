@@ -13,6 +13,10 @@ import { SuccessDialog } from "@/components/ui/success-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { getCachedValue, setCachedValue } from "@/lib/indexed-cache";
+
+const PROVIDERS_CACHE_KEY = "providers:list";
+const PROVIDERS_CACHE_TTL_MS = 60_000;
 
 function ProvidersContent() {
   const ITEMS_PER_PAGE = 20;
@@ -36,6 +40,7 @@ function ProvidersContent() {
     try {
       const data = await providerApi.getAll();
       setProviders(data);
+      await setCachedValue<Provider[]>(PROVIDERS_CACHE_KEY, data, PROVIDERS_CACHE_TTL_MS);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load providers");
@@ -45,7 +50,21 @@ function ProvidersContent() {
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
+    const hydrateFromCache = async () => {
+      try {
+        const cached = await getCachedValue<Provider[]>(PROVIDERS_CACHE_KEY);
+        if (!cached || !isMounted) return;
+        setProviders(cached);
+        setIsLoading(false);
+      } catch (_error) {
+      }
+    };
+    hydrateFromCache();
     fetchProviders();
+    return () => {
+      isMounted = false;
+    };
   }, [fetchProviders]);
 
   const handleCreate = () => {

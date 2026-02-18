@@ -13,6 +13,15 @@ import { SuccessDialog } from "@/components/ui/success-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { getCachedValue, setCachedValue } from "@/lib/indexed-cache";
+
+interface ApiKeysCachePayload {
+  apiKeys: ApiKey[];
+  providers: Provider[];
+}
+
+const API_KEYS_CACHE_KEY = "api-keys:list";
+const API_KEYS_CACHE_TTL_MS = 60_000;
 
 function ApiKeysContent() {
   const ITEMS_PER_PAGE = 20;
@@ -46,6 +55,11 @@ function ApiKeysContent() {
       ]);
       setApiKeys(keysData);
       setProviders(providersData);
+      await setCachedValue<ApiKeysCachePayload>(
+        API_KEYS_CACHE_KEY,
+        { apiKeys: keysData, providers: providersData },
+        API_KEYS_CACHE_TTL_MS
+      );
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load API keys");
@@ -55,7 +69,22 @@ function ApiKeysContent() {
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
+    const hydrateFromCache = async () => {
+      try {
+        const cached = await getCachedValue<ApiKeysCachePayload>(API_KEYS_CACHE_KEY);
+        if (!cached || !isMounted) return;
+        setApiKeys(cached.apiKeys);
+        setProviders(cached.providers);
+        setIsLoading(false);
+      } catch (_error) {
+      }
+    };
+    hydrateFromCache();
     fetchData();
+    return () => {
+      isMounted = false;
+    };
   }, [fetchData]);
 
   const handleCopyPrefix = async (prefix: string, id: string) => {

@@ -86,3 +86,20 @@ export async function setCachedValue<T>(key: string, value: T, ttlMs: number): P
     db.close();
   }
 }
+
+export async function clearCachedValues(): Promise<void> {
+  if (!isBrowser()) return;
+
+  const db = await openDB();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      const store = tx.objectStore(STORE_NAME);
+      const request = store.clear();
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error ?? new Error("failed to clear cache"));
+    });
+  } finally {
+    db.close();
+  }
+}

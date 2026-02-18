@@ -35,15 +35,13 @@ type RegisterRequest struct {
 
 // PublicProviderResponse represents the public view of a provider
 type PublicProviderResponse struct {
-	ID                       string                       `json:"id"`
-	Name                     string                       `json:"name"`
-	Type                     model.ProviderType           `json:"type"`
-	FacilityCode             string                       `json:"facility_code"`
-	Location                 string                       `json:"location"`
-	BaseURL                  string                       `json:"baseUrl"`
-	PractitionerListEndpoint string                       `json:"practitionerListEndpoint,omitempty"`
-	PractitionerList         []model.ProviderPractitioner `json:"practitionerList,omitempty"`
-	IsActive                 bool                         `json:"isActive"`
+	ID           string             `json:"id"`
+	Name         string             `json:"name"`
+	Type         model.ProviderType `json:"type"`
+	FacilityCode string             `json:"facility_code"`
+	Location     string             `json:"location"`
+	BaseURL      string             `json:"baseUrl"`
+	IsActive     bool               `json:"isActive"`
 }
 
 // Register handles POST /api/v1/providers
@@ -105,21 +103,16 @@ func (h *ProviderHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Map to public response to hide sensitive/internal fields
-	includePractitionerList := middleware.GetAuthSourceFromContext(r.Context()) == "api_key"
 	response := make([]PublicProviderResponse, len(providers))
 	for i, p := range providers {
 		response[i] = PublicProviderResponse{
-			ID:                       p.ID,
-			Name:                     p.Name,
-			Type:                     p.Type,
-			FacilityCode:             p.FacilityCode,
-			Location:                 p.Location,
-			BaseURL:                  p.BaseURL,
-			PractitionerListEndpoint: p.PractitionerListEndpoint,
-			IsActive:                 p.IsActive,
-		}
-		if includePractitionerList {
-			response[i].PractitionerList = p.PractitionerList
+			ID:           p.ID,
+			Name:         p.Name,
+			Type:         p.Type,
+			FacilityCode: p.FacilityCode,
+			Location:     p.Location,
+			BaseURL:      p.BaseURL,
+			IsActive:     p.IsActive,
 		}
 	}
 

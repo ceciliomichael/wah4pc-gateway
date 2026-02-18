@@ -108,7 +108,7 @@ func TestProviderHandlerGetAll_HidesPractitionerListForPublic(t *testing.T) {
 	}
 }
 
-func TestProviderHandlerGetAll_IncludesPractitionerListForAPIKeyAuth(t *testing.T) {
+func TestProviderHandlerGetAll_HidesPractitionerListForAPIKeyAuth(t *testing.T) {
 	repo := &providerRepoStub{
 		items: map[string]model.Provider{
 			"p1": {
@@ -141,8 +141,8 @@ func TestProviderHandlerGetAll_IncludesPractitionerListForAPIKeyAuth(t *testing.
 	if len(response.Data) != 1 {
 		t.Fatalf("expected one provider, got %d", len(response.Data))
 	}
-	if len(response.Data[0].PractitionerList) != 1 {
-		t.Fatalf("expected practitionerList to be included for API key auth, got %d", len(response.Data[0].PractitionerList))
+	if len(response.Data[0].PractitionerList) != 0 {
+		t.Fatalf("expected practitionerList to be hidden for API key auth, got %d", len(response.Data[0].PractitionerList))
 	}
 }
 

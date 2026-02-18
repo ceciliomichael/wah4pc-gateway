@@ -2,6 +2,7 @@
 
 import { FormInput } from "@/components/ui/form/form-input";
 import { FormSelect } from "@/components/ui/form/form-select";
+import { ensureSelectedOption } from "@/lib/form-option-utils";
 import type { ProcedureFormData } from "@/lib/procedure-utils";
 
 interface ProcedureFormProps {
@@ -50,6 +51,27 @@ export function ProcedureForm({
 	practitioners,
 	disabled = false,
 }: ProcedureFormProps) {
+	const statusOptions = ensureSelectedOption(
+		STATUS_OPTIONS,
+		formData.status,
+		formData.status,
+	);
+	const categoryOptions = ensureSelectedOption(
+		CATEGORY_OPTIONS,
+		formData.category,
+		formData.categoryDisplay,
+	);
+	const codeOptions = ensureSelectedOption(
+		CODE_OPTIONS,
+		formData.code,
+		formData.codeDisplay,
+	);
+	const patientOptions = ensureSelectedOption(patients, formData.patientId);
+	const practitionerOptions = ensureSelectedOption(
+		practitioners,
+		formData.practitionerId,
+	);
+
 	return (
 		<div className="space-y-8">
 			<section>
@@ -61,7 +83,7 @@ export function ProcedureForm({
 						label="Status"
 						value={formData.status}
 						onChange={(val) => onFieldChange("status", val)}
-						options={STATUS_OPTIONS}
+						options={statusOptions}
 						required
 						disabled={disabled}
 					/>
@@ -70,12 +92,12 @@ export function ProcedureForm({
 						value={formData.category}
 						onChange={(val) => {
 							onFieldChange("category", val);
-							const selectedCat = CATEGORY_OPTIONS.find((c) => c.code === val);
+							const selectedCat = categoryOptions.find((c) => c.code === val);
 							if (selectedCat) {
 								onFieldChange("categoryDisplay", selectedCat.display);
 							}
 						}}
-						options={CATEGORY_OPTIONS}
+						options={categoryOptions}
 						disabled={disabled}
 						placeholder="Select procedure category"
 					/>
@@ -92,12 +114,12 @@ export function ProcedureForm({
 						value={formData.code}
 						onChange={(val) => {
 							onFieldChange("code", val);
-							const selectedCode = CODE_OPTIONS.find((c) => c.code === val);
+							const selectedCode = codeOptions.find((c) => c.code === val);
 							if (selectedCode) {
 								onFieldChange("codeDisplay", selectedCode.display);
 							}
 						}}
-						options={CODE_OPTIONS}
+						options={codeOptions}
 						required
 						disabled={disabled}
 						placeholder="Select procedure type"
@@ -114,7 +136,7 @@ export function ProcedureForm({
 						label="Patient"
 						value={formData.patientId}
 						onChange={(val) => onFieldChange("patientId", val)}
-						options={patients}
+						options={patientOptions}
 						required
 						disabled={disabled}
 						placeholder={patients.length === 0 ? "No patients available" : "Select a patient"}
@@ -123,7 +145,7 @@ export function ProcedureForm({
 						label="Practitioner"
 						value={formData.practitionerId}
 						onChange={(val) => onFieldChange("practitionerId", val)}
-						options={practitioners}
+						options={practitionerOptions}
 						disabled={disabled}
 						placeholder={practitioners.length === 0 ? "No practitioners available" : "Select a practitioner"}
 					/>

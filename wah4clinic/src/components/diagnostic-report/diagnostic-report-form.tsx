@@ -2,6 +2,7 @@
 
 import { FormInput } from "@/components/ui/form/form-input";
 import { FormSelect } from "@/components/ui/form/form-select";
+import { ensureSelectedOption } from "@/lib/form-option-utils";
 import type { DiagnosticReportFormData } from "@/lib/diagnostic-report-utils";
 
 interface DiagnosticReportFormProps {
@@ -36,6 +37,22 @@ export function DiagnosticReportForm({
 	practitioners,
 	disabled = false,
 }: DiagnosticReportFormProps) {
+	const statusOptions = ensureSelectedOption(
+		STATUS_OPTIONS,
+		formData.status,
+		formData.status,
+	);
+	const categoryOptions = ensureSelectedOption(
+		CATEGORY_OPTIONS,
+		formData.categoryCode,
+		formData.categoryDisplay,
+	);
+	const patientOptions = ensureSelectedOption(patients, formData.patientId);
+	const practitionerOptions = ensureSelectedOption(
+		practitioners,
+		formData.performerId,
+	);
+
 	return (
 		<div className="space-y-8">
 			<section>
@@ -47,7 +64,7 @@ export function DiagnosticReportForm({
 						label="Status"
 						value={formData.status}
 						onChange={(value) => onFieldChange("status", value)}
-						options={STATUS_OPTIONS}
+						options={statusOptions}
 						required
 						disabled={disabled}
 					/>
@@ -56,12 +73,12 @@ export function DiagnosticReportForm({
 						value={formData.categoryCode}
 						onChange={(value) => {
 							onFieldChange("categoryCode", value);
-							const category = CATEGORY_OPTIONS.find((option) => option.code === value);
+							const category = categoryOptions.find((option) => option.code === value);
 							if (category) {
 								onFieldChange("categoryDisplay", category.display);
 							}
 						}}
-						options={CATEGORY_OPTIONS}
+						options={categoryOptions}
 						disabled={disabled}
 						placeholder="Select category"
 					/>
@@ -93,7 +110,7 @@ export function DiagnosticReportForm({
 						label="Patient"
 						value={formData.patientId}
 						onChange={(value) => onFieldChange("patientId", value)}
-						options={patients}
+						options={patientOptions}
 						disabled={disabled}
 						placeholder={
 							patients.length === 0 ? "No patients available" : "Select a patient"
@@ -132,7 +149,7 @@ export function DiagnosticReportForm({
 						label="Performer"
 						value={formData.performerId}
 						onChange={(value) => onFieldChange("performerId", value)}
-						options={practitioners}
+						options={practitionerOptions}
 						disabled={disabled}
 						placeholder={
 							practitioners.length === 0

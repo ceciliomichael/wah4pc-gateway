@@ -100,7 +100,7 @@ export function fhirToFormData(immunization: FHIRImmunization): ImmunizationForm
 
 	return {
 		status: immunization.status || "",
-		vaccineCode: vaccineCoding?.code || "",
+		vaccineCode: vaccineCoding?.code || vaccineCoding?.display || immunization.vaccineCode?.text || "",
 		vaccineDisplay: vaccineCoding?.display || immunization.vaccineCode?.text || "",
 		patientId: immunization.patient?.reference?.split("/")[1] || "",
 		patientDisplay: immunization.patient?.display || "",
@@ -108,9 +108,9 @@ export function fhirToFormData(immunization: FHIRImmunization): ImmunizationForm
 		occurrenceDateTime: fromFHIRDateTime(immunization.occurrenceDateTime || ""),
 		practitionerId,
 		practitionerDisplay: immunization.performer?.[0]?.actor?.display || "",
-		site: siteCoding?.code || "",
+		site: siteCoding?.code || siteCoding?.display || "",
 		siteDisplay: siteCoding?.display || "",
-		route: routeCoding?.code || "",
+		route: routeCoding?.code || routeCoding?.display || "",
 		routeDisplay: routeCoding?.display || "",
 		doseValue: immunization.doseQuantity?.value?.toString() || "",
 		doseUnit: immunization.doseQuantity?.unit || "",

@@ -147,7 +147,7 @@ class IntegrationServiceClass {
     this.writeJsonFile("received-data.json", allData);
   }
 
-  private isJsonObject(value: JsonValue): value is JsonObject {
+  private isJsonObject(value: JsonValue | undefined): value is JsonObject {
     return typeof value === "object" && value !== null && !Array.isArray(value);
   }
 
@@ -184,11 +184,24 @@ class IntegrationServiceClass {
       resourceType,
     };
 
-    if (resourceType !== "Appointment") {
-      return base;
+    switch (resourceType) {
+      case "Appointment":
+        return this.normalizeAppointmentParticipantDisplays(base);
+      case "Encounter":
+        return this.normalizeEncounterDisplays(base);
+      case "Procedure":
+        return this.normalizeProcedureDisplays(base);
+      case "Immunization":
+        return this.normalizeImmunizationDisplays(base);
+      case "Observation":
+        return this.normalizeObservationDisplays(base);
+      case "DiagnosticReport":
+        return this.normalizeDiagnosticReportDisplays(base);
+      case "MedicationRequest":
+        return this.normalizeMedicationRequestDisplays(base);
+      default:
+        return base;
     }
-
-    return this.normalizeAppointmentParticipantDisplays(base);
   }
 
   private normalizeAppointmentParticipantDisplays(
@@ -231,6 +244,164 @@ class IntegrationServiceClass {
       ...appointment,
       resourceType,
       participant: normalizedParticipants,
+    };
+  }
+
+  private normalizeEncounterDisplays(encounter: StoredResource): StoredResource {
+    const normalizedSubject = this.normalizeJsonObjectValue(encounter.subject);
+    const normalizedParticipants = this.normalizeParticipantArray(
+      encounter.participant,
+      "individual",
+    );
+
+    const next: StoredResource = {
+      ...encounter,
+    };
+    if (normalizedSubject !== undefined) next.subject = normalizedSubject;
+    if (normalizedParticipants !== undefined) next.participant = normalizedParticipants;
+    return next;
+  }
+
+  private normalizeProcedureDisplays(procedure: StoredResource): StoredResource {
+    const normalizedSubject = this.normalizeJsonObjectValue(procedure.subject);
+    const normalizedRecorder = this.normalizeJsonObjectValue(procedure.recorder);
+    const normalizedPerformer = this.normalizeParticipantArray(
+      procedure.performer,
+      "actor",
+    );
+
+    const next: StoredResource = {
+      ...procedure,
+    };
+    if (normalizedSubject !== undefined) next.subject = normalizedSubject;
+    if (normalizedRecorder !== undefined) next.recorder = normalizedRecorder;
+    if (normalizedPerformer !== undefined) next.performer = normalizedPerformer;
+    return next;
+  }
+
+  private normalizeImmunizationDisplays(
+    immunization: StoredResource,
+  ): StoredResource {
+    const normalizedPatient = this.normalizeJsonObjectValue(immunization.patient);
+    const normalizedPerformer = this.normalizeParticipantArray(
+      immunization.performer,
+      "actor",
+    );
+
+    const next: StoredResource = {
+      ...immunization,
+    };
+    if (normalizedPatient !== undefined) next.patient = normalizedPatient;
+    if (normalizedPerformer !== undefined) next.performer = normalizedPerformer;
+    return next;
+  }
+
+  private normalizeObservationDisplays(
+    observation: StoredResource,
+  ): StoredResource {
+    const normalizedSubject = this.normalizeJsonObjectValue(observation.subject);
+    const normalizedPerformer = this.normalizeReferenceArray(
+      observation.performer,
+    );
+
+    const next: StoredResource = {
+      ...observation,
+    };
+    if (normalizedSubject !== undefined) next.subject = normalizedSubject;
+    if (normalizedPerformer !== undefined) next.performer = normalizedPerformer;
+    return next;
+  }
+
+  private normalizeDiagnosticReportDisplays(
+    diagnosticReport: StoredResource,
+  ): StoredResource {
+    const normalizedSubject = this.normalizeJsonObjectValue(
+      diagnosticReport.subject,
+    );
+    const normalizedPerformer = this.normalizeReferenceArray(
+      diagnosticReport.performer,
+    );
+
+    const next: StoredResource = {
+      ...diagnosticReport,
+    };
+    if (normalizedSubject !== undefined) next.subject = normalizedSubject;
+    if (normalizedPerformer !== undefined) next.performer = normalizedPerformer;
+    return next;
+  }
+
+  private normalizeMedicationRequestDisplays(
+    medicationRequest: StoredResource,
+  ): StoredResource {
+    const normalizedSubject = this.normalizeJsonObjectValue(
+      medicationRequest.subject,
+    );
+    const normalizedRequester = this.normalizeJsonObjectValue(
+      medicationRequest.requester,
+    );
+
+    const next: StoredResource = {
+      ...medicationRequest,
+    };
+    if (normalizedSubject !== undefined) next.subject = normalizedSubject;
+    if (normalizedRequester !== undefined) next.requester = normalizedRequester;
+    return next;
+  }
+
+  private normalizeParticipantArray(
+    value: JsonValue | undefined,
+    nestedKey: string,
+  ): JsonValue | undefined {
+    if (!Array.isArray(value)) {
+      return value;
+    }
+
+    return value.map((entry) => {
+      if (!this.isJsonObject(entry)) {
+        return entry;
+      }
+
+      const nested = entry[nestedKey];
+      if (!this.isJsonObject(nested)) {
+        return entry;
+      }
+
+      return {
+        ...entry,
+        [nestedKey]: this.normalizeReferenceDisplayObject(nested),
+      };
+    });
+  }
+
+  private normalizeReferenceArray(value: JsonValue | undefined): JsonValue | undefined {
+    if (!Array.isArray(value)) {
+      return value;
+    }
+
+    return value.map((entry) => {
+      if (!this.isJsonObject(entry)) {
+        return entry;
+      }
+      return this.normalizeReferenceDisplayObject(entry);
+    });
+  }
+
+  private normalizeJsonObjectValue(value: JsonValue | undefined): JsonValue | undefined {
+    if (!this.isJsonObject(value)) {
+      return value;
+    }
+    return this.normalizeReferenceDisplayObject(value);
+  }
+
+  private normalizeReferenceDisplayObject(referenceObject: JsonObject): JsonObject {
+    const canonicalDisplay = this.resolveParticipantActorDisplay(referenceObject);
+    if (!canonicalDisplay) {
+      return referenceObject;
+    }
+
+    return {
+      ...referenceObject,
+      display: canonicalDisplay,
     };
   }
 

@@ -2,6 +2,7 @@
 
 import { FormInput } from "@/components/ui/form/form-input";
 import { FormSelect } from "@/components/ui/form/form-select";
+import { ensureSelectedOption } from "@/lib/form-option-utils";
 import type { MedicationRequestFormData } from "@/lib/medication-request-utils";
 
 interface MedicationRequestFormProps {
@@ -46,6 +47,27 @@ export function MedicationRequestForm({
 	practitioners,
 	disabled = false,
 }: MedicationRequestFormProps) {
+	const statusOptions = ensureSelectedOption(
+		STATUS_OPTIONS,
+		formData.status,
+		formData.status,
+	);
+	const intentOptions = ensureSelectedOption(
+		INTENT_OPTIONS,
+		formData.intent,
+		formData.intent,
+	);
+	const priorityOptions = ensureSelectedOption(
+		PRIORITY_OPTIONS,
+		formData.priority,
+		formData.priority,
+	);
+	const patientOptions = ensureSelectedOption(patients, formData.patientId);
+	const practitionerOptions = ensureSelectedOption(
+		practitioners,
+		formData.requesterId,
+	);
+
 	return (
 		<div className="space-y-8">
 			<section>
@@ -57,7 +79,7 @@ export function MedicationRequestForm({
 						label="Status"
 						value={formData.status}
 						onChange={(value) => onFieldChange("status", value)}
-						options={STATUS_OPTIONS}
+						options={statusOptions}
 						required
 						disabled={disabled}
 					/>
@@ -65,7 +87,7 @@ export function MedicationRequestForm({
 						label="Intent"
 						value={formData.intent}
 						onChange={(value) => onFieldChange("intent", value)}
-						options={INTENT_OPTIONS}
+						options={intentOptions}
 						required
 						disabled={disabled}
 					/>
@@ -73,7 +95,7 @@ export function MedicationRequestForm({
 						label="Priority"
 						value={formData.priority}
 						onChange={(value) => onFieldChange("priority", value)}
-						options={PRIORITY_OPTIONS}
+						options={priorityOptions}
 						disabled={disabled}
 						placeholder="Select priority"
 					/>
@@ -120,7 +142,7 @@ export function MedicationRequestForm({
 						label="Patient"
 						value={formData.patientId}
 						onChange={(value) => onFieldChange("patientId", value)}
-						options={patients}
+						options={patientOptions}
 						required
 						disabled={disabled}
 						placeholder={
@@ -131,7 +153,7 @@ export function MedicationRequestForm({
 						label="Requester"
 						value={formData.requesterId}
 						onChange={(value) => onFieldChange("requesterId", value)}
-						options={practitioners}
+						options={practitionerOptions}
 						disabled={disabled}
 						placeholder={
 							practitioners.length === 0

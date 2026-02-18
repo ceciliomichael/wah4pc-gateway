@@ -2,6 +2,7 @@
 
 import { FormInput } from "@/components/ui/form/form-input";
 import { FormSelect } from "@/components/ui/form/form-select";
+import { ensureSelectedOption } from "@/lib/form-option-utils";
 import type { ObservationFormData } from "@/lib/observation-utils";
 
 interface ObservationFormProps {
@@ -86,7 +87,36 @@ export function ObservationForm({
 	disabled = false,
 }: ObservationFormProps) {
 	const isBloodPressure = formData.code === "85354-9";
-	const availableUnits = OBSERVATION_UNIT_MAP[formData.code] || [];
+	const statusOptions = ensureSelectedOption(
+		STATUS_OPTIONS,
+		formData.status,
+		formData.status,
+	);
+	const categoryOptions = ensureSelectedOption(
+		CATEGORY_OPTIONS,
+		formData.categoryCode,
+		formData.categoryDisplay,
+	);
+	const observationCodeOptions = ensureSelectedOption(
+		OBSERVATION_CODE_OPTIONS,
+		formData.code,
+		formData.codeDisplay,
+	);
+	const interpretationOptions = ensureSelectedOption(
+		INTERPRETATION_OPTIONS,
+		formData.interpretation,
+		formData.interpretationDisplay,
+	);
+	const patientOptions = ensureSelectedOption(patients, formData.patientId);
+	const practitionerOptions = ensureSelectedOption(
+		practitioners,
+		formData.practitionerId,
+	);
+	const availableUnits = ensureSelectedOption(
+		OBSERVATION_UNIT_MAP[formData.code] || [],
+		formData.valueUnit,
+		formData.valueUnit,
+	);
 
 	return (
 		<div className="space-y-8">
@@ -99,7 +129,7 @@ export function ObservationForm({
 						label="Status"
 						value={formData.status}
 						onChange={(val) => onFieldChange("status", val)}
-						options={STATUS_OPTIONS}
+						options={statusOptions}
 						required
 						disabled={disabled}
 					/>
@@ -116,12 +146,12 @@ export function ObservationForm({
 						value={formData.categoryCode}
 						onChange={(val) => {
 							onFieldChange("categoryCode", val);
-							const selectedCategory = CATEGORY_OPTIONS.find((c) => c.code === val);
+							const selectedCategory = categoryOptions.find((c) => c.code === val);
 							if (selectedCategory) {
 								onFieldChange("categoryDisplay", selectedCategory.display);
 							}
 						}}
-						options={CATEGORY_OPTIONS}
+						options={categoryOptions}
 						required
 						disabled={disabled}
 						placeholder="Select observation category"
@@ -131,12 +161,12 @@ export function ObservationForm({
 						value={formData.code}
 						onChange={(val) => {
 							onFieldChange("code", val);
-							const selectedCode = OBSERVATION_CODE_OPTIONS.find((c) => c.code === val);
+							const selectedCode = observationCodeOptions.find((c) => c.code === val);
 							if (selectedCode) {
 								onFieldChange("codeDisplay", selectedCode.display);
 							}
 						}}
-						options={OBSERVATION_CODE_OPTIONS}
+						options={observationCodeOptions}
 						required
 						disabled={disabled}
 						placeholder="Select observation type"
@@ -153,7 +183,7 @@ export function ObservationForm({
 						label="Patient"
 						value={formData.patientId}
 						onChange={(val) => onFieldChange("patientId", val)}
-						options={patients}
+						options={patientOptions}
 						required
 						disabled={disabled}
 						placeholder={patients.length === 0 ? "No patients available" : "Select a patient"}
@@ -162,7 +192,7 @@ export function ObservationForm({
 						label="Practitioner (Performer)"
 						value={formData.practitionerId}
 						onChange={(val) => onFieldChange("practitionerId", val)}
-						options={practitioners}
+						options={practitionerOptions}
 						disabled={disabled}
 						placeholder={practitioners.length === 0 ? "No practitioners available" : "Select a practitioner"}
 					/>
@@ -259,12 +289,12 @@ export function ObservationForm({
 						value={formData.interpretation}
 						onChange={(val) => {
 							onFieldChange("interpretation", val);
-							const selectedInterpretation = INTERPRETATION_OPTIONS.find((i) => i.code === val);
+							const selectedInterpretation = interpretationOptions.find((i) => i.code === val);
 							if (selectedInterpretation) {
 								onFieldChange("interpretationDisplay", selectedInterpretation.display);
 							}
 						}}
-						options={INTERPRETATION_OPTIONS}
+						options={interpretationOptions}
 						disabled={disabled}
 						placeholder="Select interpretation (optional)"
 					/>

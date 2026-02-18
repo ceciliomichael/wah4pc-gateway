@@ -114,9 +114,9 @@ export function fhirToFormData(observation: FHIRObservation): ObservationFormDat
 
 	return {
 		status: observation.status || "",
-		categoryCode: categoryCoding?.code || "",
+		categoryCode: categoryCoding?.code || categoryCoding?.display || "",
 		categoryDisplay: categoryCoding?.display || "",
-		code: codeCoding?.code || "",
+		code: codeCoding?.code || codeCoding?.display || observation.code?.text || "",
 		codeDisplay: codeCoding?.display || observation.code?.text || "",
 		patientId: observation.subject?.reference?.split("/")[1] || "",
 		patientDisplay: observation.subject?.display || "",
@@ -128,7 +128,7 @@ export function fhirToFormData(observation: FHIRObservation): ObservationFormDat
 		valueUnit: observation.valueQuantity?.unit || "",
 		systolicValue,
 		diastolicValue,
-		interpretation: interpretationCoding?.code || "",
+		interpretation: interpretationCoding?.code || interpretationCoding?.display || observation.interpretation?.[0]?.text || "",
 		interpretationDisplay: interpretationCoding?.display || observation.interpretation?.[0]?.text || "",
 		notes: observation.note?.[0]?.text || "",
 	};

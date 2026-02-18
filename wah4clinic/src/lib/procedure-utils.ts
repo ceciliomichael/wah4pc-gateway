@@ -79,9 +79,9 @@ export function fhirToFormData(procedure: FHIRProcedure): ProcedureFormData {
 
 	return {
 		status: procedure.status || "",
-		category: categoryCoding?.code || "",
+		category: categoryCoding?.code || categoryCoding?.display || procedure.category?.text || "",
 		categoryDisplay: categoryCoding?.display || procedure.category?.text || "",
-		code: codeCoding?.code || "",
+		code: codeCoding?.code || codeCoding?.display || procedure.code?.text || "",
 		codeDisplay: codeCoding?.display || procedure.code?.text || "",
 		patientId: procedure.subject?.reference?.split("/")[1] || "",
 		patientDisplay: procedure.subject?.display || "",

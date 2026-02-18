@@ -3,6 +3,7 @@
 import { FormInput } from "@/components/ui/form/form-input";
 import { FormSelect } from "@/components/ui/form/form-select";
 import type { EncounterFormData } from "@/lib/encounter-utils";
+import { ensureSelectedOption } from "@/lib/form-option-utils";
 
 interface EncounterFormProps {
 	formData: EncounterFormData;
@@ -34,6 +35,22 @@ export function EncounterForm({
 	practitioners,
 	disabled = false,
 }: EncounterFormProps) {
+	const statusOptions = ensureSelectedOption(
+		STATUS_OPTIONS,
+		formData.status,
+		formData.status,
+	);
+	const classOptions = ensureSelectedOption(
+		CLASS_OPTIONS,
+		formData.class,
+		formData.class,
+	);
+	const patientOptions = ensureSelectedOption(patients, formData.patientId);
+	const practitionerOptions = ensureSelectedOption(
+		practitioners,
+		formData.practitionerId,
+	);
+
 	return (
 		<div className="space-y-8">
 			<section>
@@ -45,7 +62,7 @@ export function EncounterForm({
 						label="Status"
 						value={formData.status}
 						onChange={(val) => onFieldChange("status", val)}
-						options={STATUS_OPTIONS}
+						options={statusOptions}
 						required
 						disabled={disabled}
 					/>
@@ -53,7 +70,7 @@ export function EncounterForm({
 						label="Class"
 						value={formData.class}
 						onChange={(val) => onFieldChange("class", val)}
-						options={CLASS_OPTIONS}
+						options={classOptions}
 						required
 						disabled={disabled}
 					/>
@@ -76,7 +93,7 @@ export function EncounterForm({
 						label="Patient"
 						value={formData.patientId}
 						onChange={(val) => onFieldChange("patientId", val)}
-						options={patients}
+						options={patientOptions}
 						required
 						disabled={disabled}
 						placeholder={patients.length === 0 ? "No patients available" : "Select a patient"}
@@ -85,7 +102,7 @@ export function EncounterForm({
 						label="Practitioner"
 						value={formData.practitionerId}
 						onChange={(val) => onFieldChange("practitionerId", val)}
-						options={practitioners}
+						options={practitionerOptions}
 						disabled={disabled}
 						placeholder={practitioners.length === 0 ? "No practitioners available" : "Select a practitioner"}
 					/>

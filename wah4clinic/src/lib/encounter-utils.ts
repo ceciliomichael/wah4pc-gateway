@@ -91,7 +91,7 @@ export function fhirToFormData(encounter: FHIREncounter): EncounterFormData {
 
 	return {
 		status: encounter.status || "",
-		class: encounter.class?.code || "",
+		class: encounter.class?.code || encounter.class?.display || "",
 		type: encounter.type?.[0]?.text || "",
 		patientId,
 		practitionerId,

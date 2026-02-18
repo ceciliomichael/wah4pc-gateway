@@ -69,9 +69,9 @@ export function fhirToFormData(
 
 	return {
 		status: diagnosticReport.status || "",
-		categoryCode: categoryCoding?.code || "",
+		categoryCode: categoryCoding?.code || categoryCoding?.display || diagnosticReport.category?.[0]?.text || "",
 		categoryDisplay: categoryCoding?.display || diagnosticReport.category?.[0]?.text || "",
-		code: codeCoding?.code || "",
+		code: codeCoding?.code || codeCoding?.display || diagnosticReport.code?.text || "",
 		codeDisplay: codeCoding?.display || diagnosticReport.code?.text || "",
 		patientId: diagnosticReport.subject?.reference?.split("/")[1] || "",
 		patientDisplay: diagnosticReport.subject?.display || "",

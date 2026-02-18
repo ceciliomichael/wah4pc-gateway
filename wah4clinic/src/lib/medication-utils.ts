@@ -81,7 +81,7 @@ function getDrugCoding(medication: FHIRMedication) {
 
 function resolveDrugCode(medication: FHIRMedication): string {
 	const coding = getDrugCoding(medication);
-	return coding?.code || "";
+	return coding?.code || coding?.display || medication.code?.text || "";
 }
 
 function resolveDrugDisplay(medication: FHIRMedication): string {
@@ -91,7 +91,7 @@ function resolveDrugDisplay(medication: FHIRMedication): string {
 
 function resolveFormCode(medication: FHIRMedication): string {
 	const coding = medication.form?.coding?.[0];
-	return coding?.code || "";
+	return coding?.code || coding?.display || "";
 }
 
 function resolveAmountUnit(medication: FHIRMedication): string {

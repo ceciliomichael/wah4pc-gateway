@@ -2,6 +2,7 @@
 
 import { FormInput } from "@/components/ui/form/form-input";
 import { FormSelect } from "@/components/ui/form/form-select";
+import { ensureSelectedOption } from "@/lib/form-option-utils";
 import type { ImmunizationFormData } from "@/lib/immunization-utils";
 
 interface ImmunizationFormProps {
@@ -67,6 +68,32 @@ export function ImmunizationForm({
 	practitioners,
 	disabled = false,
 }: ImmunizationFormProps) {
+	const statusOptions = ensureSelectedOption(
+		STATUS_OPTIONS,
+		formData.status,
+		formData.status,
+	);
+	const vaccineOptions = ensureSelectedOption(
+		VACCINE_OPTIONS,
+		formData.vaccineCode,
+		formData.vaccineDisplay,
+	);
+	const siteOptions = ensureSelectedOption(
+		SITE_OPTIONS,
+		formData.site,
+		formData.siteDisplay,
+	);
+	const routeOptions = ensureSelectedOption(
+		ROUTE_OPTIONS,
+		formData.route,
+		formData.routeDisplay,
+	);
+	const patientOptions = ensureSelectedOption(patients, formData.patientId);
+	const practitionerOptions = ensureSelectedOption(
+		practitioners,
+		formData.practitionerId,
+	);
+
 	return (
 		<div className="space-y-8">
 			<section>
@@ -78,7 +105,7 @@ export function ImmunizationForm({
 						label="Status"
 						value={formData.status}
 						onChange={(val) => onFieldChange("status", val)}
-						options={STATUS_OPTIONS}
+						options={statusOptions}
 						required
 						disabled={disabled}
 					/>
@@ -95,12 +122,12 @@ export function ImmunizationForm({
 						value={formData.vaccineCode}
 						onChange={(val) => {
 							onFieldChange("vaccineCode", val);
-							const selectedVaccine = VACCINE_OPTIONS.find((v) => v.code === val);
+							const selectedVaccine = vaccineOptions.find((v) => v.code === val);
 							if (selectedVaccine) {
 								onFieldChange("vaccineDisplay", selectedVaccine.display);
 							}
 						}}
-						options={VACCINE_OPTIONS}
+						options={vaccineOptions}
 						required
 						disabled={disabled}
 						placeholder="Select vaccine type"
@@ -117,7 +144,7 @@ export function ImmunizationForm({
 						label="Patient"
 						value={formData.patientId}
 						onChange={(val) => onFieldChange("patientId", val)}
-						options={patients}
+						options={patientOptions}
 						required
 						disabled={disabled}
 						placeholder={patients.length === 0 ? "No patients available" : "Select a patient"}
@@ -126,7 +153,7 @@ export function ImmunizationForm({
 						label="Practitioner (Administering)"
 						value={formData.practitionerId}
 						onChange={(val) => onFieldChange("practitionerId", val)}
-						options={practitioners}
+						options={practitionerOptions}
 						disabled={disabled}
 						placeholder={practitioners.length === 0 ? "No practitioners available" : "Select a practitioner"}
 					/>
@@ -158,12 +185,12 @@ export function ImmunizationForm({
 						value={formData.site}
 						onChange={(val) => {
 							onFieldChange("site", val);
-							const selectedSite = SITE_OPTIONS.find((s) => s.code === val);
+							const selectedSite = siteOptions.find((s) => s.code === val);
 							if (selectedSite) {
 								onFieldChange("siteDisplay", selectedSite.display);
 							}
 						}}
-						options={SITE_OPTIONS}
+						options={siteOptions}
 						disabled={disabled}
 						placeholder="Select administration site"
 					/>
@@ -172,12 +199,12 @@ export function ImmunizationForm({
 						value={formData.route}
 						onChange={(val) => {
 							onFieldChange("route", val);
-							const selectedRoute = ROUTE_OPTIONS.find((r) => r.code === val);
+							const selectedRoute = routeOptions.find((r) => r.code === val);
 							if (selectedRoute) {
 								onFieldChange("routeDisplay", selectedRoute.display);
 							}
 						}}
-						options={ROUTE_OPTIONS}
+						options={routeOptions}
 						disabled={disabled}
 						placeholder="Select administration route"
 					/>

@@ -2,6 +2,7 @@
 
 import { FormInput } from "@/components/ui/form/form-input";
 import { FormSelect } from "@/components/ui/form/form-select";
+import { ensureSelectedOption } from "@/lib/form-option-utils";
 import type { MedicationFormData } from "@/lib/medication-utils";
 
 interface MedicationFormProps {
@@ -43,35 +44,22 @@ export function MedicationForm({
 	drugsLoading = false,
 	disabled = false,
 }: MedicationFormProps) {
-	const drugOptions = [...drugs];
-	if (
-		formData.drugCode &&
-		!drugOptions.some((option) => option.code === formData.drugCode)
-	) {
-		drugOptions.push({
-			code: formData.drugCode,
-			display: formData.drugDisplay || formData.drugCode,
-		});
-	}
-
-	const formOptions = [...FORM_OPTIONS];
-	if (formData.form && !formOptions.some((option) => option.code === formData.form)) {
-		formOptions.push({
-			code: formData.form,
-			display: formData.form,
-		});
-	}
-
-	const unitOptions = [...UNIT_OPTIONS];
-	if (
-		formData.amountUnit &&
-		!unitOptions.some((option) => option.code === formData.amountUnit)
-	) {
-		unitOptions.push({
-			code: formData.amountUnit,
-			display: formData.amountUnit,
-		});
-	}
+	const drugOptions = ensureSelectedOption(
+		drugs,
+		formData.drugCode,
+		formData.drugDisplay,
+	);
+	const statusOptions = ensureSelectedOption(
+		STATUS_OPTIONS,
+		formData.status,
+		formData.status,
+	);
+	const formOptions = ensureSelectedOption(FORM_OPTIONS, formData.form, formData.form);
+	const unitOptions = ensureSelectedOption(
+		UNIT_OPTIONS,
+		formData.amountUnit,
+		formData.amountUnit,
+	);
 
 	return (
 		<div className="space-y-8">
@@ -100,7 +88,7 @@ export function MedicationForm({
 						label="Status"
 						value={formData.status}
 						onChange={(val) => onFieldChange("status", val)}
-						options={STATUS_OPTIONS}
+						options={statusOptions}
 						required
 						disabled={disabled}
 					/>

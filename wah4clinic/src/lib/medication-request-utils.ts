@@ -70,7 +70,11 @@ export function fhirToFormData(
 		status: medicationRequest.status || "",
 		intent: medicationRequest.intent || "",
 		priority: medicationRequest.priority || "",
-		medicationCode: medicationCoding?.code || "",
+		medicationCode:
+			medicationCoding?.code ||
+			medicationCoding?.display ||
+			medicationRequest.medicationCodeableConcept?.text ||
+			"",
 		medicationDisplay:
 			medicationCoding?.display || medicationRequest.medicationCodeableConcept?.text || "",
 		patientId: medicationRequest.subject?.reference?.split("/")[1] || "",

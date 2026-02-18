@@ -5,6 +5,11 @@ import { useRouter, useParams } from "next/navigation";
 import { AppointmentForm } from "@/components/appointment/appointment-form";
 import { fhirToFormData, buildFHIRAppointment, type AppointmentFormData, type Patient, type Practitioner } from "@/lib/appointment-utils";
 
+interface AppointmentTypeOption {
+	code: string;
+	display: string;
+}
+
 export default function AppointmentDetailPage() {
 	const router = useRouter();
 	const params = useParams();
@@ -28,6 +33,7 @@ export default function AppointmentDetailPage() {
 	const [practitioners, setPractitioners] = useState<Array<{ code: string; display: string }>>([]);
 	const [patientsData, setPatientsData] = useState<Patient[]>([]);
 	const [practitionersData, setPractitionersData] = useState<Practitioner[]>([]);
+	const [customAppointmentTypeOption, setCustomAppointmentTypeOption] = useState<AppointmentTypeOption | null>(null);
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
@@ -71,7 +77,22 @@ export default function AppointmentDetailPage() {
 				}))
 			);
 
-			setFormData(fhirToFormData(appointment));
+			setFormData(
+				fhirToFormData(appointment, {
+					patients: patientsArray,
+					practitioners: practitionersArray,
+				}),
+			);
+
+			const incomingTypeCoding = appointment?.appointmentType?.coding?.[0];
+			if (incomingTypeCoding?.code) {
+				setCustomAppointmentTypeOption({
+					code: incomingTypeCoding.code,
+					display: incomingTypeCoding.display || incomingTypeCoding.code,
+				});
+			} else {
+				setCustomAppointmentTypeOption(null);
+			}
 		} catch (error) {
 			console.error("Error fetching resources:", error);
 		} finally {
@@ -167,6 +188,7 @@ export default function AppointmentDetailPage() {
 					onFieldChange={handleFieldChange}
 					patients={patients}
 					practitioners={practitioners}
+					customAppointmentTypeOption={customAppointmentTypeOption}
 					disabled={!isEditing}
 				/>
 

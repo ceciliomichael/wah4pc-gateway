@@ -36,11 +36,15 @@ interface FHIRAppointment {
 			}>;
 		}>;
 		actor: {
-			reference: string;
-			type: string;
-			display: string;
+			reference?: string;
+			type?: string;
+			display?: string;
+			identifier?: {
+				system?: string;
+				value?: string;
+			};
 		};
-		required: string;
+		required?: string;
 		status: string;
 	}>;
 	[key: string]: unknown;
@@ -52,6 +56,10 @@ interface Patient {
 		family: string;
 		given: string[];
 	}>;
+	identifier?: Array<{
+		system?: string;
+		value?: string;
+	}>;
 }
 
 interface Practitioner {
@@ -61,6 +69,24 @@ interface Practitioner {
 		family: string;
 		given: string[];
 	}>;
+	identifier?: Array<{
+		system?: string;
+		value?: string;
+	}>;
+}
+
+interface ParticipantLookupData {
+	patients: Patient[];
+	practitioners: Practitioner[];
+}
+
+interface ParticipantActor {
+	reference?: string;
+	display?: string;
+	identifier?: {
+		system?: string;
+		value?: string;
+	};
 }
 
 const APPOINTMENT_TYPE_MAP: Record<string, string> = {
@@ -71,19 +97,133 @@ const APPOINTMENT_TYPE_MAP: Record<string, string> = {
 	EMERGENCY: "Emergency appointment",
 };
 
-export function fhirToFormData(appointment: FHIRAppointment): AppointmentFormData {
+function normalizeText(value: string): string {
+	return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function extractReferenceId(reference?: string): string {
+	if (!reference) return "";
+	const segments = reference.split("/");
+	return segments.length > 1 ? segments[1] : "";
+}
+
+function getPatientDisplay(patient: Patient): string {
+	const firstName = patient.name?.[0]?.given?.join(" ") || "";
+	const lastName = patient.name?.[0]?.family || "";
+	return `${firstName} ${lastName}`.trim();
+}
+
+function getPractitionerDisplay(practitioner: Practitioner): string {
+	const prefix = practitioner.name?.[0]?.prefix?.[0] || "";
+	const given = practitioner.name?.[0]?.given?.join(" ") || "";
+	const family = practitioner.name?.[0]?.family || "";
+	return `${prefix} ${given} ${family}`.trim();
+}
+
+function matchByIdentifier<T extends { id: string; identifier?: Array<{ system?: string; value?: string }> }>(
+	resources: T[],
+	actorIdentifier?: { system?: string; value?: string },
+): string {
+	if (!actorIdentifier?.value) return "";
+
+	if (actorIdentifier.system) {
+		const exactMatch = resources.find((resource) =>
+			resource.identifier?.some(
+				(identifier) =>
+					identifier.system === actorIdentifier.system &&
+					identifier.value === actorIdentifier.value,
+			),
+		);
+		if (exactMatch) return exactMatch.id;
+	}
+
+	const idValueMatch = resources.find((resource) => resource.id === actorIdentifier.value);
+	return idValueMatch?.id || "";
+}
+
+function matchByDisplay<T extends { id: string }>(
+	resources: T[],
+	actorDisplay: string | undefined,
+	toDisplay: (resource: T) => string,
+): string {
+	if (!actorDisplay) return "";
+	const normalizedActorDisplay = normalizeText(actorDisplay);
+	if (!normalizedActorDisplay) return "";
+
+	const matches = resources.filter(
+		(resource) => normalizeText(toDisplay(resource)) === normalizedActorDisplay,
+	);
+
+	return matches.length === 1 ? matches[0].id : "";
+}
+
+function resolveParticipantId<T extends { id: string; identifier?: Array<{ system?: string; value?: string }> }>(
+	actor: ParticipantActor | undefined,
+	resources: T[],
+	toDisplay: (resource: T) => string,
+): string {
+	const referenceId = extractReferenceId(actor?.reference);
+
+	if (referenceId && resources.some((resource) => resource.id === referenceId)) {
+		return referenceId;
+	}
+
+	const identifierMatch = matchByIdentifier(resources, actor?.identifier);
+	if (identifierMatch) {
+		return identifierMatch;
+	}
+
+	const displayMatch = matchByDisplay(resources, actor?.display, toDisplay);
+	if (displayMatch) {
+		return displayMatch;
+	}
+
+	return referenceId;
+}
+
+function isPatientParticipant(
+	participant: FHIRAppointment["participant"][number],
+): boolean {
+	if (participant.actor?.type === "Patient") return true;
+	return participant.actor?.reference?.startsWith("Patient/") || false;
+}
+
+function isPractitionerParticipant(
+	participant: FHIRAppointment["participant"][number],
+): boolean {
+	if (participant.actor?.type === "Practitioner") return true;
+	if (participant.actor?.reference?.startsWith("Practitioner/")) return true;
+	return participant.type?.some((entry) =>
+		entry.coding?.some((coding) => coding.code === "PPRF"),
+	) || false;
+}
+
+export function fhirToFormData(
+	appointment: FHIRAppointment,
+	lookupData?: ParticipantLookupData,
+): AppointmentFormData {
 	const patientParticipant = appointment.participant?.find(
-		(p) => p.actor?.type === "Patient"
+		(p) => isPatientParticipant(p),
 	);
 	const practitionerParticipant = appointment.participant?.find(
-		(p) => p.actor?.type === "Practitioner" && p.type?.[0]?.coding?.[0]?.code === "PPRF"
+		(p) => isPractitionerParticipant(p),
 	);
 
-	const patientRef = patientParticipant?.actor?.reference || "";
-	const patientId = patientRef.split("/")[1] || "";
+	const patientId = lookupData
+		? resolveParticipantId(
+				patientParticipant?.actor,
+				lookupData.patients,
+				getPatientDisplay,
+		  )
+		: extractReferenceId(patientParticipant?.actor?.reference);
 
-	const practitionerRef = practitionerParticipant?.actor?.reference || "";
-	const practitionerId = practitionerRef.split("/")[1] || "";
+	const practitionerId = lookupData
+		? resolveParticipantId(
+				practitionerParticipant?.actor,
+				lookupData.practitioners,
+				getPractitionerDisplay,
+		  )
+		: extractReferenceId(practitionerParticipant?.actor?.reference);
 
 	return {
 		status: appointment.status || "",

@@ -1,0 +1,111 @@
+{
+  "notes": "Please confirm availability for this appointment",
+  "reason": "New appointment booking from WAH4P",
+  "senderId": "26ee95b0-9f39-40ed-ba80-969fecb8b6d3",
+  "targetId": "433b81f2-413d-4efa-9ce5-123198bfec6f",
+  "resource": {
+    "resourceType": "Appointment",
+    "id": "99ed7d16-2d22-4215-9c13-83fd3aa9df93",
+    "meta": {
+      "profile": [
+        "http://hl7.org/fhir/StructureDefinition/Appointment"
+      ]
+    },
+    "status": "proposed",
+    "appointmentType": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/v2-0276",
+          "code": "POSTPARTUM",
+          "display": "Postpartum follow-up"
+        }
+      ],
+      "text": "Postpartum follow-up"
+    },
+    "description": "plssssssssssssssssss",
+    "comment": "plssssssssssssssssss",
+    "patientInstruction": "plssssssssssssssssss",
+    "created": "2026-02-18T17:23:36.354Z",
+    "start": "2026-02-20T11:00:00.000Z",
+    "end": "2026-02-20T12:00:00.000Z",
+    "minutesDuration": 60,
+    "reasonCode": [
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "postpartum"
+          }
+        ],
+        "text": "plsssssssssssssssssss"
+      }
+    ],
+    "serviceCategory": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/service-category",
+            "code": "onsite"
+          }
+        ]
+      }
+    ],
+    "specialty": [
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "obstetrics"
+          }
+        ]
+      }
+    ],
+    "participant": [
+      {
+        "actor": {
+          "type": "Practitioner",
+          "display": "Dr. Ron Samanniego Samanniego",
+          "identifier": {
+            "system": "http://wah4p.echosphere.cfd/practitioner-name",
+            "value": "Dr. Ron Samanniego Samanniego"
+          }
+        },
+        "type": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/v3-ParticipationType",
+                "code": "PPRF",
+                "display": "primary performer"
+              }
+            ]
+          }
+        ],
+        "status": "accepted"
+      },
+      {
+        "actor": {
+          "type": "Patient",
+          "display": "Current Patient",
+          "reference": "Patient/87e8fdaf-c8de-413e-bd4d-39eafbc572e4",
+          "identifier": {
+            "system": "http://wah4p.echosphere.cfd/patient-id",
+            "value": "87e8fdaf-c8de-413e-bd4d-39eafbc572e4"
+          }
+        },
+        "status": "accepted"
+      },
+      {
+        "actor": {
+          "type": "Location",
+          "display": "wah4clinic",
+          "identifier": {
+            "system": "http://wah4p.echosphere.cfd/location-name",
+            "value": "wah4clinic"
+          }
+        },
+        "status": "accepted"
+      }
+    ]
+  }
+}

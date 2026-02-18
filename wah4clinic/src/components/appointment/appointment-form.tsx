@@ -9,6 +9,7 @@ interface AppointmentFormProps {
 	onFieldChange: (field: keyof AppointmentFormData, value: string) => void;
 	patients: Array<{ code: string; display: string }>;
 	practitioners: Array<{ code: string; display: string }>;
+	customAppointmentTypeOption?: { code: string; display: string } | null;
 	disabled?: boolean;
 }
 
@@ -35,8 +36,27 @@ export function AppointmentForm({
 	onFieldChange,
 	patients,
 	practitioners,
+	customAppointmentTypeOption = null,
 	disabled = false,
 }: AppointmentFormProps) {
+	const appointmentTypeOptions = [...APPOINTMENT_TYPE_OPTIONS];
+	if (
+		customAppointmentTypeOption?.code &&
+		!appointmentTypeOptions.some((option) => option.code === customAppointmentTypeOption.code)
+	) {
+		appointmentTypeOptions.push(customAppointmentTypeOption);
+	}
+
+	if (
+		formData.appointmentType &&
+		!appointmentTypeOptions.some((option) => option.code === formData.appointmentType)
+	) {
+		appointmentTypeOptions.push({
+			code: formData.appointmentType,
+			display: customAppointmentTypeOption?.display || formData.appointmentType,
+		});
+	}
+
 	return (
 		<div className="space-y-8">
 			<section>
@@ -56,7 +76,7 @@ export function AppointmentForm({
 						label="Appointment Type"
 						value={formData.appointmentType}
 						onChange={(val) => onFieldChange("appointmentType", val)}
-						options={APPOINTMENT_TYPE_OPTIONS}
+						options={appointmentTypeOptions}
 						disabled={disabled}
 					/>
 				</div>

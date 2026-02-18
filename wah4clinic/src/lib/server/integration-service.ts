@@ -12,6 +12,22 @@ import {
 } from "@/lib/integration-types";
 import { DataService } from "@/lib/server/data-service";
 
+interface HumanName {
+  family?: string;
+  given?: string[];
+  prefix?: string[];
+}
+
+interface FHIRPersonResource {
+  [key: string]: unknown;
+  resourceType: string;
+  id?: string;
+  name?: HumanName[];
+  identifier?: Identifier[];
+}
+
+type StoredResource = JsonObject & { resourceType: string };
+
 class IntegrationServiceClass {
   private readonly dataPath: string;
 
@@ -151,12 +167,198 @@ class IntegrationServiceClass {
     }
 
     const normalizedResourceType = this.normalizeResourceType(resourceType);
-    const resourceForStore = {
-      ...resource,
-      resourceType: normalizedResourceType,
-    };
+    const resourceForStore = this.normalizePushResourceForStore(
+      normalizedResourceType,
+      resource,
+    );
 
     DataService.create(resourceForStore);
+  }
+
+  private normalizePushResourceForStore(
+    resourceType: string,
+    resource: JsonObject,
+  ): StoredResource {
+    const base: StoredResource = {
+      ...resource,
+      resourceType,
+    };
+
+    if (resourceType !== "Appointment") {
+      return base;
+    }
+
+    return this.normalizeAppointmentParticipantDisplays(base);
+  }
+
+  private normalizeAppointmentParticipantDisplays(
+    appointment: JsonObject,
+  ): StoredResource {
+    const resourceType = this.readString(appointment.resourceType) || "Appointment";
+    const participants = appointment.participant;
+    if (!Array.isArray(participants)) {
+      return {
+        ...appointment,
+        resourceType,
+      };
+    }
+
+    const normalizedParticipants = participants.map((participant) => {
+      if (!this.isJsonObject(participant)) {
+        return participant;
+      }
+
+      const actorValue = participant.actor;
+      if (!this.isJsonObject(actorValue)) {
+        return participant;
+      }
+
+      const canonicalDisplay = this.resolveParticipantActorDisplay(actorValue);
+      if (!canonicalDisplay) {
+        return participant;
+      }
+
+      return {
+        ...participant,
+        actor: {
+          ...actorValue,
+          display: canonicalDisplay,
+        },
+      };
+    });
+
+    return {
+      ...appointment,
+      resourceType,
+      participant: normalizedParticipants,
+    };
+  }
+
+  private resolveParticipantActorDisplay(actor: JsonObject): string | null {
+    const reference = this.readString(actor.reference);
+    const { resourceType, id } = this.parseReference(reference);
+
+    if (resourceType === "Patient" && id) {
+      const patient = DataService.findById<FHIRPersonResource>("Patient", id);
+      const display = this.buildPatientDisplay(patient);
+      if (display) {
+        return display;
+      }
+    }
+
+    if (resourceType === "Practitioner" && id) {
+      const practitioner = DataService.findById<FHIRPersonResource>(
+        "Practitioner",
+        id,
+      );
+      const display = this.buildPractitionerDisplay(practitioner);
+      if (display) {
+        return display;
+      }
+    }
+
+    const actorIdentifier = this.readIdentifier(actor.identifier);
+    if (!actorIdentifier) {
+      return null;
+    }
+
+    if (resourceType === "Patient" || resourceType === "") {
+      const patient = this.findByIdentifier("Patient", actorIdentifier);
+      const display = this.buildPatientDisplay(patient);
+      if (display) {
+        return display;
+      }
+    }
+
+    if (resourceType === "Practitioner" || resourceType === "") {
+      const practitioner = this.findByIdentifier(
+        "Practitioner",
+        actorIdentifier,
+      );
+      const display = this.buildPractitionerDisplay(practitioner);
+      if (display) {
+        return display;
+      }
+    }
+
+    return null;
+  }
+
+  private findByIdentifier(
+    resourceType: "Patient" | "Practitioner",
+    identifier: Identifier,
+  ): FHIRPersonResource | null {
+    const people = DataService.findAll<FHIRPersonResource>(resourceType);
+    return (
+      people.find((person) =>
+        person.identifier?.some(
+          (item) =>
+            typeof item.system === "string" &&
+            item.system.length > 0 &&
+            item.value === identifier.value &&
+            this.systemsMatch(item.system, identifier.system),
+        ),
+      ) || null
+    );
+  }
+
+  private buildPatientDisplay(patient: FHIRPersonResource | null): string {
+    if (!patient?.name?.[0]) {
+      return "";
+    }
+    const firstName = patient.name[0].given?.join(" ") || "";
+    const familyName = patient.name[0].family || "";
+    return `${firstName} ${familyName}`.trim();
+  }
+
+  private buildPractitionerDisplay(
+    practitioner: FHIRPersonResource | null,
+  ): string {
+    if (!practitioner?.name?.[0]) {
+      return "";
+    }
+    const prefix = practitioner.name[0].prefix?.[0] || "";
+    const given = practitioner.name[0].given?.join(" ") || "";
+    const family = practitioner.name[0].family || "";
+    return `${prefix} ${given} ${family}`.trim();
+  }
+
+  private parseReference(
+    reference: string,
+  ): { resourceType: "Patient" | "Practitioner" | ""; id: string } {
+    if (!reference) {
+      return { resourceType: "", id: "" };
+    }
+
+    const [rawType, rawId] = reference.split("/");
+    const id = rawId?.trim() || "";
+
+    if (rawType === "Patient") {
+      return { resourceType: "Patient", id };
+    }
+    if (rawType === "Practitioner") {
+      return { resourceType: "Practitioner", id };
+    }
+
+    return { resourceType: "", id: "" };
+  }
+
+  private readIdentifier(value: JsonValue | undefined): Identifier | null {
+    if (!value || !this.isJsonObject(value)) {
+      return null;
+    }
+
+    const system = this.readString(value.system);
+    const identifierValue = this.readString(value.value);
+    if (!system || !identifierValue) {
+      return null;
+    }
+
+    return { system, value: identifierValue };
+  }
+
+  private readString(value: JsonValue | undefined): string {
+    return typeof value === "string" ? value.trim() : "";
   }
 
   /**

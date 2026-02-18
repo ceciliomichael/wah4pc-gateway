@@ -47,6 +47,15 @@ export interface ReceivePushPayload {
 	notes?: string;
 }
 
+// Direct push shape received from sender-facing gateway endpoint payloads.
+export interface DirectPushPayload {
+	senderId: string;
+	targetId?: string;
+	resource: JsonValue;
+	reason?: string;
+	notes?: string;
+}
+
 export interface OperationOutcomePayload {
 	[key: string]: JsonValue;
 	resourceType: "OperationOutcome";

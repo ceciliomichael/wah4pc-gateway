@@ -68,7 +68,7 @@ func (r *providerRepoStub) Exists(id string) (bool, error) {
 
 type providerListAPIResponse struct {
 	Success bool                     `json:"success"`
-	Data    []PublicProviderResponse `json:"data"`
+	Data    []map[string]interface{} `json:"data"`
 	Error   string                   `json:"error,omitempty"`
 }
 
@@ -103,8 +103,8 @@ func TestProviderHandlerGetAll_HidesPractitionerListForPublic(t *testing.T) {
 	if len(response.Data) != 1 {
 		t.Fatalf("expected one provider, got %d", len(response.Data))
 	}
-	if len(response.Data[0].PractitionerList) != 0 {
-		t.Fatal("expected practitionerList to be hidden for unauthenticated request")
+	if _, exists := response.Data[0]["practitionerList"]; exists {
+		t.Fatal("expected practitionerList field to be absent for unauthenticated request")
 	}
 }
 
@@ -141,8 +141,8 @@ func TestProviderHandlerGetAll_HidesPractitionerListForAPIKeyAuth(t *testing.T) 
 	if len(response.Data) != 1 {
 		t.Fatalf("expected one provider, got %d", len(response.Data))
 	}
-	if len(response.Data[0].PractitionerList) != 0 {
-		t.Fatalf("expected practitionerList to be hidden for API key auth, got %d", len(response.Data[0].PractitionerList))
+	if _, exists := response.Data[0]["practitionerList"]; exists {
+		t.Fatal("expected practitionerList field to be absent for API key auth")
 	}
 }
 
@@ -179,8 +179,8 @@ func TestProviderHandlerGetAll_HidesPractitionerListForMasterKeyAuth(t *testing.
 	if len(response.Data) != 1 {
 		t.Fatalf("expected one provider, got %d", len(response.Data))
 	}
-	if len(response.Data[0].PractitionerList) != 0 {
-		t.Fatal("expected practitionerList to be hidden for master key auth")
+	if _, exists := response.Data[0]["practitionerList"]; exists {
+		t.Fatal("expected practitionerList field to be absent for master key auth")
 	}
 }
 

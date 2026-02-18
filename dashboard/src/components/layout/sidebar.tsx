@@ -14,6 +14,7 @@ import {
   LuX,
   LuActivity,
   LuShieldCheck,
+  LuUsers,
 } from "react-icons/lu";
 import { clsx } from "clsx";
 import { useAuth } from "@/stores/auth-store";
@@ -30,6 +31,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LuLayoutDashboard, description: "Overview & stats", roles: ["admin", "user"] },
   { href: "/providers", label: "Providers", icon: LuBuilding2, description: "Healthcare providers", roles: ["admin"] },
+  { href: "/practitioners", label: "Practitioners", icon: LuUsers, description: "Provider directories", roles: ["admin", "user"] },
   { href: "/apikeys", label: "API Keys", icon: LuKeyRound, description: "Access credentials", roles: ["admin"] },
   { href: "/transactions", label: "Transactions", icon: LuArrowLeftRight, description: "FHIR transfers", roles: ["admin", "user"] },
   { href: "/logs", label: "System Logs", icon: LuFileText, description: "Audit trail", roles: ["admin", "user"] },

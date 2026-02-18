@@ -161,6 +161,20 @@ export const providerApi = {
     return providers.map(normalizeProvider);
   },
 
+  getAllWithPractitioners: async () => {
+    const providers = await providerApi.getAll();
+    const detailedProviders = await Promise.all(
+      providers.map(async (provider) => {
+        try {
+          return await providerApi.getById(provider.id);
+        } catch {
+          return provider;
+        }
+      })
+    );
+    return detailedProviders;
+  },
+
   getById: async (id: string) => {
     const provider = await fetchWithAuth<ProviderApiShape>(`/providers/${id}`);
     return normalizeProvider(provider);

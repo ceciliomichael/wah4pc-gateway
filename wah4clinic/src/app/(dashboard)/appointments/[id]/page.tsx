@@ -85,10 +85,19 @@ export default function AppointmentDetailPage() {
 			);
 
 			const incomingTypeCoding = appointment?.appointmentType?.coding?.[0];
-			if (incomingTypeCoding?.code) {
+			const incomingTypeCode =
+				incomingTypeCoding?.code ||
+				incomingTypeCoding?.display ||
+				appointment?.appointmentType?.text;
+			const incomingTypeDisplay =
+				incomingTypeCoding?.display ||
+				incomingTypeCoding?.code ||
+				appointment?.appointmentType?.text;
+
+			if (incomingTypeCode) {
 				setCustomAppointmentTypeOption({
-					code: incomingTypeCoding.code,
-					display: incomingTypeCoding.display || incomingTypeCoding.code,
+					code: incomingTypeCode,
+					display: incomingTypeDisplay || incomingTypeCode,
 				});
 			} else {
 				setCustomAppointmentTypeOption(null);

@@ -21,6 +21,7 @@ interface FHIRAppointment {
 			code: string;
 			display: string;
 		}>;
+		text?: string;
 	};
 	description?: string;
 	start?: string;
@@ -96,6 +97,19 @@ const APPOINTMENT_TYPE_MAP: Record<string, string> = {
 	FOLLOWUP: "A follow up visit from a previous appointment",
 	EMERGENCY: "Emergency appointment",
 };
+
+function getAppointmentTypeCode(appointment: FHIRAppointment): string {
+	const coding = appointment.appointmentType?.coding?.[0];
+	const appointmentTypeText =
+		typeof appointment.appointmentType?.text === "string"
+			? appointment.appointmentType.text
+			: "";
+	return coding?.code || coding?.display || appointmentTypeText || "";
+}
+
+function getAppointmentTypeDisplayFromCode(code: string): string {
+	return APPOINTMENT_TYPE_MAP[code] || code;
+}
 
 function normalizeText(value: string): string {
 	return value.trim().toLowerCase().replace(/\s+/g, " ");
@@ -227,7 +241,7 @@ export function fhirToFormData(
 
 	return {
 		status: appointment.status || "",
-		appointmentType: appointment.appointmentType?.coding?.[0]?.code || "",
+		appointmentType: getAppointmentTypeCode(appointment),
 		patientId,
 		practitionerId,
 		start: fromFHIRDateTime(appointment.start || ""),
@@ -301,7 +315,7 @@ export function buildFHIRAppointment(
 				{
 					system: "http://terminology.hl7.org/CodeSystem/v2-0276",
 					code: formData.appointmentType,
-					display: APPOINTMENT_TYPE_MAP[formData.appointmentType] || formData.appointmentType,
+					display: getAppointmentTypeDisplayFromCode(formData.appointmentType),
 				},
 			],
 		};

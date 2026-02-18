@@ -9,6 +9,10 @@ import { Button } from "@/components/ui/button";
 import { settingsApi } from "@/lib/api";
 import { SystemSettings } from "@/types";
 import { LuSave, LuShieldAlert, LuShieldCheck } from "react-icons/lu";
+import { getCachedValue, setCachedValue } from "@/lib/indexed-cache";
+
+const SETTINGS_CACHE_KEY = "settings:global";
+const SETTINGS_CACHE_TTL_MS = 60_000;
 
 function SettingsContent() {
   const [settings, setSettings] = useState<SystemSettings>({
@@ -21,7 +25,23 @@ function SettingsContent() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+    const hydrateFromCache = async () => {
+      try {
+        const cached = await getCachedValue<SystemSettings>(SETTINGS_CACHE_KEY);
+        if (!cached || !isMounted) return;
+        setSettings(cached);
+        setIsLoading(false);
+      } catch (_error) {
+      }
+    };
+
+    hydrateFromCache();
     loadSettings();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const loadSettings = async () => {
@@ -30,6 +50,7 @@ function SettingsContent() {
     try {
       const data = await settingsApi.get();
       setSettings(data);
+      await setCachedValue<SystemSettings>(SETTINGS_CACHE_KEY, data, SETTINGS_CACHE_TTL_MS);
     } catch (err) {
       console.error("Failed to load settings:", err);
       setError("Failed to load settings. Please try again.");
@@ -44,7 +65,9 @@ function SettingsContent() {
     setSuccessMessage(null);
 
     try {
-      await settingsApi.update(settings);
+      const updated = await settingsApi.update(settings);
+      setSettings(updated);
+      await setCachedValue<SystemSettings>(SETTINGS_CACHE_KEY, updated, SETTINGS_CACHE_TTL_MS);
       setSuccessMessage("Settings saved successfully");
       
       // Clear success message after 3 seconds

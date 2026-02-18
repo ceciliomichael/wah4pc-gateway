@@ -1,141 +1,145 @@
 import fs from "node:fs";
 import path from "node:path";
+import type { JsonObject } from "@/lib/integration-types";
 
-interface Patient {
-	resourceType: string;
-	id: string;
-	meta: {
-		profile: string[];
-		lastUpdated: string;
-	};
-	[key: string]: unknown;
+interface ResourceRecord extends JsonObject {
+  resourceType: string;
+  id?: string;
+  meta?: JsonObject;
 }
 
 interface DataStore<T> {
-	data: T[];
-	meta: {
-		lastUpdated: string;
-		count: number;
-	};
+  data: T[];
+  meta: {
+    lastUpdated: string;
+    count: number;
+  };
 }
 
 class DataServiceClass {
-	private readonly dataPath: string;
+  private readonly dataPath: string;
 
-	constructor() {
-		this.dataPath = path.join(process.cwd(), "data");
-		this.ensureDataDirectory();
-	}
+  constructor() {
+    this.dataPath = path.join(process.cwd(), "data");
+    this.ensureDataDirectory();
+  }
 
-	private ensureDataDirectory(): void {
-		if (!fs.existsSync(this.dataPath)) {
-			fs.mkdirSync(this.dataPath, { recursive: true });
-		}
-	}
+  private ensureDataDirectory(): void {
+    if (!fs.existsSync(this.dataPath)) {
+      fs.mkdirSync(this.dataPath, { recursive: true });
+    }
+  }
 
-	private getFilePath(resourceType: string): string {
-		return path.join(this.dataPath, `${resourceType.toLowerCase()}.json`);
-	}
+  private getFilePath(resourceType: string): string {
+    return path.join(this.dataPath, `${resourceType.toLowerCase()}.json`);
+  }
 
-	private readStore<T>(resourceType: string): DataStore<T> {
-		const filePath = this.getFilePath(resourceType);
+  private readStore<T>(resourceType: string): DataStore<T> {
+    const filePath = this.getFilePath(resourceType);
 
-		if (!fs.existsSync(filePath)) {
-			return {
-				data: [],
-				meta: {
-					lastUpdated: new Date().toISOString(),
-					count: 0,
-				},
-			};
-		}
+    if (!fs.existsSync(filePath)) {
+      return {
+        data: [],
+        meta: {
+          lastUpdated: new Date().toISOString(),
+          count: 0,
+        },
+      };
+    }
 
-		const fileContent = fs.readFileSync(filePath, "utf-8");
-		return JSON.parse(fileContent) as DataStore<T>;
-	}
+    const fileContent = fs.readFileSync(filePath, "utf-8");
+    return JSON.parse(fileContent) as DataStore<T>;
+  }
 
-	private writeStore<T>(resourceType: string, store: DataStore<T>): void {
-		const filePath = this.getFilePath(resourceType);
-		fs.writeFileSync(filePath, JSON.stringify(store, null, 2), "utf-8");
-	}
+  private writeStore<T>(resourceType: string, store: DataStore<T>): void {
+    const filePath = this.getFilePath(resourceType);
+    fs.writeFileSync(filePath, JSON.stringify(store, null, 2), "utf-8");
+  }
 
-	create<T extends Patient>(resource: T): T {
-		const resourceType = resource.resourceType;
-		const store = this.readStore<T>(resourceType);
+  create<T extends ResourceRecord>(resource: T): T {
+    const resourceType = resource.resourceType;
+    const store = this.readStore<T>(resourceType);
 
-		const now = new Date().toISOString();
-		const resourceWithMeta = {
-			...resource,
-			meta: {
-				...resource.meta,
-				lastUpdated: now,
-			},
-		};
+    const now = new Date().toISOString();
+    const resourceWithMeta = {
+      ...resource,
+      meta: {
+        ...resource.meta,
+        lastUpdated: now,
+      },
+    };
 
-		store.data.push(resourceWithMeta);
-		store.meta.lastUpdated = now;
-		store.meta.count = store.data.length;
+    store.data.push(resourceWithMeta);
+    store.meta.lastUpdated = now;
+    store.meta.count = store.data.length;
 
-		this.writeStore(resourceType, store);
+    this.writeStore(resourceType, store);
 
-		return resourceWithMeta;
-	}
+    return resourceWithMeta;
+  }
 
-	findAll<T>(resourceType: string): T[] {
-		const store = this.readStore<T>(resourceType);
-		return store.data;
-	}
+  findAll<T>(resourceType: string): T[] {
+    const store = this.readStore<T>(resourceType);
+    return store.data;
+  }
 
-	findById<T extends Patient>(resourceType: string, id: string): T | null {
-		const store = this.readStore<T>(resourceType);
-		const resource = store.data.find((item) => (item as Patient).id === id);
-		return resource ? (resource as T) : null;
-	}
+  findById<T extends ResourceRecord>(
+    resourceType: string,
+    id: string,
+  ): T | null {
+    const store = this.readStore<T>(resourceType);
+    const resource = store.data.find(
+      (item) => (item as ResourceRecord).id === id,
+    );
+    return resource ? (resource as T) : null;
+  }
 
-	update<T extends Patient>(resource: T): T | null {
-		const resourceType = resource.resourceType;
-		const store = this.readStore<T>(resourceType);
+  update<T extends ResourceRecord>(resource: T): T | null {
+    const resourceType = resource.resourceType;
+    const store = this.readStore<T>(resourceType);
 
-		const index = store.data.findIndex((item) => (item as Patient).id === resource.id);
+    const index = store.data.findIndex(
+      (item) => (item as ResourceRecord).id === resource.id,
+    );
 
-		if (index === -1) {
-			return null;
-		}
+    if (index === -1) {
+      return null;
+    }
 
-		const now = new Date().toISOString();
-		const updatedResource = {
-			...resource,
-			meta: {
-				...resource.meta,
-				lastUpdated: now,
-			},
-		};
+    const now = new Date().toISOString();
+    const updatedResource = {
+      ...resource,
+      meta: {
+        ...resource.meta,
+        lastUpdated: now,
+      },
+    };
 
-		store.data[index] = updatedResource;
-		store.meta.lastUpdated = now;
+    store.data[index] = updatedResource;
+    store.meta.lastUpdated = now;
 
-		this.writeStore(resourceType, store);
+    this.writeStore(resourceType, store);
 
-		return updatedResource;
-	}
+    return updatedResource;
+  }
 
-	delete(resourceType: string, id: string): boolean {
-		const store = this.readStore<Patient>(resourceType);
+  delete(resourceType: string, id: string): boolean {
+    const store = this.readStore<ResourceRecord>(resourceType);
 
-		const index = store.data.findIndex((item) => item.id === id);
+    const index = store.data.findIndex((item) => item.id === id);
 
-		if (index === -1) {
-			return false;
-		}
+    if (index === -1) {
+      return false;
+    }
 
-		store.data.splice(index, 1);
-		store.meta.lastUpdated = new Date().toISOString();
-		store.meta.count = store.data.length;
+    store.data.splice(index, 1);
+    store.meta.lastUpdated = new Date().toISOString();
+    store.meta.count = store.data.length;
 
-		this.writeStore(resourceType, store);
+    this.writeStore(resourceType, store);
 
-		return true;
-	}
+    return true;
+  }
 }
 
 export const DataService = new DataServiceClass();

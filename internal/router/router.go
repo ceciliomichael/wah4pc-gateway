@@ -84,6 +84,7 @@ func (r *Router) registerRoutes() {
 
 	// Provider routes
 	r.mux.HandleFunc("/api/v1/providers", r.handleProviders)
+	r.mux.HandleFunc("/api/v1/providers/facilities/", r.handleProviderFacilityRoutes)
 	r.mux.HandleFunc("/api/v1/providers/", r.handleProviderByID)
 
 	// FHIR Gateway routes
@@ -102,6 +103,22 @@ func (r *Router) registerRoutes() {
 
 	// Settings routes
 	r.mux.HandleFunc("/api/v1/settings", r.handleSettings)
+}
+
+// handleProviderFacilityRoutes routes /api/v1/providers/facilities/{facilityCode}/practitioners
+func (r *Router) handleProviderFacilityRoutes(w http.ResponseWriter, req *http.Request) {
+	path := strings.TrimSuffix(req.URL.Path, "/")
+	if !strings.HasSuffix(path, "/practitioners") {
+		http.NotFound(w, req)
+		return
+	}
+
+	if req.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	r.providerHandler.GetPractitionersByFacility(w, req)
 }
 
 // handleEventsStream routes /api/v1/events/stream

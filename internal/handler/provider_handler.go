@@ -263,6 +263,35 @@ func (h *ProviderHandler) SetActive(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, provider)
 }
 
+// GetPractitionersByFacility handles GET /api/v1/providers/facilities/{facilityCode}/practitioners
+func (h *ProviderHandler) GetPractitionersByFacility(w http.ResponseWriter, r *http.Request) {
+	facilityCode := extractFacilityCodeForPractitionerLookup(r.URL.Path)
+	if facilityCode == "" {
+		respondError(w, http.StatusBadRequest, "facility code required")
+		return
+	}
+
+	practitioners, err := h.service.GetPractitionersByFacilityCode(facilityCode)
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidFacilityCode) {
+			respondError(w, http.StatusBadRequest, "invalid facility code")
+			return
+		}
+		if errors.Is(err, service.ErrProviderNotFound) {
+			respondError(w, http.StatusNotFound, "provider not found")
+			return
+		}
+		if errors.Is(err, service.ErrProviderUpstreamUnavailable) || errors.Is(err, service.ErrInvalidUpstreamResponse) {
+			respondError(w, http.StatusBadGateway, err.Error())
+			return
+		}
+		respondError(w, http.StatusInternalServerError, "failed to fetch practitioners")
+		return
+	}
+
+	respondJSON(w, http.StatusOK, practitioners)
+}
+
 // extractPathParam extracts a path parameter after a prefix
 func extractPathParam(path, prefix string) string {
 	if !strings.HasPrefix(path, prefix) {
@@ -272,6 +301,21 @@ func extractPathParam(path, prefix string) string {
 	// Remove trailing slash if present
 	param = strings.TrimSuffix(param, "/")
 	return param
+}
+
+func extractFacilityCodeForPractitionerLookup(path string) string {
+	const prefix = "/api/v1/providers/facilities/"
+	const suffix = "/practitioners"
+
+	path = strings.TrimSuffix(path, "/")
+	if !strings.HasPrefix(path, prefix) || !strings.HasSuffix(path, suffix) {
+		return ""
+	}
+
+	code := strings.TrimPrefix(path, prefix)
+	code = strings.TrimSuffix(code, suffix)
+	code = strings.TrimSuffix(code, "/")
+	return strings.TrimSpace(code)
 }
 
 func firstNonEmpty(values ...string) string {

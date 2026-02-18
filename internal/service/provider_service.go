@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"net/http"
 	"strings"
 	"time"
 
@@ -11,11 +12,14 @@ import (
 )
 
 var (
-	ErrProviderNotFound      = errors.New("provider not found")
-	ErrProviderAlreadyExists = errors.New("provider already exists")
-	ErrDuplicateFacilityCode = errors.New("facility code already exists")
-	ErrInvalidProvider       = errors.New("invalid provider data")
-	ErrMissingRequiredField  = errors.New("missing required provider field")
+	ErrProviderNotFound            = errors.New("provider not found")
+	ErrProviderAlreadyExists       = errors.New("provider already exists")
+	ErrDuplicateFacilityCode       = errors.New("facility code already exists")
+	ErrInvalidProvider             = errors.New("invalid provider data")
+	ErrMissingRequiredField        = errors.New("missing required provider field")
+	ErrInvalidFacilityCode         = errors.New("invalid facility code")
+	ErrProviderUpstreamUnavailable = errors.New("provider upstream unavailable")
+	ErrInvalidUpstreamResponse     = errors.New("invalid upstream response")
 )
 
 // ProviderRepository defines the interface for provider data access
@@ -31,12 +35,18 @@ type ProviderRepository interface {
 
 // ProviderService handles provider registration and lookup
 type ProviderService struct {
-	repo ProviderRepository
+	repo       ProviderRepository
+	httpClient *http.Client
 }
 
 // NewProviderService creates a new provider service
 func NewProviderService(repo ProviderRepository) *ProviderService {
-	return &ProviderService{repo: repo}
+	return &ProviderService{
+		repo: repo,
+		httpClient: &http.Client{
+			Timeout: 15 * time.Second,
+		},
+	}
 }
 
 // RegisterInput represents the input for registering a provider

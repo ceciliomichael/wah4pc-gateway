@@ -22,8 +22,8 @@ export const fhirEndpoints: EndpointCardProps[] = [
       {
         name: "Idempotency-Key",
         value: "550e8400-e29b-41d4-a716-446655440000",
-        required: true,
-        description: "UUID for safe retries. Required for mutating requests.",
+        required: false,
+        description: "UUID for safe retries on retries/duplicate submissions.",
       },
     ],
     requestBody: `{
@@ -58,7 +58,7 @@ export const fhirEndpoints: EndpointCardProps[] = [
     notes: [
       "Use `/docs/request-formats` for all 25 request body formats.",
       "Both requesterId and targetId must be registered providers.",
-      "Idempotency is required for safe retries on POST requests.",
+      "Idempotency-Key is optional but strongly recommended for safe retries on POST requests.",
       "The gateway forwards the query to target provider `/fhir/process-query`.",
       "Results are sent asynchronously to requester `/fhir/receive-results`.",
       "Duplicate requests inside the 5-minute window can return HTTP 429.",
@@ -89,7 +89,7 @@ export const fhirEndpoints: EndpointCardProps[] = [
       {
         name: "Idempotency-Key",
         value: "550e8400-e29b-41d4-a716-446655440000",
-        required: true,
+        required: false,
         description: "UUID for safe retries when sending results back.",
       },
     ],
@@ -154,8 +154,8 @@ export const fhirEndpoints: EndpointCardProps[] = [
       {
         name: "Idempotency-Key",
         value: "550e8400-e29b-41d4-a716-446655440000",
-        required: true,
-        description: "UUID for safe retries. Required for mutating requests.",
+        required: false,
+        description: "UUID for safe retries on retries/duplicate submissions.",
       },
     ],
     requestBody: `{
@@ -171,6 +171,8 @@ export const fhirEndpoints: EndpointCardProps[] = [
 }`,
     responseStatus: 200,
     responseBody: `{
+  "success": true,
+  "data": {
   "id": "txn_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "requesterId": "your-provider-uuid",
   "targetId": "target-provider-uuid",
@@ -178,6 +180,7 @@ export const fhirEndpoints: EndpointCardProps[] = [
   "status": "COMPLETED",
   "createdAt": "2026-02-17T11:00:00Z",
   "updatedAt": "2026-02-17T11:00:00Z"
+  }
 }`,
     notes: [
       "Target provider must support `/fhir/receive-push`.",

@@ -110,9 +110,9 @@ export const errorData = [
     causes: "An unexpected error occurred on the server"
   },
   {
-    code: 503,
-    meaning: "Service Unavailable",
-    causes: "The gateway or target provider system is temporarily unavailable"
+    code: 502,
+    meaning: "Bad Gateway",
+    causes: "Upstream provider forwarding failed or upstream returned an error"
   }
 ];
 

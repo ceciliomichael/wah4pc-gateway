@@ -3,6 +3,7 @@ package mongo
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/wah4pc/wah4pc-gateway/internal/model"
@@ -32,20 +33,38 @@ func (r *ApiKeyRepository) ensureIndexes() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	_, err := r.collection.Indexes().CreateMany(ctx, []mongo.IndexModel{
-		{
-			Keys:    bson.D{{Key: "id", Value: 1}},
-			Options: options.Index().SetUnique(true),
-		},
-		{
-			Keys:    bson.D{{Key: "keyHash", Value: 1}},
-			Options: options.Index().SetUnique(true),
-		},
+	_, err := r.collection.Indexes().CreateOne(ctx, mongo.IndexModel{
+		Keys:    bson.D{{Key: "id", Value: 1}},
+		Options: options.Index().SetUnique(true),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create api key indexes: %w", err)
 	}
+
+	_, err = r.collection.Indexes().CreateOne(ctx, mongo.IndexModel{
+		Keys:    bson.D{{Key: "keyHash", Value: 1}},
+		Options: options.Index().SetUnique(true),
+	})
+	if err != nil {
+		// Backward-compatibility: older deployments may already have a non-unique
+		// keyHash index with the same generated name (keyHash_1). In that case we
+		// keep running and allow a manual migration to a unique index.
+		if !isLegacyKeyHashIndexConflict(err) {
+			return fmt.Errorf("failed to create api key indexes: %w", err)
+		}
+	}
+
 	return nil
+}
+
+func isLegacyKeyHashIndexConflict(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	msg := err.Error()
+	return strings.Contains(msg, "IndexKeySpecsConflict") ||
+		strings.Contains(msg, "IndexOptionsConflict")
 }
 
 func (r *ApiKeyRepository) GetAll() ([]model.ApiKey, error) {

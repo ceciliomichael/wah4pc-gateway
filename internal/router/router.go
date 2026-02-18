@@ -19,6 +19,7 @@ type Router struct {
 	apiKeyHandler         *handler.ApiKeyHandler
 	logHandler            *handler.LogHandler
 	settingsHandler       *handler.SettingsHandler
+	eventsHandler         *handler.EventsHandler
 	webHandler            *handler.WebHandler
 	authMiddleware        *middleware.AuthMiddleware
 	rateLimitMiddleware   *middleware.RateLimitMiddleware
@@ -34,6 +35,7 @@ func NewRouter(
 	apiKeyHandler *handler.ApiKeyHandler,
 	logHandler *handler.LogHandler,
 	settingsHandler *handler.SettingsHandler,
+	eventsHandler *handler.EventsHandler,
 	apiKeyService *service.ApiKeyService,
 	masterKey string,
 	auditLogger *logger.FileLogger,
@@ -55,6 +57,7 @@ func NewRouter(
 		apiKeyHandler:         apiKeyHandler,
 		logHandler:            logHandler,
 		settingsHandler:       settingsHandler,
+		eventsHandler:         eventsHandler,
 		webHandler:            webHandler,
 		authMiddleware:        authMW,
 		rateLimitMiddleware:   rateLimitMW,
@@ -95,9 +98,19 @@ func (r *Router) registerRoutes() {
 	// Log routes
 	r.mux.HandleFunc("/api/v1/logs/dates", r.handleLogDates)
 	r.mux.HandleFunc("/api/v1/logs/", r.handleLogs)
+	r.mux.HandleFunc("/api/v1/events/stream", r.handleEventsStream)
 
 	// Settings routes
 	r.mux.HandleFunc("/api/v1/settings", r.handleSettings)
+}
+
+// handleEventsStream routes /api/v1/events/stream
+func (r *Router) handleEventsStream(w http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	r.eventsHandler.Stream(w, req)
 }
 
 // handleAuthIdentity routes /api/v1/auth/identity
@@ -280,7 +293,7 @@ func (r *Router) handleLogs(w http.ResponseWriter, req *http.Request) {
 
 	parts := strings.Split(req.URL.Path, "/")
 	// Expected: /api/v1/logs/{date} (len 5) or /api/v1/logs/{date}/{id} (len 6)
-	
+
 	if len(parts) == 5 {
 		r.logHandler.GetLogs(w, req)
 	} else if len(parts) == 6 {

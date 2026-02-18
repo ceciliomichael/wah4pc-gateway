@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/wah4pc/wah4pc-gateway/pkg/realtime"
 )
 
 // MaxBodySize is the maximum size of request/response body to log (16KB)
@@ -77,15 +80,22 @@ type AuditLogStorage interface {
 // FileLogger keeps the existing type name for compatibility with current wiring.
 type FileLogger struct {
 	storage    AuditLogStorage
+	broker     *realtime.Broker
 	logChannel chan DetailedLogEntry
 	done       chan struct{}
 	wg         sync.WaitGroup
 }
 
 // NewFileLogger creates an async logger that persists logs to the provided storage.
-func NewFileLogger(storage AuditLogStorage) *FileLogger {
+func NewFileLogger(storage AuditLogStorage, broker ...*realtime.Broker) *FileLogger {
+	var resolvedBroker *realtime.Broker
+	if len(broker) > 0 {
+		resolvedBroker = broker[0]
+	}
+
 	l := &FileLogger{
 		storage:    storage,
+		broker:     resolvedBroker,
 		logChannel: make(chan DetailedLogEntry, 1000),
 		done:       make(chan struct{}),
 	}
@@ -161,6 +171,18 @@ func (l *FileLogger) writeEntry(entry DetailedLogEntry) {
 
 	if err := l.storage.Upsert(stored); err != nil {
 		fmt.Fprintf(os.Stderr, "[AUDIT ERROR] Failed to persist log %s: %v\n", entry.ID, err)
+		return
+	}
+
+	if l.broker != nil {
+		combinedBody := strings.Join([]string{entry.RequestBody, entry.ResponseBody}, "\n")
+		l.broker.Publish(realtime.Event{
+			Type:          "audit.log.created",
+			Timestamp:     entry.Timestamp.UTC(),
+			LogID:         entry.ID,
+			ProviderIDs:   collectProviderIDs(entry.ProviderID, combinedBody),
+			TransactionID: extractJSONField(combinedBody, "transactionId"),
+		})
 	}
 }
 
@@ -333,4 +355,38 @@ func TruncateBody(body []byte) (string, int, bool) {
 		return string(body[:MaxBodySize]) + "\n\n[TRUNCATED - Original size: " + fmt.Sprintf("%d", originalSize) + " bytes]", originalSize, true
 	}
 	return string(body), originalSize, false
+}
+
+func collectProviderIDs(providerID, body string) []string {
+	seen := make(map[string]struct{})
+	out := make([]string, 0, 4)
+
+	appendUnique := func(value string) {
+		v := strings.TrimSpace(value)
+		if v == "" {
+			return
+		}
+		if _, ok := seen[v]; ok {
+			return
+		}
+		seen[v] = struct{}{}
+		out = append(out, v)
+	}
+
+	appendUnique(providerID)
+	appendUnique(extractJSONField(body, "requesterId"))
+	appendUnique(extractJSONField(body, "targetId"))
+	appendUnique(extractJSONField(body, "senderId"))
+
+	return out
+}
+
+func extractJSONField(content, field string) string {
+	pattern := fmt.Sprintf(`"%s"\s*:\s*"([^"]+)"`, field)
+	re := regexp.MustCompile(pattern)
+	matches := re.FindStringSubmatch(content)
+	if len(matches) < 2 {
+		return ""
+	}
+	return strings.TrimSpace(matches[1])
 }

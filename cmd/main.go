@@ -14,6 +14,7 @@ import (
 	"github.com/wah4pc/wah4pc-gateway/internal/service"
 	"github.com/wah4pc/wah4pc-gateway/internal/validator"
 	"github.com/wah4pc/wah4pc-gateway/pkg/logger"
+	"github.com/wah4pc/wah4pc-gateway/pkg/realtime"
 )
 
 func main() {
@@ -80,8 +81,10 @@ func main() {
 		log.Fatalf("Failed to initialize log repository: %v", err)
 	}
 
+	eventBroker := realtime.NewBroker()
+
 	// Initialize audit logger (persists entries to MongoDB)
-	auditLogger := logger.NewFileLogger(logRepo)
+	auditLogger := logger.NewFileLogger(logRepo, eventBroker)
 	defer auditLogger.Close()
 
 	if err := service.MigrateLegacyLogs("log", "logs.txt", logRepo); err != nil {
@@ -102,9 +105,10 @@ func main() {
 	apiKeyHandler := handler.NewApiKeyHandler(apiKeyService)
 	logHandler := handler.NewLogHandler(logService)
 	settingsHandler := handler.NewSettingsHandler(settingsService)
+	eventsHandler := handler.NewEventsHandler(eventBroker)
 
 	// Initialize router with middleware
-	r := router.NewRouter(authHandler, providerHandler, gatewayHandler, apiKeyHandler, logHandler, settingsHandler, apiKeyService, cfg.Security.MasterKey, auditLogger)
+	r := router.NewRouter(authHandler, providerHandler, gatewayHandler, apiKeyHandler, logHandler, settingsHandler, eventsHandler, apiKeyService, cfg.Security.MasterKey, auditLogger)
 
 	// Start server
 	addr := cfg.Address()

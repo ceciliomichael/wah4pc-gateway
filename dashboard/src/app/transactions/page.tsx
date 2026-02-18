@@ -5,7 +5,7 @@ import { AuthGuard } from "@/components/auth-guard";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { transactionApi, providerApi } from "@/lib/api";
 import type { Transaction, Provider, Identifier } from "@/types";
-import { LuLoaderCircle, LuCircleAlert, LuRefreshCw } from "react-icons/lu";
+import { LuCircleAlert, LuRefreshCw } from "react-icons/lu";
 import { clsx } from "clsx";
 
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,16 @@ import {
   type StatusFilterValue,
 } from "@/components/transactions/transaction-filters";
 import { TransactionsList } from "@/components/transactions/transactions-list";
+import { useRealtimeEvents } from "@/hooks/use-realtime-events";
+import { Skeleton } from "@/components/ui/skeleton";
+import { getCachedValue, setCachedValue } from "@/lib/indexed-cache";
+
+interface TransactionsCachePayload {
+  transactions: Transaction[];
+  providers: Provider[];
+}
+
+const TRANSACTIONS_CACHE_TTL_MS = 45_000;
 
 // Helper to search within identifiers array
 function identifiersMatchSearch(identifiers: Identifier[], query: string): boolean {
@@ -49,6 +59,14 @@ function TransactionsContent() {
       setTransactions(txData);
       setProviders(providerData);
       setError(null);
+      await setCachedValue<TransactionsCachePayload>(
+        "transactions:list",
+        {
+          transactions: txData,
+          providers: providerData,
+        },
+        TRANSACTIONS_CACHE_TTL_MS
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load transactions");
     } finally {
@@ -58,8 +76,27 @@ function TransactionsContent() {
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
+    const hydrateFromCache = async () => {
+      try {
+        const cached = await getCachedValue<TransactionsCachePayload>("transactions:list");
+        if (!cached || !isMounted) return;
+        setTransactions(cached.transactions);
+        setProviders(cached.providers);
+        setIsLoading(false);
+      } catch (_error) {
+      }
+    };
+    hydrateFromCache();
     fetchData();
+    return () => {
+      isMounted = false;
+    };
   }, [fetchData]);
+
+  useRealtimeEvents(() => {
+    fetchData(true);
+  });
 
   // Helper to get provider name for search
   const getProviderName = useCallback(
@@ -119,8 +156,10 @@ function TransactionsContent() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <LuLoaderCircle className="w-8 h-8 text-blue-600 animate-spin" />
+      <div className="space-y-5">
+        <Skeleton className="h-20 w-full rounded-2xl" />
+        <Skeleton className="h-14 w-full rounded-xl" />
+        <Skeleton className="h-96 w-full rounded-2xl" />
       </div>
     );
   }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { logsApi } from "@/lib/api";
 import type { LogDate, LogSummary } from "@/types";
 import { LogsTable } from "@/components/logs/logs-table";
@@ -11,6 +11,12 @@ import { LuCalendar, LuLoader, LuRefreshCw, LuChevronDown } from "react-icons/lu
 import { clsx } from "clsx";
 import { AuthGuard } from "@/components/auth-guard";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { useRealtimeEvents } from "@/hooks/use-realtime-events";
+import { Skeleton } from "@/components/ui/skeleton";
+import { getCachedValue, setCachedValue } from "@/lib/indexed-cache";
+
+const LOG_DATES_CACHE_TTL_MS = 45_000;
+const LOG_ITEMS_CACHE_TTL_MS = 30_000;
 
 function LogsContent() {
   const [dates, setDates] = useState<LogDate[]>([]);
@@ -42,25 +48,13 @@ function LogsContent() {
   };
 
   // Fetch dates on mount
-  useEffect(() => {
-    fetchDates();
-  }, []);
-
-  // Fetch logs when date changes
-  useEffect(() => {
-    if (selectedDate) {
-      fetchLogs(selectedDate);
-    } else {
-      setLogs([]);
-    }
-  }, [selectedDate]);
-
-  const fetchDates = async () => {
+  const fetchDates = useCallback(async () => {
     setLoadingDates(true);
     setError(null);
     try {
       const data = await logsApi.getDates();
       setDates(data);
+      await setCachedValue<LogDate[]>("logs:dates", data, LOG_DATES_CACHE_TTL_MS);
       if (data.length > 0 && !selectedDate) {
         setSelectedDate(data[0].date);
       }
@@ -70,9 +64,9 @@ function LogsContent() {
     } finally {
       setLoadingDates(false);
     }
-  };
+  }, [selectedDate]);
 
-  const fetchLogs = async (date: string) => {
+  const fetchLogs = useCallback(async (date: string) => {
     setLoadingLogs(true);
     // Keep selected log if it belongs to the new date, otherwise clear
     if (selectedLog && !selectedLog.timestamp.startsWith(date)) {
@@ -83,6 +77,7 @@ function LogsContent() {
       const data = await logsApi.getLogs(date);
       const filteredLogs = data.filter((log) => !shouldHideLog(log.url));
       setLogs(filteredLogs);
+      await setCachedValue<LogSummary[]>(`logs:date:${date}`, filteredLogs, LOG_ITEMS_CACHE_TTL_MS);
       if (selectedLog && !filteredLogs.some((log) => log.id === selectedLog.id)) {
         setSelectedLog(null);
       }
@@ -92,7 +87,54 @@ function LogsContent() {
     } finally {
       setLoadingLogs(false);
     }
-  };
+  }, [selectedLog]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const hydrateDatesFromCache = async () => {
+      try {
+        const cachedDates = await getCachedValue<LogDate[]>("logs:dates");
+        if (!cachedDates || !isMounted) return;
+        setDates(cachedDates);
+        if (cachedDates.length > 0 && !selectedDate) {
+          setSelectedDate(cachedDates[0].date);
+        }
+        setLoadingDates(false);
+      } catch (_error) {
+      }
+    };
+    hydrateDatesFromCache();
+    fetchDates();
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchDates]);
+
+  // Fetch logs when date changes
+  useEffect(() => {
+    if (selectedDate) {
+      const hydrateLogsFromCache = async () => {
+        try {
+          const cachedLogs = await getCachedValue<LogSummary[]>(`logs:date:${selectedDate}`);
+          if (!cachedLogs) return;
+          setLogs(cachedLogs);
+          setLoadingLogs(false);
+        } catch (_error) {
+        }
+      };
+      hydrateLogsFromCache();
+      fetchLogs(selectedDate);
+    } else {
+      setLogs([]);
+    }
+  }, [selectedDate, fetchLogs]);
+
+  useRealtimeEvents(() => {
+    if (selectedDate) {
+      fetchLogs(selectedDate);
+    }
+    fetchDates();
+  });
 
   const handleRefresh = () => {
     setIsRefreshing(true);
@@ -110,8 +152,12 @@ function LogsContent() {
   // Loading state
   if (loadingDates && dates.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <LuLoader className="w-8 h-8 text-primary-500 animate-spin" />
+      <div className="space-y-5">
+        <Skeleton className="h-10 w-40" />
+        <div className="flex gap-4">
+          <Skeleton className="hidden lg:block h-[560px] w-56 rounded-2xl" />
+          <Skeleton className="h-[560px] flex-1 rounded-2xl" />
+        </div>
       </div>
     );
   }

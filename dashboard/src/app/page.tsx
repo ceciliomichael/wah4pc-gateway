@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AuthGuard } from "@/components/auth-guard";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { providerApi, apiKeyApi, transactionApi } from "@/lib/api";
@@ -13,7 +13,6 @@ import {
   LuCircleCheck,
   LuClock,
   LuCircleX,
-  LuLoaderCircle,
   LuCircleAlert,
   LuTrendingUp,
   LuActivity,
@@ -22,6 +21,9 @@ import {
 } from "react-icons/lu";
 import { clsx } from "clsx";
 import { StatusBadge } from "@/components/ui/badge";
+import { useRealtimeEvents } from "@/hooks/use-realtime-events";
+import { Skeleton } from "@/components/ui/skeleton";
+import { getCachedValue, setCachedValue } from "@/lib/indexed-cache";
 
 interface StatCardProps {
   label: string;
@@ -31,6 +33,13 @@ interface StatCardProps {
   trend?: string;
   description?: string;
 }
+
+interface DashboardCachePayload {
+  stats: DashboardStats;
+  recentTransactions: Transaction[];
+}
+
+const DASHBOARD_CACHE_TTL_MS = 60_000;
 
 function StatCard({ label, value, icon: Icon, color, trend, description }: StatCardProps) {
   const colorConfig = {
@@ -106,42 +115,84 @@ function DashboardContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const transactions = await transactionApi.getAll();
-        if (identity?.role === "admin") {
-          const [providers, apiKeys] = await Promise.all([
-            providerApi.getAll(),
-            apiKeyApi.getAll(),
-          ]);
-          setStats(calculateStats(providers, apiKeys, transactions));
-        } else {
-          setStats(calculateStats([], [], transactions));
-        }
-        setRecentTransactions(transactions.slice(0, 5));
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load dashboard data");
-      } finally {
-        setIsLoading(false);
+  const fetchData = useCallback(async () => {
+    try {
+      const transactions = await transactionApi.getAll();
+      let resolvedStats: DashboardStats;
+      if (identity?.role === "admin") {
+        const [providers, apiKeys] = await Promise.all([
+          providerApi.getAll(),
+          apiKeyApi.getAll(),
+        ]);
+        resolvedStats = calculateStats(providers, apiKeys, transactions);
+      } else {
+        resolvedStats = calculateStats([], [], transactions);
       }
-    }
+      setStats(resolvedStats);
+      setRecentTransactions(transactions.slice(0, 5));
+      setError(null);
 
+      const cacheKey =
+        identity?.role === "admin"
+          ? "dashboard:admin"
+          : `dashboard:provider:${identity?.providerId ?? "self"}`;
+      const cachePayload: DashboardCachePayload = {
+        stats: resolvedStats,
+        recentTransactions: transactions.slice(0, 5),
+      };
+      await setCachedValue(cacheKey, cachePayload, DASHBOARD_CACHE_TTL_MS);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load dashboard data");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [identity?.providerId, identity?.role]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const cacheKey =
+      identity?.role === "admin"
+        ? "dashboard:admin"
+        : `dashboard:provider:${identity?.providerId ?? "self"}`;
+
+    const hydrateFromCache = async () => {
+      try {
+        const cached = await getCachedValue<DashboardCachePayload>(cacheKey);
+        if (!cached || !isMounted) return;
+        setStats(cached.stats);
+        setRecentTransactions(cached.recentTransactions);
+        setIsLoading(false);
+      } catch (_error) {
+      }
+    };
+
+    hydrateFromCache();
     fetchData();
-  }, [identity?.role]);
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchData]);
+
+  useRealtimeEvents(() => {
+    fetchData();
+  });
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="flex flex-col items-center gap-3">
-          <div className="relative">
-            <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center">
-              <LuActivity className="w-6 h-6 text-primary-600 animate-pulse" />
-            </div>
-            <LuLoaderCircle className="w-12 h-12 text-primary-500 animate-spin absolute inset-0" />
-          </div>
-          <p className="text-sm text-slate-500 font-medium">Loading dashboard...</p>
+      <div className="space-y-6">
+        <Skeleton className="h-28 w-full rounded-2xl" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Skeleton className="h-40 w-full" />
+          <Skeleton className="h-40 w-full" />
+          <Skeleton className="h-40 w-full" />
+          <Skeleton className="h-40 w-full" />
         </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <Skeleton className="h-28 w-full" />
+          <Skeleton className="h-28 w-full" />
+          <Skeleton className="h-28 w-full" />
+        </div>
+        <Skeleton className="h-72 w-full rounded-2xl" />
       </div>
     );
   }

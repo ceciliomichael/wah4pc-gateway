@@ -136,6 +136,9 @@ func (m *AuditMiddleware) shouldSkipLogging(req *http.Request) bool {
 	if strings.HasPrefix(path, "/api/v1/logs") {
 		return true
 	}
+	if path == "/api/v1/events/stream" {
+		return true
+	}
 
 	// Exclude auth identity checks to avoid login/session noise in audit logs.
 	if path == "/api/v1/auth/identity" {

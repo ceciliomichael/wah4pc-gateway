@@ -14,4 +14,6 @@ const (
 	ContextKeyRateLimit ContextKey = "rateLimit"
 	// ContextKeyProviderID is the context key for the associated provider ID
 	ContextKeyProviderID ContextKey = "providerId"
+	// ContextKeyAuthSource is the context key describing how request was authenticated.
+	ContextKeyAuthSource ContextKey = "authSource"
 )

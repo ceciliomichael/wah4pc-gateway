@@ -8,6 +8,12 @@ export interface Provider {
   facilityCode: string;
   location: string;
   baseUrl: string;
+  practitionerListEndpoint?: string;
+  practitionerList?: Array<{
+    code: string;
+    display: string;
+    active: boolean;
+  }>;
   gatewayAuthKey?: string;
   isActive: boolean;
   createdAt: string;
@@ -21,6 +27,7 @@ export interface ProviderCreateRequest {
   location: string;
   baseUrl: string;
   gatewayAuthKey: string;
+  practitionerListEndpoint?: string;
 }
 
 // API Key types matching Go backend

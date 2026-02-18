@@ -38,6 +38,7 @@ interface ProviderFormErrors {
   facilityCode?: string;
   location?: string;
   baseUrl?: string;
+  practitionerListEndpoint?: string;
   gatewayAuthKey?: string;
 }
 
@@ -55,6 +56,7 @@ export function ProviderDialog({
     facilityCode: "",
     location: "",
     baseUrl: "",
+    practitionerListEndpoint: "",
     gatewayAuthKey: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -71,6 +73,7 @@ export function ProviderDialog({
           facilityCode: provider.facilityCode || "",
           location: provider.location || "",
           baseUrl: provider.baseUrl,
+          practitionerListEndpoint: provider.practitionerListEndpoint || "",
           gatewayAuthKey: provider.gatewayAuthKey || "",
         });
       } else {
@@ -80,6 +83,7 @@ export function ProviderDialog({
           facilityCode: "",
           location: "",
           baseUrl: "",
+          practitionerListEndpoint: "",
           gatewayAuthKey: "",
         });
       }
@@ -113,6 +117,7 @@ export function ProviderDialog({
     const location = formData.location.trim();
     const baseUrl = formData.baseUrl.trim();
     const gatewayAuthKey = formData.gatewayAuthKey.trim();
+    const practitionerListEndpoint = formData.practitionerListEndpoint?.trim() || "";
 
     if (!name) {
       nextErrors.name = "Provider name is required";
@@ -138,6 +143,11 @@ export function ProviderDialog({
     if (!gatewayAuthKey) {
       nextErrors.gatewayAuthKey = "Gateway auth key is required";
     }
+    if (practitionerListEndpoint) {
+      if (!practitionerListEndpoint.startsWith("/")) {
+        nextErrors.practitionerListEndpoint = "Use a relative path starting with /";
+      }
+    }
 
     setFieldErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
@@ -159,6 +169,7 @@ export function ProviderDialog({
         facilityCode: formData.facilityCode.trim(),
         location: formData.location.trim(),
         baseUrl: formData.baseUrl.trim(),
+        practitionerListEndpoint: formData.practitionerListEndpoint?.trim() || undefined,
         gatewayAuthKey: formData.gatewayAuthKey.trim(),
       };
       if (isEditing && provider) {
@@ -280,6 +291,20 @@ export function ProviderDialog({
             disabled={isSubmitting}
             required
             error={fieldErrors.gatewayAuthKey}
+          />
+
+          <Input
+            label="Practitioner List Endpoint"
+            name="practitionerListEndpoint"
+            type="text"
+            value={formData.practitionerListEndpoint || ""}
+            onChange={(e) =>
+              handleFieldChange("practitionerListEndpoint", e.target.value)
+            }
+            placeholder="/fhir/practitioners"
+            hint="Relative endpoint the gateway will call to sync practitioners."
+            disabled={isSubmitting}
+            error={fieldErrors.practitionerListEndpoint}
           />
         </DialogContent>
 

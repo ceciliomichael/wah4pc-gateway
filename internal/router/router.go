@@ -188,8 +188,18 @@ func (r *Router) handleProviders(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-// handleProviderByID routes /api/v1/providers/{id} and /api/v1/providers/{id}/status
+// handleProviderByID routes /api/v1/providers/{id}, /api/v1/providers/{id}/status,
+// and /api/v1/providers/{id}/practitioners/webhook
 func (r *Router) handleProviderByID(w http.ResponseWriter, req *http.Request) {
+	if strings.HasSuffix(req.URL.Path, "/practitioners/webhook") {
+		if req.Method == http.MethodPost {
+			r.providerHandler.SyncPractitionerListWebhook(w, req)
+			return
+		}
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
 	// Check if this is a status update request
 	if strings.HasSuffix(req.URL.Path, "/status") {
 		if req.Method == http.MethodPost {

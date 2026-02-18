@@ -22,24 +22,28 @@ func NewProviderHandler(svc *service.ProviderService) *ProviderHandler {
 
 // RegisterRequest is the request body for provider registration
 type RegisterRequest struct {
-	Name              string `json:"name"`
-	Type              string `json:"type"`
-	FacilityCode      string `json:"facility_code"`
-	FacilityCodeCamel string `json:"facilityCode"`
-	Location          string `json:"location"`
-	BaseURL           string `json:"baseUrl"`
-	GatewayAuthKey    string `json:"gatewayAuthKey"`
+	Name                          string `json:"name"`
+	Type                          string `json:"type"`
+	FacilityCode                  string `json:"facility_code"`
+	FacilityCodeCamel             string `json:"facilityCode"`
+	Location                      string `json:"location"`
+	BaseURL                       string `json:"baseUrl"`
+	GatewayAuthKey                string `json:"gatewayAuthKey"`
+	PractitionerListEndpoint      string `json:"practitionerListEndpoint"`
+	PractitionerListEndpointSnake string `json:"practitioner_list_endpoint"`
 }
 
 // PublicProviderResponse represents the public view of a provider
 type PublicProviderResponse struct {
-	ID           string             `json:"id"`
-	Name         string             `json:"name"`
-	Type         model.ProviderType `json:"type"`
-	FacilityCode string             `json:"facility_code"`
-	Location     string             `json:"location"`
-	BaseURL      string             `json:"baseUrl"`
-	IsActive     bool               `json:"isActive"`
+	ID                       string                       `json:"id"`
+	Name                     string                       `json:"name"`
+	Type                     model.ProviderType           `json:"type"`
+	FacilityCode             string                       `json:"facility_code"`
+	Location                 string                       `json:"location"`
+	BaseURL                  string                       `json:"baseUrl"`
+	PractitionerListEndpoint string                       `json:"practitionerListEndpoint,omitempty"`
+	PractitionerList         []model.ProviderPractitioner `json:"practitionerList,omitempty"`
+	IsActive                 bool                         `json:"isActive"`
 }
 
 // Register handles POST /api/v1/providers
@@ -58,12 +62,13 @@ func (h *ProviderHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	input := service.RegisterInput{
-		Name:           req.Name,
-		Type:           model.ProviderType(req.Type),
-		FacilityCode:   firstNonEmpty(req.FacilityCode, req.FacilityCodeCamel),
-		Location:       req.Location,
-		BaseURL:        req.BaseURL,
-		GatewayAuthKey: req.GatewayAuthKey,
+		Name:                     req.Name,
+		Type:                     model.ProviderType(req.Type),
+		FacilityCode:             firstNonEmpty(req.FacilityCode, req.FacilityCodeCamel),
+		Location:                 req.Location,
+		BaseURL:                  req.BaseURL,
+		GatewayAuthKey:           req.GatewayAuthKey,
+		PractitionerListEndpoint: firstNonEmpty(req.PractitionerListEndpoint, req.PractitionerListEndpointSnake),
 	}
 
 	provider, err := h.service.Register(input)
@@ -100,16 +105,21 @@ func (h *ProviderHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Map to public response to hide sensitive/internal fields
+	includePractitionerList := middleware.GetAuthSourceFromContext(r.Context()) == "api_key"
 	response := make([]PublicProviderResponse, len(providers))
 	for i, p := range providers {
 		response[i] = PublicProviderResponse{
-			ID:           p.ID,
-			Name:         p.Name,
-			Type:         p.Type,
-			FacilityCode: p.FacilityCode,
-			Location:     p.Location,
-			BaseURL:      p.BaseURL,
-			IsActive:     p.IsActive,
+			ID:                       p.ID,
+			Name:                     p.Name,
+			Type:                     p.Type,
+			FacilityCode:             p.FacilityCode,
+			Location:                 p.Location,
+			BaseURL:                  p.BaseURL,
+			PractitionerListEndpoint: p.PractitionerListEndpoint,
+			IsActive:                 p.IsActive,
+		}
+		if includePractitionerList {
+			response[i].PractitionerList = p.PractitionerList
 		}
 	}
 
@@ -159,12 +169,13 @@ func (h *ProviderHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	input := service.RegisterInput{
-		Name:           req.Name,
-		Type:           model.ProviderType(req.Type),
-		FacilityCode:   firstNonEmpty(req.FacilityCode, req.FacilityCodeCamel),
-		Location:       req.Location,
-		BaseURL:        req.BaseURL,
-		GatewayAuthKey: req.GatewayAuthKey,
+		Name:                     req.Name,
+		Type:                     model.ProviderType(req.Type),
+		FacilityCode:             firstNonEmpty(req.FacilityCode, req.FacilityCodeCamel),
+		Location:                 req.Location,
+		BaseURL:                  req.BaseURL,
+		GatewayAuthKey:           req.GatewayAuthKey,
+		PractitionerListEndpoint: firstNonEmpty(req.PractitionerListEndpoint, req.PractitionerListEndpointSnake),
 	}
 
 	provider, err := h.service.Update(id, input)
@@ -257,6 +268,45 @@ func (h *ProviderHandler) SetActive(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		respondError(w, http.StatusInternalServerError, "failed to update provider status")
+		return
+	}
+
+	respondJSON(w, http.StatusOK, provider)
+}
+
+// SyncPractitionerListWebhook handles POST /api/v1/providers/{id}/practitioners/webhook
+// Provider systems can ping this webhook after adding practitioners to refresh cached practitionerList.
+func (h *ProviderHandler) SyncPractitionerListWebhook(w http.ResponseWriter, r *http.Request) {
+	role := middleware.GetRoleFromContext(r.Context())
+	if role != model.ApiKeyRoleAdmin && role != model.ApiKeyRoleUser {
+		respondError(w, http.StatusForbidden, "admin or user role required to sync practitioner list")
+		return
+	}
+
+	path := r.URL.Path
+	path = strings.TrimPrefix(path, "/api/v1/providers/")
+	path = strings.TrimSuffix(path, "/practitioners/webhook")
+	id := strings.TrimSpace(path)
+	if id == "" {
+		respondError(w, http.StatusBadRequest, "provider id required")
+		return
+	}
+
+	// User keys are provider-scoped: only allow syncing their own provider.
+	if role == model.ApiKeyRoleUser {
+		if middleware.GetProviderIDFromContext(r.Context()) != id {
+			respondError(w, http.StatusForbidden, "not authorized to sync practitioner list for this provider")
+			return
+		}
+	}
+
+	provider, err := h.service.SyncPractitionerList(id)
+	if err != nil {
+		if errors.Is(err, service.ErrProviderNotFound) {
+			respondError(w, http.StatusNotFound, "provider not found")
+			return
+		}
+		respondError(w, http.StatusInternalServerError, "failed to sync practitioner list")
 		return
 	}
 

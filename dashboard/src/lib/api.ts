@@ -23,6 +23,13 @@ interface ProviderApiShape {
   location?: string;
   baseUrl?: string;
   base_url?: string;
+  practitionerListEndpoint?: string;
+  practitioner_list_endpoint?: string;
+  practitionerList?: Array<{
+    code: string;
+    display: string;
+    active: boolean;
+  }>;
   gatewayAuthKey?: string;
   gateway_auth_key?: string;
   isActive?: boolean;
@@ -137,6 +144,9 @@ function normalizeProvider(data: ProviderApiShape): Provider {
     facilityCode: data.facilityCode ?? data.facility_code ?? "",
     location: data.location ?? "",
     baseUrl: data.baseUrl ?? data.base_url ?? "",
+    practitionerListEndpoint:
+      data.practitionerListEndpoint ?? data.practitioner_list_endpoint ?? "",
+    practitionerList: data.practitionerList ?? [],
     gatewayAuthKey: data.gatewayAuthKey ?? data.gateway_auth_key ?? "",
     isActive: data.isActive ?? data.is_active ?? false,
     createdAt: data.createdAt ?? data.created_at ?? "",

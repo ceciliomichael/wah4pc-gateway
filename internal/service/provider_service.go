@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"net/http"
 	"strings"
 	"time"
 
@@ -31,22 +32,29 @@ type ProviderRepository interface {
 
 // ProviderService handles provider registration and lookup
 type ProviderService struct {
-	repo ProviderRepository
+	repo       ProviderRepository
+	httpClient *http.Client
 }
 
 // NewProviderService creates a new provider service
 func NewProviderService(repo ProviderRepository) *ProviderService {
-	return &ProviderService{repo: repo}
+	return &ProviderService{
+		repo: repo,
+		httpClient: &http.Client{
+			Timeout: 10 * time.Second,
+		},
+	}
 }
 
 // RegisterInput represents the input for registering a provider
 type RegisterInput struct {
-	Name           string
-	Type           model.ProviderType
-	FacilityCode   string
-	Location       string
-	BaseURL        string
-	GatewayAuthKey string
+	Name                     string
+	Type                     model.ProviderType
+	FacilityCode             string
+	Location                 string
+	BaseURL                  string
+	GatewayAuthKey           string
+	PractitionerListEndpoint string
 }
 
 // Register adds a new provider to the registry
@@ -55,9 +63,13 @@ func (s *ProviderService) Register(input RegisterInput) (*model.Provider, error)
 	facilityCode := normalizeFacilityCode(input.FacilityCode)
 	location := strings.TrimSpace(input.Location)
 	gatewayAuthKey := strings.TrimSpace(input.GatewayAuthKey)
+	practitionerListEndpoint, endpointErr := normalizePractitionerListEndpoint(input.PractitionerListEndpoint)
 
 	normalizedBaseURL, err := normalizeProviderBaseURL(input.BaseURL)
 	if name == "" || err != nil {
+		return nil, ErrInvalidProvider
+	}
+	if endpointErr != nil {
 		return nil, ErrInvalidProvider
 	}
 	if facilityCode == "" || location == "" || gatewayAuthKey == "" || input.Type == "" {
@@ -69,17 +81,19 @@ func (s *ProviderService) Register(input RegisterInput) (*model.Provider, error)
 
 	now := time.Now().UTC()
 	provider := model.Provider{
-		ID:             uuid.New().String(),
-		Name:           name,
-		Type:           input.Type,
-		FacilityCode:   facilityCode,
-		Location:       location,
-		BaseURL:        normalizedBaseURL,
-		GatewayAuthKey: gatewayAuthKey,
-		IsActive:       true,
-		CreatedAt:      now,
-		UpdatedAt:      now,
+		ID:                       uuid.New().String(),
+		Name:                     name,
+		Type:                     input.Type,
+		FacilityCode:             facilityCode,
+		Location:                 location,
+		BaseURL:                  normalizedBaseURL,
+		GatewayAuthKey:           gatewayAuthKey,
+		PractitionerListEndpoint: practitionerListEndpoint,
+		IsActive:                 true,
+		CreatedAt:                now,
+		UpdatedAt:                now,
 	}
+	s.syncPractitionerListOnSave(&provider)
 
 	if err := s.repo.Create(provider); err != nil {
 		if errors.Is(err, repository.ErrAlreadyExists) {
@@ -164,6 +178,14 @@ func (s *ProviderService) Update(id string, input RegisterInput) (*model.Provide
 		}
 		provider.GatewayAuthKey = gatewayAuthKey
 	}
+	if input.PractitionerListEndpoint != "" {
+		practitionerListEndpoint, normalizeErr := normalizePractitionerListEndpoint(input.PractitionerListEndpoint)
+		if normalizeErr != nil {
+			return nil, ErrInvalidProvider
+		}
+		provider.PractitionerListEndpoint = practitionerListEndpoint
+	}
+	s.syncPractitionerListOnSave(&provider)
 	provider.UpdatedAt = time.Now().UTC()
 
 	if err := s.repo.Update(provider); err != nil {
@@ -207,6 +229,29 @@ func (s *ProviderService) SetActive(id string, active bool) (*model.Provider, er
 // Exists checks if a provider exists
 func (s *ProviderService) Exists(id string) (bool, error) {
 	return s.repo.Exists(id)
+}
+
+// SyncPractitionerList refreshes a provider's cached practitioner list from its configured endpoint.
+func (s *ProviderService) SyncPractitionerList(id string) (*model.Provider, error) {
+	provider, err := s.repo.GetByID(id)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return nil, ErrProviderNotFound
+		}
+		return nil, err
+	}
+
+	s.syncPractitionerListOnSave(&provider)
+	provider.UpdatedAt = time.Now().UTC()
+
+	if err := s.repo.Update(provider); err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return nil, ErrProviderNotFound
+		}
+		return nil, err
+	}
+
+	return &provider, nil
 }
 
 func (s *ProviderService) ensureFacilityCodeUnique(facilityCode string, currentProviderID string) error {

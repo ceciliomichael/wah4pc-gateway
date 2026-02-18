@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 
@@ -42,14 +43,16 @@ func (m *AuthMiddleware) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Allow public paths without authentication
 		if m.isPublicPath(r.Method, r.URL.Path) {
+			ctx, authenticated, err := m.authenticateOptional(r)
+			if err != nil {
+				m.respondUnauthorized(w, err.Error())
+				return
+			}
+			if authenticated {
+				next.ServeHTTP(w, r.WithContext(ctx))
+				return
+			}
 			next.ServeHTTP(w, r)
-			return
-		}
-
-		// Check for master key authentication (bypasses all other auth)
-		if m.checkMasterKey(r) {
-			ctx := m.setMasterKeyContext(r.Context())
-			next.ServeHTTP(w, r.WithContext(ctx))
 			return
 		}
 
@@ -63,29 +66,39 @@ func (m *AuthMiddleware) Middleware(next http.Handler) http.Handler {
 			}
 		}
 
-		// Extract API key from header
-		apiKey := m.extractApiKey(r)
-		if apiKey == "" {
+		ctx, authenticated, err := m.authenticateOptional(r)
+		if err != nil {
+			m.respondUnauthorized(w, err.Error())
+			return
+		}
+		if !authenticated {
 			m.respondUnauthorized(w, "missing API key")
 			return
 		}
 
-		// Validate the API key
-		key, err := m.validator.ValidateKey(apiKey)
-		if err != nil {
-			m.respondUnauthorized(w, "invalid or inactive API key")
-			return
-		}
-
-		// Add key info to context
-		ctx := context.WithValue(r.Context(), ContextKeyApiKey, key)
-		ctx = context.WithValue(ctx, ContextKeyKeyID, key.ID)
-		ctx = context.WithValue(ctx, ContextKeyRole, key.Role)
-		ctx = context.WithValue(ctx, ContextKeyRateLimit, key.RateLimit)
-		ctx = context.WithValue(ctx, ContextKeyProviderID, key.ProviderID)
-
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+func (m *AuthMiddleware) authenticateOptional(r *http.Request) (context.Context, bool, error) {
+	// Check for master key authentication (bypasses all other auth)
+	if m.checkMasterKey(r) {
+		return m.setMasterKeyContext(r.Context()), true, nil
+	}
+
+	// Extract API key from header
+	apiKey := m.extractApiKey(r)
+	if apiKey == "" {
+		return r.Context(), false, nil
+	}
+
+	// Validate the API key
+	key, err := m.validator.ValidateKey(apiKey)
+	if err != nil {
+		return nil, false, errors.New("invalid or inactive API key")
+	}
+
+	return m.setAPIKeyContext(r.Context(), key), true, nil
 }
 
 // checkMasterKey validates the X-Master-Key header against the configured master key
@@ -112,6 +125,17 @@ func (m *AuthMiddleware) setMasterKeyContext(ctx context.Context) context.Contex
 	ctx = context.WithValue(ctx, ContextKeyRole, model.ApiKeyRoleAdmin)
 	ctx = context.WithValue(ctx, ContextKeyRateLimit, 0)   // No rate limit for master key
 	ctx = context.WithValue(ctx, ContextKeyProviderID, "") // Admin has no provider restriction
+	ctx = context.WithValue(ctx, ContextKeyAuthSource, "master_key")
+	return ctx
+}
+
+func (m *AuthMiddleware) setAPIKeyContext(ctx context.Context, key *model.ApiKey) context.Context {
+	ctx = context.WithValue(ctx, ContextKeyApiKey, key)
+	ctx = context.WithValue(ctx, ContextKeyKeyID, key.ID)
+	ctx = context.WithValue(ctx, ContextKeyRole, key.Role)
+	ctx = context.WithValue(ctx, ContextKeyRateLimit, key.RateLimit)
+	ctx = context.WithValue(ctx, ContextKeyProviderID, key.ProviderID)
+	ctx = context.WithValue(ctx, ContextKeyAuthSource, "api_key")
 	return ctx
 }
 
@@ -224,4 +248,13 @@ func GetProviderIDFromContext(ctx context.Context) string {
 		return ""
 	}
 	return providerID
+}
+
+// GetAuthSourceFromContext retrieves the auth source from the request context.
+func GetAuthSourceFromContext(ctx context.Context) string {
+	source, ok := ctx.Value(ContextKeyAuthSource).(string)
+	if !ok {
+		return ""
+	}
+	return source
 }

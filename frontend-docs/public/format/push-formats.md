@@ -188,10 +188,10 @@ Notes:
 ## Complete Appointment Push Example
 ```json
 {
-  "senderId": "<sender-provider-id>",
-  "targetId": "<target-provider-id>",
+  "senderId": "d222aba3-3fc3-46fa-a251-933dd8b87857",
+  "targetId": "433b81f2-413d-4efa-9ce5-123198bfec6f",
   "reason": "Referral appointment transfer",
-  "notes": "Please reconcile with your scheduling system",
+  "notes": "Please reconcile with local scheduling and notify patient",
   "resource": {
     "resourceType": "Appointment",
     "id": "appt-2026-000123",
@@ -201,31 +201,76 @@ Notes:
         "value": "APT-2026-000123"
       }
     ],
+    "meta": {
+      "profile": [
+        "http://hl7.org/fhir/StructureDefinition/Appointment"
+      ]
+    },
     "status": "booked",
-    "description": "Initial specialist consultation",
-    "start": "2026-02-20T09:00:00Z",
-    "end": "2026-02-20T09:30:00Z",
+    "description": "Initial cardiology consultation",
+    "comment": "Bring previous ECG and lab results.",
+    "start": "2026-03-05T09:00:00+08:00",
+    "end": "2026-03-05T09:30:00+08:00",
+    "minutesDuration": 30,
+    "created": "2026-02-18T10:15:00+08:00",
+    "appointmentType": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/v2-0276",
+          "code": "FOLLOWUP",
+          "display": "A follow up visit from a previous appointment"
+        }
+      ],
+      "text": "Follow-up"
+    },
+    "serviceCategory": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/service-category",
+            "code": "17",
+            "display": "General Practice"
+          }
+        ]
+      }
+    ],
+    "specialty": [
+      {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "394579002",
+            "display": "Cardiology"
+          }
+        ]
+      }
+    ],
     "participant": [
       {
+        "type": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/v3-ParticipationType",
+                "code": "PAT",
+                "display": "patient"
+              }
+            ]
+          }
+        ],
         "actor": {
-          "reference": "Patient/PAT-12345",
+          "reference": "Patient/a43ba81b-c551-463a-8774-046fb91f82a2",
           "identifier": {
             "system": "https://sender.example/fhir/patient-id",
-            "value": "PAT-12345"
+            "value": "a43ba81b-c551-463a-8774-046fb91f82a2"
           },
-          "display": "Patient"
+          "display": "Mariel Atienza Gravidez",
+          "type": "Patient"
         },
+        "required": "required",
         "status": "accepted"
       },
       {
-        "actor": {
-          "reference": "Practitioner/PRAC-56789",
-          "identifier": {
-            "system": "https://sender.example/fhir/practitioner-id",
-            "value": "PRAC-56789"
-          },
-          "display": "Practitioner"
-        },
         "type": [
           {
             "coding": [
@@ -237,9 +282,282 @@ Notes:
             ]
           }
         ],
+        "actor": {
+          "reference": "Practitioner/789a25b5-809f-4c5d-b28e-d6eb1c9e8765",
+          "identifier": {
+            "system": "https://sender.example/fhir/practitioner-id",
+            "value": "789a25b5-809f-4c5d-b28e-d6eb1c9e8765"
+          },
+          "display": "Dr. Ron Samanniego Samanniego",
+          "type": "Practitioner"
+        },
+        "required": "required",
         "status": "accepted"
       }
     ]
+  }
+}
+```
+
+## Other Wah4Clinic-Supported Push Request Body Examples
+
+### Patient (`POST /api/v1/fhir/push/Patient`)
+```json
+{
+  "senderId": "d222aba3-3fc3-46fa-a251-933dd8b87857",
+  "targetId": "433b81f2-413d-4efa-9ce5-123198bfec6f",
+  "reason": "Patient demographic sync",
+  "notes": "Source clinic registration update",
+  "resource": {
+    "resourceType": "Patient",
+    "id": "a43ba81b-c551-463a-8774-046fb91f82a2",
+    "identifier": [
+      {
+        "system": "http://philhealth.gov.ph/fhir/Identifier/philhealth-id",
+        "value": "PH-0099887766"
+      }
+    ],
+    "name": [
+      {
+        "family": "Gravidez",
+        "given": ["Mariel", "Atienza"]
+      }
+    ],
+    "gender": "female",
+    "birthDate": "1990-10-24"
+  }
+}
+```
+
+### Practitioner (`POST /api/v1/fhir/push/Practitioner`)
+```json
+{
+  "senderId": "d222aba3-3fc3-46fa-a251-933dd8b87857",
+  "targetId": "433b81f2-413d-4efa-9ce5-123198bfec6f",
+  "reason": "Provider roster sync",
+  "notes": "New attending physician",
+  "resource": {
+    "resourceType": "Practitioner",
+    "id": "789a25b5-809f-4c5d-b28e-d6eb1c9e8765",
+    "identifier": [
+      {
+        "system": "https://sender.example/fhir/practitioner-id",
+        "value": "789a25b5-809f-4c5d-b28e-d6eb1c9e8765"
+      }
+    ],
+    "name": [
+      {
+        "prefix": ["Dr."],
+        "family": "Samanniego",
+        "given": ["Ron", "Samanniego"]
+      }
+    ]
+  }
+}
+```
+
+### Encounter (`POST /api/v1/fhir/push/Encounter`)
+```json
+{
+  "senderId": "d222aba3-3fc3-46fa-a251-933dd8b87857",
+  "targetId": "433b81f2-413d-4efa-9ce5-123198bfec6f",
+  "reason": "Encounter handoff",
+  "notes": "Outpatient visit linked to referral",
+  "resource": {
+    "resourceType": "Encounter",
+    "id": "enc-2026-001",
+    "status": "finished",
+    "class": {
+      "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+      "code": "AMB",
+      "display": "ambulatory"
+    },
+    "subject": {
+      "reference": "Patient/a43ba81b-c551-463a-8774-046fb91f82a2",
+      "display": "Mariel Atienza Gravidez"
+    },
+    "participant": [
+      {
+        "individual": {
+          "reference": "Practitioner/789a25b5-809f-4c5d-b28e-d6eb1c9e8765",
+          "display": "Dr. Ron Samanniego Samanniego"
+        }
+      }
+    ]
+  }
+}
+```
+
+### Procedure (`POST /api/v1/fhir/push/Procedure`)
+```json
+{
+  "senderId": "d222aba3-3fc3-46fa-a251-933dd8b87857",
+  "targetId": "433b81f2-413d-4efa-9ce5-123198bfec6f",
+  "reason": "Procedure documentation sync",
+  "notes": "Performed during ambulatory encounter",
+  "resource": {
+    "resourceType": "Procedure",
+    "id": "proc-2026-001",
+    "status": "completed",
+    "code": {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "165171009",
+          "display": "Blood pressure measurement"
+        }
+      ],
+      "text": "Blood pressure measurement"
+    },
+    "subject": {
+      "reference": "Patient/a43ba81b-c551-463a-8774-046fb91f82a2",
+      "display": "Mariel Atienza Gravidez"
+    },
+    "performedDateTime": "2026-03-05T09:10:00+08:00"
+  }
+}
+```
+
+### Immunization (`POST /api/v1/fhir/push/Immunization`)
+```json
+{
+  "senderId": "d222aba3-3fc3-46fa-a251-933dd8b87857",
+  "targetId": "433b81f2-413d-4efa-9ce5-123198bfec6f",
+  "reason": "Immunization record sync",
+  "notes": "Administered vaccine update",
+  "resource": {
+    "resourceType": "Immunization",
+    "id": "imm-2026-001",
+    "status": "completed",
+    "vaccineCode": {
+      "coding": [
+        {
+          "system": "http://hl7.org/fhir/sid/cvx",
+          "code": "208",
+          "display": "COVID-19"
+        }
+      ],
+      "text": "COVID-19"
+    },
+    "patient": {
+      "reference": "Patient/a43ba81b-c551-463a-8774-046fb91f82a2",
+      "display": "Mariel Atienza Gravidez"
+    },
+    "occurrenceDateTime": "2026-03-05T10:00:00+08:00"
+  }
+}
+```
+
+### Observation (`POST /api/v1/fhir/push/Observation`)
+```json
+{
+  "senderId": "d222aba3-3fc3-46fa-a251-933dd8b87857",
+  "targetId": "433b81f2-413d-4efa-9ce5-123198bfec6f",
+  "reason": "Vital signs sync",
+  "notes": "BP panel result from visit",
+  "resource": {
+    "resourceType": "Observation",
+    "id": "obs-2026-001",
+    "status": "final",
+    "code": {
+      "coding": [
+        {
+          "system": "http://loinc.org",
+          "code": "85354-9",
+          "display": "Blood Pressure Panel"
+        }
+      ],
+      "text": "Blood Pressure Panel"
+    },
+    "subject": {
+      "reference": "Patient/a43ba81b-c551-463a-8774-046fb91f82a2",
+      "display": "Mariel Atienza Gravidez"
+    },
+    "effectiveDateTime": "2026-03-05T09:12:00+08:00"
+  }
+}
+```
+
+### DiagnosticReport (`POST /api/v1/fhir/push/DiagnosticReport`)
+```json
+{
+  "senderId": "d222aba3-3fc3-46fa-a251-933dd8b87857",
+  "targetId": "433b81f2-413d-4efa-9ce5-123198bfec6f",
+  "reason": "Diagnostic report sync",
+  "notes": "Linked to observation results",
+  "resource": {
+    "resourceType": "DiagnosticReport",
+    "id": "dr-2026-001",
+    "status": "final",
+    "code": {
+      "coding": [
+        {
+          "system": "http://loinc.org",
+          "code": "58410-2",
+          "display": "Complete blood count panel"
+        }
+      ],
+      "text": "Complete blood count panel"
+    },
+    "subject": {
+      "reference": "Patient/a43ba81b-c551-463a-8774-046fb91f82a2",
+      "display": "Mariel Atienza Gravidez"
+    }
+  }
+}
+```
+
+### Medication (`POST /api/v1/fhir/push/Medication`)
+```json
+{
+  "senderId": "d222aba3-3fc3-46fa-a251-933dd8b87857",
+  "targetId": "433b81f2-413d-4efa-9ce5-123198bfec6f",
+  "reason": "Medication master sync",
+  "notes": "New formulary item",
+  "resource": {
+    "resourceType": "Medication",
+    "id": "med-2026-001",
+    "status": "active",
+    "code": {
+      "coding": [
+        {
+          "system": "urn://example.com/ph-core/fhir/ValueSet/drugs",
+          "code": "MET500",
+          "display": "Metformin 500 mg tablet"
+        }
+      ],
+      "text": "Metformin 500 mg tablet"
+    }
+  }
+}
+```
+
+### MedicationRequest (`POST /api/v1/fhir/push/MedicationRequest`)
+```json
+{
+  "senderId": "d222aba3-3fc3-46fa-a251-933dd8b87857",
+  "targetId": "433b81f2-413d-4efa-9ce5-123198bfec6f",
+  "reason": "Prescription sync",
+  "notes": "Discharge medication order",
+  "resource": {
+    "resourceType": "MedicationRequest",
+    "id": "mr-2026-001",
+    "status": "active",
+    "intent": "order",
+    "medicationCodeableConcept": {
+      "coding": [
+        {
+          "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+          "code": "860975",
+          "display": "Metformin 500 MG Oral Tablet"
+        }
+      ],
+      "text": "Metformin 500 MG Oral Tablet"
+    },
+    "subject": {
+      "reference": "Patient/a43ba81b-c551-463a-8774-046fb91f82a2",
+      "display": "Mariel Atienza Gravidez"
+    }
   }
 }
 ```

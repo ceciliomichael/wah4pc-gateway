@@ -3,6 +3,7 @@ package service
 import (
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/hex"
 	"errors"
 	"sync"
@@ -25,6 +26,7 @@ var (
 type ApiKeyRepository interface {
 	GetAll() ([]model.ApiKey, error)
 	GetByID(id string) (model.ApiKey, error)
+	GetByHash(keyHash string) (model.ApiKey, error)
 	Create(key model.ApiKey) error
 	Update(key model.ApiKey) error
 	Delete(id string) error
@@ -39,15 +41,17 @@ type ProviderValidator interface {
 type ApiKeyService struct {
 	repo              ApiKeyRepository
 	providerValidator ProviderValidator
+	apiKeyPepper      string
 	limiters          map[string]*rate.Limiter
 	mu                sync.RWMutex
 }
 
 // NewApiKeyService creates a new API key service
-func NewApiKeyService(repo ApiKeyRepository, providerValidator ProviderValidator) *ApiKeyService {
+func NewApiKeyService(repo ApiKeyRepository, providerValidator ProviderValidator, apiKeyPepper string) *ApiKeyService {
 	return &ApiKeyService{
 		repo:              repo,
 		providerValidator: providerValidator,
+		apiKeyPepper:      apiKeyPepper,
 		limiters:          make(map[string]*rate.Limiter),
 	}
 }
@@ -86,7 +90,7 @@ func (s *ApiKeyService) Create(req model.ApiKeyCreateRequest) (*model.ApiKeyResp
 	prefix := "wah_" + rawKey[:8]
 
 	// Hash the key for storage
-	keyHash := hashKey(rawKey)
+	keyHash := hashKey(rawKey, s.apiKeyPepper)
 
 	// Default rate limit to 10 req/sec if not specified
 	rateLimit := req.RateLimit
@@ -130,28 +134,26 @@ func (s *ApiKeyService) Create(req model.ApiKeyCreateRequest) (*model.ApiKeyResp
 
 // ValidateKey checks if a raw API key is valid and returns the associated ApiKey
 func (s *ApiKeyService) ValidateKey(rawKey string) (*model.ApiKey, error) {
-	// Strip prefix if present
-	keyToHash := rawKey
-	if len(rawKey) > 4 && rawKey[:4] == "wah_" {
-		keyToHash = rawKey[4:]
+	keyToHash := normalizeRawAPIKey(rawKey)
+	if keyToHash == "" {
+		return nil, ErrInvalidApiKey
 	}
 
-	keyHash := hashKey(keyToHash)
-
-	keys, err := s.repo.GetAll()
+	primaryHash := hashKey(keyToHash, s.apiKeyPepper)
+	key, err := s.repo.GetByHash(primaryHash)
 	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return nil, ErrInvalidApiKey
+		}
 		return nil, err
 	}
 
-	for _, key := range keys {
-		if key.KeyHash == keyHash && key.IsActive {
-			// Update last used timestamp (async to not block request)
-			go s.updateLastUsed(key.ID)
-			return &key, nil
-		}
+	if !hashMatches(keyToHash, key.KeyHash, s.apiKeyPepper) || !key.IsActive {
+		return nil, ErrInvalidApiKey
 	}
 
-	return nil, ErrInvalidApiKey
+	go s.updateLastUsed(key.ID)
+	return &key, nil
 }
 
 // CheckRateLimit checks if the request should be allowed based on rate limiting
@@ -275,8 +277,39 @@ func generateSecureKey() (string, error) {
 	return hex.EncodeToString(bytes), nil
 }
 
-// hashKey creates a SHA256 hash of the key
-func hashKey(key string) string {
-	hash := sha256.Sum256([]byte(key))
+func normalizeRawAPIKey(rawKey string) string {
+	if len(rawKey) > 4 && rawKey[:4] == "wah_" {
+		return rawKey[4:]
+	}
+	return rawKey
+}
+
+// hashKey creates a SHA256 hash of the key, optionally salted with a server-side pepper.
+func hashKey(key string, pepper string) string {
+	payload := key
+	if pepper != "" {
+		payload = pepper + ":" + key
+	}
+	hash := sha256.Sum256([]byte(payload))
 	return hex.EncodeToString(hash[:])
+}
+
+func hashMatches(rawKey, storedHash, pepper string) bool {
+	computedHash := hashKey(rawKey, pepper)
+
+	computedBytes, err := hex.DecodeString(computedHash)
+	if err != nil {
+		return false
+	}
+
+	storedBytes, err := hex.DecodeString(storedHash)
+	if err != nil {
+		return false
+	}
+
+	if len(computedBytes) != len(storedBytes) {
+		return false
+	}
+
+	return subtle.ConstantTimeCompare(computedBytes, storedBytes) == 1
 }

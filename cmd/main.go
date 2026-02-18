@@ -95,7 +95,7 @@ func main() {
 	providerService := service.NewProviderService(providerRepo)
 	settingsService := service.NewSettingsService(settingsRepo)
 	gatewayService := service.NewGatewayService(txRepo, providerService, settingsService, cfg.Server.BaseURL, remoteValidator, auditLogger)
-	apiKeyService := service.NewApiKeyService(apiKeyRepo, providerService)
+	apiKeyService := service.NewApiKeyService(apiKeyRepo, providerService, cfg.Security.ApiKeyPepper)
 	logService := service.NewLogService(logRepo, txRepo)
 
 	// Initialize handlers

@@ -10,6 +10,7 @@ server:
 
 security:
   master_key: "tcgtrio123"  # Master key for administrative access (leave empty to disable)
+  api_key_pepper: ""  # Optional server-side pepper for API key hashing (recommended in production)
 
 mongodb:
   uri: "mongodb://localhost:27017"

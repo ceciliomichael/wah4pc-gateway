@@ -1,22 +1,27 @@
 "use client";
 
-import { useState } from "react";
-import { apiKeyApi } from "@/lib/api";
-import type { Provider, ApiKeyRole, ApiKeyCreateRequest, ApiKeyCreateResponse } from "@/types";
-import { LuCircleAlert, LuCopy, LuCheck, LuKey } from "react-icons/lu";
 import { clsx } from "clsx";
+import { useEffect, useMemo, useState } from "react";
+import { LuCheck, LuCircleAlert, LuCopy, LuKey } from "react-icons/lu";
 
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogHeader,
-  DialogTitle,
   DialogContent,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, type SelectOption } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { apiKeyApi } from "@/lib/api";
+import type {
+  ApiKeyCreateRequest,
+  ApiKeyCreateResponse,
+  ApiKeyRole,
+  Provider,
+} from "@/types";
 
 const ROLE_OPTIONS: SelectOption[] = [
   { value: "user", label: "User" },
@@ -26,8 +31,12 @@ const ROLE_OPTIONS: SelectOption[] = [
 interface CreateApiKeyDialogProps {
   open: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (createdKey: ApiKeyCreateResponse) => void | Promise<void>;
   providers: Provider[];
+  title?: string;
+  submitLabel?: string;
+  successHint?: string;
+  initialValues?: Partial<ApiKeyCreateRequest>;
 }
 
 interface ApiKeyFormErrors {
@@ -42,31 +51,51 @@ export function CreateApiKeyDialog({
   onClose,
   onSuccess,
   providers,
+  title,
+  submitLabel,
+  successHint,
+  initialValues,
 }: CreateApiKeyDialogProps) {
-  const [formData, setFormData] = useState<ApiKeyCreateRequest>({
-    owner: "",
-    role: "user",
-    providerId: "",
-    rateLimit: 100,
-  });
+  const initialFormData = useMemo<ApiKeyCreateRequest>(
+    () => ({
+      owner: initialValues?.owner ?? "",
+      role: initialValues?.role ?? "user",
+      providerId: initialValues?.providerId ?? "",
+      rateLimit: initialValues?.rateLimit ?? 100,
+    }),
+    [initialValues],
+  );
+
+  const [formData, setFormData] =
+    useState<ApiKeyCreateRequest>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFinalizing, setIsFinalizing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<ApiKeyFormErrors>({});
-  const [createdKey, setCreatedKey] = useState<ApiKeyCreateResponse | null>(null);
+  const [createdKey, setCreatedKey] = useState<ApiKeyCreateResponse | null>(
+    null,
+  );
   const [copied, setCopied] = useState(false);
 
   const resetForm = () => {
-    setFormData({
-      owner: "",
-      role: "user",
-      providerId: "",
-      rateLimit: 100,
-    });
+    setFormData(initialFormData);
     setError(null);
     setFieldErrors({});
     setCreatedKey(null);
     setCopied(false);
   };
+
+  const dialogTitle = title ?? "Generate API Key";
+  const actionLabel = submitLabel ?? "Generate Key";
+
+  useEffect(() => {
+    if (!open || createdKey) {
+      return;
+    }
+    setFormData(initialFormData);
+    setError(null);
+    setFieldErrors({});
+  }, [open, createdKey, initialFormData]);
 
   const validateForm = (): boolean => {
     const nextErrors: ApiKeyFormErrors = {};
@@ -82,12 +111,9 @@ export function CreateApiKeyDialog({
     if (formData.role === "user" && !formData.providerId) {
       nextErrors.providerId = "Provider is required for user role keys";
     }
-    if (
-      !Number.isInteger(rateLimit) ||
-      rateLimit < 0 ||
-      rateLimit > 10000
-    ) {
-      nextErrors.rateLimit = "Rate limit must be a whole number between 0 and 10000";
+    if (!Number.isInteger(rateLimit) || rateLimit < 0 || rateLimit > 10000) {
+      nextErrors.rateLimit =
+        "Rate limit must be a whole number between 0 and 10000";
     }
 
     setFieldErrors(nextErrors);
@@ -101,9 +127,15 @@ export function CreateApiKeyDialog({
     }
   };
 
-  const handleSuccess = () => {
-    resetForm();
-    onSuccess();
+  const handleSuccess = async () => {
+    if (!createdKey) return;
+    setIsFinalizing(true);
+    try {
+      await onSuccess(createdKey);
+      resetForm();
+    } finally {
+      setIsFinalizing(false);
+    }
   };
 
   const handleCopyKey = async () => {
@@ -175,9 +207,12 @@ export function CreateApiKeyDialog({
 
   return (
     <Dialog open={open} onClose={handleClose}>
-      <DialogHeader onClose={handleClose} showCloseButton={!createdKey && !isSubmitting}>
+      <DialogHeader
+        onClose={handleClose}
+        showCloseButton={!createdKey && !isSubmitting}
+      >
         <DialogTitle>
-          {createdKey ? "API Key Created" : "Generate API Key"}
+          {createdKey ? "API Key Created" : dialogTitle}
         </DialogTitle>
       </DialogHeader>
 
@@ -189,14 +224,15 @@ export function CreateApiKeyDialog({
               <LuKey className="w-5 h-5 text-green-600" />
             </div>
             <p className="text-sm text-green-700">
-              Your API key has been created successfully. Make sure to copy it now - you won't be able to see it again!
+              {successHint ??
+                "Your API key has been created successfully. Make sure to copy it now - you won't be able to see it again!"}
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <p className="block text-sm font-medium text-slate-700 mb-1.5">
               Your API Key
-            </label>
+            </p>
             <div className="flex items-center gap-2">
               <code className="flex-1 px-4 py-3 bg-slate-100 rounded-lg text-sm font-mono text-slate-800 break-all">
                 {createdKey.key}
@@ -208,7 +244,7 @@ export function CreateApiKeyDialog({
                   "p-3 rounded-lg transition-colors",
                   copied
                     ? "bg-green-100 text-green-600"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200",
                 )}
                 title="Copy to clipboard"
               >
@@ -235,17 +271,21 @@ export function CreateApiKeyDialog({
             <div>
               <p className="text-slate-500">Rate Limit</p>
               <p className="font-medium text-slate-800">
-                {createdKey.rateLimit === 0 ? "Unlimited" : `${createdKey.rateLimit} req/s`}
+                {createdKey.rateLimit === 0
+                  ? "Unlimited"
+                  : `${createdKey.rateLimit} req/s`}
               </p>
             </div>
             <div>
               <p className="text-slate-500">Prefix</p>
-              <code className="font-mono text-slate-800">{createdKey.prefix}</code>
+              <code className="font-mono text-slate-800">
+                {createdKey.prefix}
+              </code>
             </div>
           </div>
 
           <div className="flex justify-end pt-2">
-            <Button onClick={handleSuccess}>
+            <Button onClick={handleSuccess} isLoading={isFinalizing}>
               Done
             </Button>
           </div>
@@ -351,7 +391,7 @@ export function CreateApiKeyDialog({
               Cancel
             </Button>
             <Button type="submit" isLoading={isSubmitting}>
-              Generate Key
+              {actionLabel}
             </Button>
           </DialogFooter>
         </form>

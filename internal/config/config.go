@@ -49,7 +49,8 @@ type LoggingConfig struct {
 }
 
 type SecurityConfig struct {
-	MasterKey string `yaml:"master_key"`
+	MasterKey    string `yaml:"master_key"`
+	ApiKeyPepper string `yaml:"api_key_pepper"`
 }
 
 func Load(path string) (*Config, error) {
@@ -85,6 +86,9 @@ func loadFromEnv(cfg *Config) {
 	}
 	if masterKey := os.Getenv("SECURITY_MASTER_KEY"); masterKey != "" {
 		cfg.Security.MasterKey = masterKey
+	}
+	if apiKeyPepper := os.Getenv("SECURITY_API_KEY_PEPPER"); apiKeyPepper != "" {
+		cfg.Security.ApiKeyPepper = apiKeyPepper
 	}
 	if mongoURI := os.Getenv("MONGODB_URI"); mongoURI != "" {
 		cfg.MongoDB.URI = mongoURI

@@ -1,28 +1,30 @@
 "use client";
 
-import type { ApiKey, Provider } from "@/types";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
-  Dropdown,
-  DropdownMenu,
-  DropdownItem,
-  DropdownSeparator,
-} from "@/components/ui/dropdown";
-import {
-  LuKey,
-  LuCopy,
   LuCheck,
+  LuCopy,
+  LuEllipsisVertical,
+  LuKey,
+  LuRefreshCw,
   LuShieldOff,
   LuTrash2,
-  LuEllipsisVertical,
 } from "react-icons/lu";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import {
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownSeparator,
+} from "@/components/ui/dropdown";
+import type { ApiKey, Provider } from "@/types";
 
 interface ApiKeyListProps {
   apiKeys: ApiKey[];
   providers: Provider[];
   copiedId: string | null;
   onCopy: (prefix: string, id: string) => void;
+  onRotate: (key: ApiKey) => void;
   onRevoke: (key: ApiKey) => void;
   onDelete: (key: ApiKey) => void;
   onCreate: () => void;
@@ -33,6 +35,7 @@ function ApiKeyCard({
   providers,
   copiedId,
   onCopy,
+  onRotate,
   onRevoke,
   onDelete,
 }: {
@@ -40,13 +43,14 @@ function ApiKeyCard({
   providers: Provider[];
   copiedId: string | null;
   onCopy: (prefix: string, id: string) => void;
+  onRotate: (key: ApiKey) => void;
   onRevoke: (key: ApiKey) => void;
   onDelete: (key: ApiKey) => void;
 }) {
   const getProviderName = (providerId?: string) => {
     if (!providerId) return "-";
     const provider = providers.find((p) => p.id === providerId);
-    return provider?.name || providerId.slice(0, 8) + "...";
+    return provider?.name || `${providerId.slice(0, 8)}...`;
   };
 
   const formatDate = (dateString: string) => {
@@ -103,6 +107,14 @@ function ApiKeyCard({
               </DropdownItem>
               {apiKey.isActive && (
                 <DropdownItem
+                  icon={<LuRefreshCw className="w-4 h-4" />}
+                  onClick={() => onRotate(apiKey)}
+                >
+                  Rotate Key
+                </DropdownItem>
+              )}
+              {apiKey.isActive && (
+                <DropdownItem
                   icon={<LuShieldOff className="w-4 h-4" />}
                   onClick={() => onRevoke(apiKey)}
                 >
@@ -134,12 +146,20 @@ function ApiKeyCard({
         {/* Provider and Created Date */}
         <div className="space-y-2">
           <div>
-            <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Provider</p>
-            <p className="text-sm text-slate-700">{getProviderName(apiKey.providerId)}</p>
+            <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">
+              Provider
+            </p>
+            <p className="text-sm text-slate-700">
+              {getProviderName(apiKey.providerId)}
+            </p>
           </div>
           <div>
-            <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Created</p>
-            <p className="text-sm text-slate-700">{formatDate(apiKey.createdAt)}</p>
+            <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">
+              Created
+            </p>
+            <p className="text-sm text-slate-700">
+              {formatDate(apiKey.createdAt)}
+            </p>
           </div>
         </div>
       </div>
@@ -152,6 +172,7 @@ export function ApiKeyList({
   providers,
   copiedId,
   onCopy,
+  onRotate,
   onRevoke,
   onDelete,
   onCreate,
@@ -159,7 +180,7 @@ export function ApiKeyList({
   const getProviderName = (providerId?: string) => {
     if (!providerId) return "-";
     const provider = providers.find((p) => p.id === providerId);
-    return provider?.name || providerId.slice(0, 8) + "...";
+    return provider?.name || `${providerId.slice(0, 8)}...`;
   };
 
   const formatDate = (dateString: string) => {
@@ -225,7 +246,10 @@ export function ApiKeyList({
             </thead>
             <tbody className="divide-y divide-slate-100">
               {apiKeys.map((key) => (
-                <tr key={key.id} className="hover:bg-slate-50 transition-colors">
+                <tr
+                  key={key.id}
+                  className="hover:bg-slate-50 transition-colors"
+                >
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-2">
                       <code className="text-sm font-mono text-slate-700 bg-slate-100 px-2 py-1 rounded">
@@ -290,6 +314,14 @@ export function ApiKeyList({
                           </DropdownItem>
                           {key.isActive && (
                             <DropdownItem
+                              icon={<LuRefreshCw className="w-4 h-4" />}
+                              onClick={() => onRotate(key)}
+                            >
+                              Rotate Key
+                            </DropdownItem>
+                          )}
+                          {key.isActive && (
+                            <DropdownItem
                               icon={<LuShieldOff className="w-4 h-4" />}
                               onClick={() => onRevoke(key)}
                             >
@@ -324,6 +356,7 @@ export function ApiKeyList({
             providers={providers}
             copiedId={copiedId}
             onCopy={onCopy}
+            onRotate={onRotate}
             onRevoke={onRevoke}
             onDelete={onDelete}
           />

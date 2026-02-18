@@ -38,7 +38,8 @@ func (r *ApiKeyRepository) ensureIndexes() error {
 			Options: options.Index().SetUnique(true),
 		},
 		{
-			Keys: bson.D{{Key: "keyHash", Value: 1}},
+			Keys:    bson.D{{Key: "keyHash", Value: 1}},
+			Options: options.Index().SetUnique(true),
 		},
 	})
 	if err != nil {
@@ -79,6 +80,18 @@ func (r *ApiKeyRepository) GetByID(id string) (model.ApiKey, error) {
 
 	var key model.ApiKey
 	err := r.collection.FindOne(ctx, bson.D{{Key: "id", Value: id}}).Decode(&key)
+	if err != nil {
+		return model.ApiKey{}, mapMongoError(err)
+	}
+	return key, nil
+}
+
+func (r *ApiKeyRepository) GetByHash(keyHash string) (model.ApiKey, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	var key model.ApiKey
+	err := r.collection.FindOne(ctx, bson.D{{Key: "keyHash", Value: keyHash}}).Decode(&key)
 	if err != nil {
 		return model.ApiKey{}, mapMongoError(err)
 	}

@@ -1,19 +1,24 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+import {
+  LuCircleAlert,
+  LuLoaderCircle,
+  LuPlus,
+  LuSearch,
+} from "react-icons/lu";
+import { ApiKeyList } from "@/components/apikeys/apikey-list";
+import { CreateApiKeyDialog } from "@/components/apikeys/create-key-dialog";
 import { AuthGuard } from "@/components/auth-guard";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
-import { apiKeyApi, providerApi } from "@/lib/api";
-import type { ApiKey, Provider } from "@/types";
-import { LuPlus, LuLoaderCircle, LuCircleAlert, LuSearch } from "react-icons/lu";
-import { CreateApiKeyDialog } from "@/components/apikeys/create-key-dialog";
-import { ApiKeyList } from "@/components/apikeys/apikey-list";
-import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
-import { SuccessDialog } from "@/components/ui/success-dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
+import { Input } from "@/components/ui/input";
+import { SuccessDialog } from "@/components/ui/success-dialog";
+import { apiKeyApi, providerApi } from "@/lib/api";
 import { getCachedValue, setCachedValue } from "@/lib/indexed-cache";
+import type { ApiKey, ApiKeyCreateResponse, Provider } from "@/types";
 
 interface ApiKeysCachePayload {
   apiKeys: ApiKey[];
@@ -40,7 +45,10 @@ function ApiKeysContent() {
   const [revokingKey, setRevokingKey] = useState<ApiKey | null>(null);
   const [isRevoking, setIsRevoking] = useState(false);
   const [deleteSuccessDialogOpen, setDeleteSuccessDialogOpen] = useState(false);
+  const [deleteSuccessTitle, setDeleteSuccessTitle] = useState("Success");
   const [deleteSuccessMessage, setDeleteSuccessMessage] = useState("");
+  const [rotateSourceKey, setRotateSourceKey] = useState<ApiKey | null>(null);
+  const [isRotateCompleting, setIsRotateCompleting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -58,7 +66,7 @@ function ApiKeysContent() {
       await setCachedValue<ApiKeysCachePayload>(
         API_KEYS_CACHE_KEY,
         { apiKeys: keysData, providers: providersData },
-        API_KEYS_CACHE_TTL_MS
+        API_KEYS_CACHE_TTL_MS,
       );
       setError(null);
     } catch (err) {
@@ -72,13 +80,13 @@ function ApiKeysContent() {
     let isMounted = true;
     const hydrateFromCache = async () => {
       try {
-        const cached = await getCachedValue<ApiKeysCachePayload>(API_KEYS_CACHE_KEY);
+        const cached =
+          await getCachedValue<ApiKeysCachePayload>(API_KEYS_CACHE_KEY);
         if (!cached || !isMounted) return;
         setApiKeys(cached.apiKeys);
         setProviders(cached.providers);
         setIsLoading(false);
-      } catch (_error) {
-      }
+      } catch (_error) {}
     };
     hydrateFromCache();
     fetchData();
@@ -110,6 +118,7 @@ function ApiKeysContent() {
       await apiKeyApi.delete(deletingKey.id);
       setDeleteDialogOpen(false);
       setDeletingKey(null);
+      setDeleteSuccessTitle("Deleted");
       setDeleteSuccessMessage("API key was deleted successfully.");
       setDeleteSuccessDialogOpen(true);
       fetchData();
@@ -123,6 +132,11 @@ function ApiKeysContent() {
   const handleRevokeClick = (key: ApiKey) => {
     setRevokingKey(key);
     setRevokeDialogOpen(true);
+  };
+
+  const handleRotateClick = (key: ApiKey) => {
+    setRotateSourceKey(key);
+    setCreateDialogOpen(true);
   };
 
   const handleRevokeConfirm = async () => {
@@ -141,6 +155,41 @@ function ApiKeysContent() {
     }
   };
 
+  const handleCreateDialogClose = () => {
+    if (isRotateCompleting) return;
+    setCreateDialogOpen(false);
+    setRotateSourceKey(null);
+  };
+
+  const handleCreateSuccess = async (_createdKey: ApiKeyCreateResponse) => {
+    if (!rotateSourceKey) {
+      setCreateDialogOpen(false);
+      await fetchData();
+      return;
+    }
+
+    setIsRotateCompleting(true);
+    try {
+      await apiKeyApi.revoke(rotateSourceKey.id);
+      setDeleteSuccessTitle("Rotated");
+      setDeleteSuccessMessage(
+        `API key ${rotateSourceKey.prefix}... rotated successfully. The old key is now revoked.`,
+      );
+      setDeleteSuccessDialogOpen(true);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? `New key was created, but failed to revoke old key ${rotateSourceKey.prefix}...: ${err.message}`
+          : `New key was created, but failed to revoke old key ${rotateSourceKey.prefix}...`,
+      );
+    } finally {
+      setIsRotateCompleting(false);
+      setRotateSourceKey(null);
+      setCreateDialogOpen(false);
+      await fetchData();
+    }
+  };
+
   const getProviderName = (providerId?: string): string => {
     if (!providerId) return "-";
     const provider = providers.find((p) => p.id === providerId);
@@ -154,11 +203,13 @@ function ApiKeysContent() {
     const providerId = key.providerId || "";
     const providerName = getProviderName(key.providerId);
     const statusText = key.isActive ? "active" : "revoked";
-    const createdAtText = new Date(key.createdAt).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    }).toLowerCase();
+    const createdAtText = new Date(key.createdAt)
+      .toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+      .toLowerCase();
 
     return (
       key.id.toLowerCase().includes(normalizedQuery) ||
@@ -172,15 +223,14 @@ function ApiKeysContent() {
     );
   });
 
-  const totalPages = Math.max(1, Math.ceil(filteredApiKeys.length / ITEMS_PER_PAGE));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredApiKeys.length / ITEMS_PER_PAGE),
+  );
   const paginatedApiKeys = filteredApiKeys.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+    currentPage * ITEMS_PER_PAGE,
   );
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery]);
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -215,7 +265,10 @@ function ApiKeysContent() {
         type="text"
         placeholder="Search by key, owner, role, provider, status..."
         value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
+        onChange={(e) => {
+          setSearchQuery(e.target.value);
+          setCurrentPage(1);
+        }}
         leftIcon={<LuSearch className="w-4 h-4" />}
       />
 
@@ -234,6 +287,7 @@ function ApiKeysContent() {
           providers={providers}
           copiedId={copiedId}
           onCopy={handleCopyPrefix}
+          onRotate={handleRotateClick}
           onRevoke={handleRevokeClick}
           onDelete={handleDeleteClick}
           onCreate={() => setCreateDialogOpen(true)}
@@ -244,6 +298,7 @@ function ApiKeysContent() {
           providers={providers}
           copiedId={copiedId}
           onCopy={handleCopyPrefix}
+          onRotate={handleRotateClick}
           onRevoke={handleRevokeClick}
           onDelete={handleDeleteClick}
           onCreate={() => setCreateDialogOpen(true)}
@@ -282,7 +337,9 @@ function ApiKeysContent() {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+            }
             disabled={currentPage === totalPages}
           >
             Next
@@ -293,12 +350,32 @@ function ApiKeysContent() {
       {/* Create API Key Dialog */}
       <CreateApiKeyDialog
         open={createDialogOpen}
-        onClose={() => setCreateDialogOpen(false)}
-        onSuccess={() => {
-          setCreateDialogOpen(false);
-          fetchData();
-        }}
+        onClose={handleCreateDialogClose}
+        onSuccess={handleCreateSuccess}
         providers={providers}
+        title={
+          rotateSourceKey
+            ? `Rotate Key ${rotateSourceKey.prefix}...`
+            : "Generate API Key"
+        }
+        submitLabel={
+          rotateSourceKey ? "Generate Replacement Key" : "Generate Key"
+        }
+        successHint={
+          rotateSourceKey
+            ? "Replacement key generated. Copy it now. Click Done to finish rotation and revoke the old key."
+            : undefined
+        }
+        initialValues={
+          rotateSourceKey
+            ? {
+                owner: rotateSourceKey.owner,
+                role: rotateSourceKey.role,
+                providerId: rotateSourceKey.providerId,
+                rateLimit: rotateSourceKey.rateLimit,
+              }
+            : undefined
+        }
       />
 
       {/* Delete Confirmation Dialog */}
@@ -324,10 +401,9 @@ function ApiKeysContent() {
       <SuccessDialog
         open={deleteSuccessDialogOpen}
         onClose={() => setDeleteSuccessDialogOpen(false)}
-        title="Deleted"
+        title={deleteSuccessTitle}
         message={deleteSuccessMessage}
       />
-
     </div>
   );
 }

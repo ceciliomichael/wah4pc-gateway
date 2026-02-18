@@ -268,3 +268,27 @@ func TestInitiateQuery_AcceptsSameIdentifierWhenResourceTypeDiffers(t *testing.T
 		t.Fatal("expected created transaction")
 	}
 }
+
+func TestInitiateQuery_BlocksDuplicateEvenWhenSelectorDiffers(t *testing.T) {
+	txRepo := newDuplicateTxRepoStub()
+	txRepo.potentialDuplicates = []model.Transaction{
+		{
+			ID:          "txn-prev-pending-different-selector",
+			RequesterID: "requester",
+			TargetID:    "target",
+			Identifiers: []model.Identifier{
+				{System: "http://philhealth.gov.ph", Value: "99-999999999-9"},
+			},
+			ResourceType: "Patient",
+			Status:       model.StatusPending,
+			CreatedAt:    time.Now().UTC(),
+		},
+	}
+
+	svc := newGatewayForDuplicateTests(t, txRepo, "http://target.local")
+
+	_, err := svc.InitiateQuery(newDuplicateQueryRequest("Patient"))
+	if !errors.Is(err, ErrDuplicateRequest) {
+		t.Fatalf("expected ErrDuplicateRequest, got: %v", err)
+	}
+}

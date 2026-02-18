@@ -125,14 +125,7 @@ func (s *GatewayService) InitiateQuery(req QueryRequest) (*model.Transaction, er
 	if err != nil {
 		return nil, fmt.Errorf("failed to check for duplicates: %w", err)
 	}
-
-	duplicates := make([]model.Transaction, 0)
-	for _, tx := range candidates {
-		if model.QuerySelectorsMatch(effectiveSelectorFromTransaction(tx), req.Selector) {
-			duplicates = append(duplicates, tx)
-		}
-	}
-	if len(duplicates) > 0 {
+	if len(candidates) > 0 {
 		return nil, ErrDuplicateRequest
 	}
 

@@ -1,11 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { JsonObject } from "@/lib/integration-types";
 
-interface ResourceRecord extends JsonObject {
+interface ResourceRecord {
   resourceType: string;
   id?: string;
-  meta?: JsonObject;
+  meta?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 interface DataStore<T> {

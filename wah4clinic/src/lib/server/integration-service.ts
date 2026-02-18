@@ -151,7 +151,7 @@ class IntegrationServiceClass {
     }
 
     const normalizedResourceType = this.normalizeResourceType(resourceType);
-    const resourceForStore: JsonObject = {
+    const resourceForStore = {
       ...resource,
       resourceType: normalizedResourceType,
     };

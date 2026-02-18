@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { IntegrationService } from "@/lib/server/integration-service";
-import { TransactionStatus } from "@/lib/integration-types";
+import { ReceiveResultsPayload, TransactionStatus } from "@/lib/integration-types";
+
+function isValidReceiveResultsPayload(
+	payload: Partial<ReceiveResultsPayload>,
+): payload is ReceiveResultsPayload {
+	return (
+		typeof payload.transactionId === "string"
+		&& payload.transactionId.length > 0
+		&& (payload.status === "SUCCESS" || payload.status === "REJECTED" || payload.status === "ERROR")
+		&& payload.data !== undefined
+	);
+}
 
 export async function POST(request: NextRequest) {
 	try {
@@ -15,10 +26,10 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		const body = await request.json();
+		const body = (await request.json()) as Partial<ReceiveResultsPayload>;
 
 		// Validate required fields
-		if (!body.transactionId || !body.status) {
+		if (!isValidReceiveResultsPayload(body)) {
 			return NextResponse.json(
 				{ error: "Missing required fields" },
 				{ status: 400 },
@@ -26,9 +37,7 @@ export async function POST(request: NextRequest) {
 		}
 
 		// Store the received data
-		if (body.data) {
-			await IntegrationService.storeReceivedData(body.transactionId, body.data);
-		}
+		await IntegrationService.storeReceivedData(body.transactionId, body.data);
 
 		// Update transaction status
 		const success = await IntegrationService.updateTransactionStatus(

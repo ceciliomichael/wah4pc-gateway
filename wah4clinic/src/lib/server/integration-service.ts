@@ -3,6 +3,8 @@ import path from "node:path";
 import { v4 as uuidv4 } from "uuid";
 import { DataService } from "@/lib/server/data-service";
 import {
+	Identifier,
+	JsonValue,
 	WebhookTransaction,
 	ReceivedData,
 	TransactionStatus,
@@ -68,7 +70,30 @@ class IntegrationServiceClass {
 		error?: string,
 	): Promise<boolean> {
 		const transactions = this.readJsonFile<WebhookTransaction>("transactions.json");
-		const index = transactions.findIndex((tx) => tx.id === transactionId);
+		const index = transactions.findIndex(
+			(tx) => tx.details.transactionId === transactionId,
+		);
+
+		if (index === -1) {
+			return false;
+		}
+
+		transactions[index].status = status;
+		if (error) {
+			transactions[index].error = error;
+		}
+
+		this.writeJsonFile("transactions.json", transactions);
+		return true;
+	}
+
+	async updateTransactionStatusByInternalId(
+		internalId: string,
+		status: TransactionStatus,
+		error?: string,
+	): Promise<boolean> {
+		const transactions = this.readJsonFile<WebhookTransaction>("transactions.json");
+		const index = transactions.findIndex((tx) => tx.id === internalId);
 
 		if (index === -1) {
 			return false;
@@ -87,7 +112,7 @@ class IntegrationServiceClass {
 		return this.readJsonFile<WebhookTransaction>("transactions.json");
 	}
 
-	async storeReceivedData(transactionId: string, data: unknown): Promise<void> {
+	async storeReceivedData(transactionId: string, data: JsonValue): Promise<void> {
 		const receivedData: ReceivedData = {
 			transactionId,
 			data,
@@ -127,7 +152,7 @@ class IntegrationServiceClass {
 		return normalized1 === normalized2;
 	}
 
-	async findPatientByIdentifiers(identifiers: { system: string; value: string }[]): Promise<any | null> {
+	async findPatientByIdentifiers(identifiers: Identifier[]): Promise<any | null> {
 		const patients = DataService.findAll<any>("Patient");
 		
 		// Search for patient by PhilHealth ID first (priority)

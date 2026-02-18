@@ -1202,3 +1202,79 @@ print('Server listening on port \${server.port}');
 />
 
 ## Integration Checklist
+
+## Canonical Webhook Formats (Runtime Source of Truth)
+
+Use these exact payloads for the three provider webhooks:
+
+### 1) `POST /fhir/process-query` (incoming from gateway)
+
+```json
+{
+  "transactionId": "txn_...",
+  "requesterId": "provider-id",
+  "identifiers": [{ "system": "http://...", "value": "..." }],
+  "resourceType": "Patient",
+  "gatewayReturnUrl": "https://.../api/v1/fhir/receive/Patient",
+  "reason": "optional",
+  "notes": "optional"
+}
+```
+
+### 2) Callback to gateway return URL (`POST /api/v1/fhir/receive/{resourceType}`)
+
+`SUCCESS` payload:
+
+```json
+{
+  "transactionId": "txn_...",
+  "status": "SUCCESS",
+  "data": {}
+}
+```
+
+`REJECTED`/`ERROR` payload (`data` must be `OperationOutcome`):
+
+```json
+{
+  "transactionId": "txn_...",
+  "status": "REJECTED",
+  "data": {
+    "resourceType": "OperationOutcome",
+    "issue": [
+      {
+        "severity": "error",
+        "code": "not-found",
+        "details": { "text": "Patient not found" }
+      }
+    ]
+  }
+}
+```
+
+### 3) `POST /fhir/receive-results` (incoming from gateway)
+
+```json
+{
+  "transactionId": "txn_...",
+  "status": "SUCCESS | REJECTED | ERROR",
+  "data": {}
+}
+```
+
+### 4) `POST /fhir/receive-push` (incoming from gateway)
+
+```json
+{
+  "transactionId": "txn_...",
+  "senderId": "provider-id",
+  "resourceType": "Appointment",
+  "resource": {
+    "resourceType": "Appointment"
+  },
+  "reason": "optional",
+  "notes": "optional"
+}
+```
+
+`/fhir/receive-push` uses `resource` as the pushed payload field, not `data`.

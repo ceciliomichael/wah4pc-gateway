@@ -92,3 +92,67 @@ Endpoint you must implement to receive requested data. When data you requested i
 ### POST /fhir/receive-push
 
 Endpoint you must implement to receive unsolicited data pushes from other providers (e.g., incoming referrals or appointments).
+
+## Webhook Payload Contracts (Canonical)
+
+Use these shapes for provider-side webhooks:
+
+### Incoming: `POST /fhir/process-query`
+
+```json
+{
+  "transactionId": "txn_...",
+  "requesterId": "provider-id",
+  "identifiers": [{ "system": "http://...", "value": "..." }],
+  "resourceType": "Patient",
+  "gatewayReturnUrl": "https://.../api/v1/fhir/receive/Patient",
+  "reason": "optional",
+  "notes": "optional"
+}
+```
+
+### Incoming: `POST /fhir/receive-results`
+
+```json
+{
+  "transactionId": "txn_...",
+  "status": "SUCCESS",
+  "data": {}
+}
+```
+
+For `REJECTED` and `ERROR`, `data` must be an `OperationOutcome`:
+
+```json
+{
+  "transactionId": "txn_...",
+  "status": "REJECTED",
+  "data": {
+    "resourceType": "OperationOutcome",
+    "issue": [
+      {
+        "severity": "error",
+        "code": "not-found",
+        "details": { "text": "Patient not found" }
+      }
+    ]
+  }
+}
+```
+
+### Incoming: `POST /fhir/receive-push`
+
+```json
+{
+  "transactionId": "txn_...",
+  "senderId": "provider-id",
+  "resourceType": "Appointment",
+  "resource": {
+    "resourceType": "Appointment"
+  },
+  "reason": "optional",
+  "notes": "optional"
+}
+```
+
+`/fhir/receive-push` uses `resource` (not `data`).

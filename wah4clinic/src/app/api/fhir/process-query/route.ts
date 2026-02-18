@@ -1,6 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 import { IntegrationService } from "@/lib/server/integration-service";
-import { TransactionType, TransactionStatus } from "@/lib/integration-types";
+import {
+	JsonValue,
+	OperationOutcomePayload,
+	ProcessQueryPayload,
+	ReceiveResultsPayload,
+	TransactionStatus,
+	TransactionType,
+} from "@/lib/integration-types";
+
+function buildOperationOutcome(text: string, code: string): OperationOutcomePayload {
+	return {
+		resourceType: "OperationOutcome",
+		issue: [
+			{
+				severity: "error",
+				code,
+				details: {
+					text,
+				},
+			},
+		],
+	};
+}
+
+function isValidProcessQueryPayload(payload: Partial<ProcessQueryPayload>): payload is ProcessQueryPayload {
+	return (
+		typeof payload.transactionId === "string"
+		&& payload.transactionId.length > 0
+		&& Array.isArray(payload.identifiers)
+		&& payload.identifiers.length > 0
+		&& typeof payload.gatewayReturnUrl === "string"
+		&& payload.gatewayReturnUrl.length > 0
+	);
+}
 
 export async function POST(request: NextRequest) {
 	try {
@@ -15,10 +48,19 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		const body = await request.json();
+		const callbackApiKey = process.env.WAH4PC_API_KEY;
+		const callbackProviderId = process.env.WAH4PC_PROVIDER_ID;
+		if (!callbackApiKey || !callbackProviderId) {
+			return NextResponse.json(
+				{ error: "Server misconfigured: WAH4PC_API_KEY and WAH4PC_PROVIDER_ID are required" },
+				{ status: 500 },
+			);
+		}
+
+		const body = (await request.json()) as Partial<ProcessQueryPayload>;
 
 		// Validate required fields
-		if (!body.transactionId || !body.identifiers || !body.gatewayReturnUrl) {
+		if (!isValidProcessQueryPayload(body)) {
 			return NextResponse.json(
 				{ error: "Missing required fields" },
 				{ status: 400 },
@@ -45,18 +87,15 @@ export async function POST(request: NextRequest) {
 				const patient = await IntegrationService.findPatientByIdentifiers(body.identifiers);
 				const requestedResourceType = body.resourceType || "Patient";
 
-				let responsePayload;
+				let responsePayload: ReceiveResultsPayload;
 				if (!patient) {
 					// Patient not found
 					responsePayload = {
 						transactionId: body.transactionId,
 						status: "REJECTED",
-						data: {
-							error: "Patient not found",
-							searchedIdentifiers: body.identifiers,
-						},
+						data: buildOperationOutcome("Patient not found", "not-found") as JsonValue,
 					};
-					await IntegrationService.updateTransactionStatus(
+					await IntegrationService.updateTransactionStatusByInternalId(
 						transaction.id,
 						TransactionStatus.REJECTED,
 					);
@@ -67,15 +106,16 @@ export async function POST(request: NextRequest) {
 						patient.id,
 					);
 
-					const responseData =
-						requestedResourceType === "Patient" ? patient : resources;
+					const responseData = (
+						requestedResourceType === "Patient" ? patient : resources
+					) as JsonValue;
 
 					responsePayload = {
 						transactionId: body.transactionId,
 						status: "SUCCESS",
 						data: responseData,
 					};
-					await IntegrationService.updateTransactionStatus(
+					await IntegrationService.updateTransactionStatusByInternalId(
 						transaction.id,
 						TransactionStatus.SUCCESS,
 					);
@@ -86,15 +126,15 @@ export async function POST(request: NextRequest) {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json",
-						"X-API-Key": process.env.WAH4PC_API_KEY || "",
-						"X-Provider-ID": process.env.WAH4PC_PROVIDER_ID || "",
+						"X-API-Key": callbackApiKey,
+						"X-Provider-ID": callbackProviderId,
 					},
 					body: JSON.stringify(responsePayload),
 				});
 
 				if (!gatewayResponse.ok) {
 					console.error(`[Process Query] Gateway callback failed: ${gatewayResponse.status}`);
-					await IntegrationService.updateTransactionStatus(
+					await IntegrationService.updateTransactionStatusByInternalId(
 						transaction.id,
 						TransactionStatus.ERROR,
 						`Gateway returned ${gatewayResponse.status}`,
@@ -102,11 +142,34 @@ export async function POST(request: NextRequest) {
 				}
 			} catch (error) {
 				console.error(`[Process Query] Error processing ${body.transactionId}:`, error);
-				await IntegrationService.updateTransactionStatus(
+				await IntegrationService.updateTransactionStatusByInternalId(
 					transaction.id,
 					TransactionStatus.ERROR,
 					error instanceof Error ? error.message : "Unknown error",
 				);
+
+				const errorPayload: ReceiveResultsPayload = {
+					transactionId: body.transactionId,
+					status: "ERROR",
+					data: buildOperationOutcome(
+						error instanceof Error ? error.message : "Unknown error",
+						"exception",
+					) as JsonValue,
+				};
+
+				try {
+					await fetch(body.gatewayReturnUrl, {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							"X-API-Key": callbackApiKey,
+							"X-Provider-ID": callbackProviderId,
+						},
+						body: JSON.stringify(errorPayload),
+					});
+				} catch (callbackError) {
+					console.error("[Process Query] Failed to send ERROR callback:", callbackError);
+				}
 			}
 		});
 

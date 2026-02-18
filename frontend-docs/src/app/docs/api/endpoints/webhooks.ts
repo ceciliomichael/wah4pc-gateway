@@ -2,6 +2,39 @@ import type { EndpointCardProps } from "@/components/ui/endpoint-card";
 
 export const webhookEndpoints: EndpointCardProps[] = [
   {
+    method: "GET",
+    path: "/api/fhir/practitioners",
+    description:
+      "Endpoint you should implement for practitioner directory sync. The gateway fetches this endpoint to keep your practitioner list current.",
+    headers: [
+      {
+        name: "X-Gateway-Auth",
+        value: "your-gateway-auth-key",
+        required: true,
+        description:
+          "Secret key you provided during provider registration. Validate this to ensure the request is from the gateway.",
+      },
+    ],
+    responseStatus: 200,
+    responseBody: `[
+  {
+    "code": "prac-001",
+    "display": "Dr. Maria Santos",
+    "active": true
+  },
+  {
+    "code": "prac-002",
+    "display": "Dr. Jose Cruz",
+    "active": false
+  }
+]`,
+    notes: [
+      "Register this relative path as your `practitionerListEndpoint` (for example `/api/fhir/practitioners`).",
+      "Return practitioner items with `code`, `display`, and `active` fields.",
+      "After practitioner changes, trigger `POST /api/v1/providers/{id}/practitioners/webhook` so gateway refreshes cached practitioners.",
+    ],
+  },
+  {
     method: "POST",
     path: "/fhir/process-query",
     description:
@@ -39,6 +72,7 @@ export const webhookEndpoints: EndpointCardProps[] = [
       "Process the request asynchronously and send results to the gatewayReturnUrl",
       "Use the transactionId when sending results back to correlate the response",
       "Validate the X-Gateway-Auth header matches your registered gatewayAuthKey",
+      "For appointment and routing workflows, keep your `/api/fhir/practitioners` list updated and trigger practitioner sync webhook on changes.",
       "Use the lookup data in the payload (`identifiers` and other provided fields) to resolve records in your local system.",
       "The payload format may evolve; process known lookup fields defensively.",
       "The reason and notes fields provide context about why data is being requested",

@@ -16,7 +16,7 @@ flowchart TB
     subgraph DISCOVER["Phase 2: Discovery"]
         direction LR
         D1[Query Provider Registry] --> D2[Find Target Provider]
-        D2 --> D3[Get Target's baseUrl]
+        D2 --> D3[Get Target ID + Facility Metadata]
     end
 
     subgraph SECURE["Phase 3: Security"]
@@ -83,7 +83,7 @@ sequenceDiagram
         GW->>REG: Query All Providers
         REG-->>GW: Provider List
         GW-->>A: 200 OK
-        Note left of GW: [{id, name, type, baseUrl}, ...]
+        Note left of GW: [{id, name, type, facility_code, location, isActive}, ...]
     end
 
     rect rgb(224, 231, 255)
@@ -92,7 +92,7 @@ sequenceDiagram
         GW->>REG: Lookup by ID
         REG-->>GW: Provider Details
         GW-->>A: 200 OK
-        Note left of GW: {id, name, type, baseUrl}
+        Note left of GW: {id, name, type, facility_code, location, isActive}
     end
 `;
 
@@ -196,7 +196,9 @@ export const lifecyclePhases = [
       "Contact Administrator to register your organization",
       "Receive your unique Provider ID (UUID)",
       "Obtain your API Key for authentication",
-      "Configure your webhook endpoints (baseUrl)",
+      "Configure webhook endpoints on your baseUrl",
+      "Configure and secure practitionerListEndpoint (for example /api/fhir/practitioners)",
+      "Trigger practitioner sync webhook after practitioner changes",
     ],
     keyInsight: "Your Provider ID is your identity in the network. Your API Key proves you are who you claim to be.",
   },
@@ -317,7 +319,7 @@ export const keyConcepts = [
   },
   {
     term: "Base URL",
-    definition: "Your webhook endpoint base. The gateway appends paths like /fhir/process-query to call your system.",
+    definition: "Your private webhook endpoint base used by gateway routing. Not exposed in /api/v1/providers discovery responses.",
     example: "https://api.yourhospital.com",
   },
   {
@@ -355,5 +357,11 @@ export const quickStartSteps = [
     action: "Request Data",
     endpoint: "POST /api/v1/fhir/request/{type}",
     result: "Transaction ID",
+  },
+  {
+    step: 5,
+    action: "Sync Practitioners",
+    endpoint: "POST /api/v1/providers/{id}/practitioners/webhook",
+    result: "Gateway practitioner cache refreshed",
   },
 ] as const;

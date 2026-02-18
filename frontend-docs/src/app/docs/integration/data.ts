@@ -63,12 +63,21 @@ sequenceDiagram
         OP-->>GW: 200 OK
         GW-->>YS: 200 OK (Transaction Completed)
     end
+
+    rect rgb(255, 247, 237)
+        Note over YS,GW: Step 5 - Practitioner Directory Sync
+        GW->>YS: GET /api/fhir/practitioners
+        YS-->>GW: [{code, display, active}]
+        YS->>GW: POST /api/v1/providers/{id}/practitioners/webhook
+        GW->>YS: GET /api/fhir/practitioners (refresh)
+    end
 `;
 
 export const webhookHandlerDiagram = `
 sequenceDiagram
     participant GW as Gateway
     participant PQ as /fhir/process-query
+    participant PR as /api/fhir/practitioners
     participant DB as Your Database
     participant RR as /fhir/receive-results
 
@@ -95,6 +104,14 @@ sequenceDiagram
         RR->>DB: Store unsolicited data
         DB-->>RR: Saved
         RR-->>GW: 200 OK
+    end
+
+    rect rgb(255, 247, 237)
+        Note over GW,DB: Practitioner Directory Pull
+        GW->>PR: GET practitioner list with X-Gateway-Auth
+        PR->>DB: Load active/inactive practitioners
+        DB-->>PR: Practitioner rows
+        PR-->>GW: 200 OK [{code, display, active}]
     end
 `;
 
@@ -1150,6 +1167,8 @@ export const checklistItems = [
   "Implement POST /fhir/process-query endpoint",
   "Implement POST /fhir/receive-results endpoint",
   "Implement POST /fhir/receive-push endpoint",
+  "Implement GET /api/fhir/practitioners endpoint",
+  "Call POST /api/v1/providers/{id}/practitioners/webhook after practitioner changes",
   "Add validation for X-Gateway-Auth header in your webhooks",
   "Add patient matching logic for FHIR identifiers",
   "Generate unique Idempotency-Key (UUID v4) for each request",
@@ -1177,6 +1196,10 @@ export const prerequisites = [
   {
     title: "Webhook Endpoints",
     description: "You must implement three webhook endpoints that the gateway will call",
+  },
+  {
+    title: "Practitioner Directory Endpoint",
+    description: "Expose a secured endpoint (for example /api/fhir/practitioners) that returns practitioner {code, display, active} records",
   },
   {
     title: "FHIR-Compatible Data",

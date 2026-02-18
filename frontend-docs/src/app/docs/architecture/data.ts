@@ -155,7 +155,9 @@ export const dataModels = {
   "id": "uuid",
   "name": "City Hospital",
   "type": "hospital",
-  "baseUrl": "https://api.cityhospital.com",
+  "facility_code": "HOSP-001",
+  "location": "Quezon City",
+  "isActive": true,
   "createdAt": "2024-01-15T10:00:00Z",
   "updatedAt": "2024-01-15T10:00:00Z"
 }`,

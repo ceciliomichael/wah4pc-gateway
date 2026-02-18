@@ -245,7 +245,7 @@ export const flowSteps = [
     step: 4,
     title: "Gateway Notifies Provider",
     actor: "Gateway → Provider",
-    endpoint: "POST {provider.baseUrl}/fhir/process-query",
+    endpoint: "POST {registered_provider_webhook_base}/fhir/process-query",
     description: "The Gateway forwards the request to the Provider (Giver) who has the patient data. The transaction_id is included in this payload.",
     keyPoint: "The Provider MUST capture and store this transaction_id. It's their key to respond correctly.",
   },

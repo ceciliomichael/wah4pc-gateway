@@ -105,11 +105,13 @@ export default function IntegrationPage() {
                 <li>Organization Name</li>
                 <li>Provider Type (e.g., hospital, clinic)</li>
                 <li>Base URL (publicly accessible webhook endpoint)</li>
+                <li>Practitioner List Endpoint (for example <code>/api/fhir/practitioners</code>)</li>
              </ul>
              <p>Once registered, you will receive:</p>
              <ul className="list-disc pl-5 space-y-2">
                 <li><strong>Provider ID:</strong> Your unique identifier (UUID)</li>
                 <li><strong>API Key:</strong> Secret key for authenticating your requests</li>
+                <li><strong>Gateway Auth Key:</strong> Validate this in incoming gateway calls</li>
              </ul>
           </div>
         </div>
@@ -119,8 +121,8 @@ export default function IntegrationPage() {
       <StepSection
         id="webhooks"
         stepNumber={2}
-        title="Implement Webhook Endpoints"
-        description="The gateway communicates with your system via webhooks. You should implement three endpoints on your backend that the gateway will call."
+        title="Implement Webhook + Practitioner Sync Endpoints"
+        description="The gateway communicates with your system through callbacks and practitioner-directory sync. Implement your webhook endpoints plus a practitioner list endpoint."
       >
         <DiagramContainer 
           chart={webhookHandlerDiagram} 
@@ -128,6 +130,10 @@ export default function IntegrationPage() {
           filename="webhooks.mmd"
           className="mb-8"
         />
+
+        <AlertBlock type="info" className="mb-8">
+          In addition to the three webhook endpoints below, expose <code className="bg-blue-50 border border-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-mono text-sm">/api/fhir/practitioners</code> (or your configured <code className="text-sm">practitionerListEndpoint</code>) and call <code className="text-sm">POST /api/v1/providers/{"{id}"}/practitioners/webhook</code> after practitioner updates so gateway cache stays current.
+        </AlertBlock>
 
         {/* Webhook 1: Process Query */}
         <WebhookCard

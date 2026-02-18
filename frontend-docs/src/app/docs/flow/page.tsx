@@ -207,7 +207,7 @@ export default function TransactionFlowPage() {
         <StepCard
           stepNumber={3}
           title="Gateway Notifies Provider (Giver)"
-          endpoint="POST {provider.baseUrl}/fhir/process-query"
+          endpoint="POST {registered_provider_webhook_base}/fhir/process-query"
           actor="Gateway → Provider"
           description="The Gateway forwards the request to the Provider who has the patient data. The transaction_id is included."
         >

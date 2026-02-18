@@ -40,7 +40,6 @@ type PublicProviderResponse struct {
 	Type         model.ProviderType `json:"type"`
 	FacilityCode string             `json:"facility_code"`
 	Location     string             `json:"location"`
-	BaseURL      string             `json:"baseUrl"`
 	IsActive     bool               `json:"isActive"`
 }
 
@@ -111,7 +110,6 @@ func (h *ProviderHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 			Type:         p.Type,
 			FacilityCode: p.FacilityCode,
 			Location:     p.Location,
-			BaseURL:      p.BaseURL,
 			IsActive:     p.IsActive,
 		}
 	}

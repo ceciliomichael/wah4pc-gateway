@@ -6,17 +6,29 @@ import { AuthGuard } from "@/components/auth-guard";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { PractitionerDirectory } from "@/components/practitioners/practitioner-directory";
 import { providerApi } from "@/lib/api";
+import { getCachedValue, setCachedValue } from "@/lib/indexed-cache";
+import { useAuth } from "@/stores/auth-store";
 import type { Provider } from "@/types";
 
+const PRACTITIONER_DIRECTORY_CACHE_TTL_MS = 60_000;
+
 function PractitionersPageContent() {
+  const { identity } = useAuth();
   const [providers, setProviders] = useState<Provider[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const providerScope = identity?.providerId || "all";
+  const cacheKey = `practitioners:directory:${identity?.role || "unknown"}:${providerScope}`;
 
   const fetchProviderDirectory = useCallback(async () => {
     try {
       const data = await providerApi.getAllWithPractitioners();
       setProviders(data);
+      await setCachedValue<Provider[]>(
+        cacheKey,
+        data,
+        PRACTITIONER_DIRECTORY_CACHE_TTL_MS,
+      );
       setError(null);
     } catch (err) {
       setError(
@@ -27,11 +39,28 @@ function PractitionersPageContent() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [cacheKey]);
 
   useEffect(() => {
+    let isMounted = true;
+    const hydrateFromCache = async () => {
+      try {
+        const cached = await getCachedValue<Provider[]>(cacheKey);
+        if (!cached || !isMounted) return;
+        setProviders(cached);
+        setIsLoading(false);
+      } catch {
+        // Ignore cache hydration errors and continue with network fetch.
+      }
+    };
+
+    hydrateFromCache();
     fetchProviderDirectory();
-  }, [fetchProviderDirectory]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [cacheKey, fetchProviderDirectory]);
 
   if (isLoading) {
     return (
@@ -42,7 +71,7 @@ function PractitionersPageContent() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-6">
       <div>
         <h1 className="text-xl font-semibold text-slate-800">
           Practitioner Directory

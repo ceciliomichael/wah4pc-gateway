@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { logsApi } from "@/lib/api";
 import type { LogDate, LogSummary } from "@/types";
 import { LogsTable } from "@/components/logs/logs-table";
 import { LogViewer } from "@/components/logs/log-viewer";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { LuCalendar, LuLoader, LuRefreshCw, LuChevronDown } from "react-icons/lu";
+import { LuCalendar, LuRefreshCw, LuChevronDown } from "react-icons/lu";
 import { clsx } from "clsx";
 import { AuthGuard } from "@/components/auth-guard";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
@@ -28,9 +28,22 @@ function LogsContent() {
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isRealtimeUpdating, setIsRealtimeUpdating] = useState(false);
   
   // Mobile: show date dropdown instead of sidebar
   const [showDateDropdown, setShowDateDropdown] = useState(false);
+  const selectedDateRef = useRef<string | null>(null);
+  const selectedLogRef = useRef<LogSummary | null>(null);
+  const datesRequestIdRef = useRef(0);
+  const logsRequestIdRef = useRef(0);
+
+  useEffect(() => {
+    selectedDateRef.current = selectedDate;
+  }, [selectedDate]);
+
+  useEffect(() => {
+    selectedLogRef.current = selectedLog;
+  }, [selectedLog]);
 
   const shouldHideLog = (url: string): boolean => {
     const path = url.split("?")[0];
@@ -48,46 +61,72 @@ function LogsContent() {
   };
 
   // Fetch dates on mount
-  const fetchDates = useCallback(async () => {
-    setLoadingDates(true);
+  const fetchDates = useCallback(async (options?: { background?: boolean }) => {
+    const requestId = ++datesRequestIdRef.current;
+    if (!options?.background) {
+      setLoadingDates(true);
+    }
     setError(null);
     try {
       const data = await logsApi.getDates();
+      if (requestId !== datesRequestIdRef.current) return;
+
       setDates(data);
       await setCachedValue<LogDate[]>("logs:dates", data, LOG_DATES_CACHE_TTL_MS);
-      if (data.length > 0 && !selectedDate) {
+
+      const currentSelectedDate = selectedDateRef.current;
+      if (data.length === 0) {
+        if (currentSelectedDate) {
+          setSelectedDate(null);
+          setLogs([]);
+        }
+        return;
+      }
+
+      if (!currentSelectedDate || !data.some((d) => d.date === currentSelectedDate)) {
         setSelectedDate(data[0].date);
       }
     } catch (err) {
+      if (requestId !== datesRequestIdRef.current) return;
       console.error("Failed to fetch log dates:", err);
       setError("Failed to load available dates.");
     } finally {
+      if (requestId !== datesRequestIdRef.current) return;
       setLoadingDates(false);
     }
-  }, [selectedDate]);
+  }, []);
 
-  const fetchLogs = useCallback(async (date: string) => {
-    setLoadingLogs(true);
+  const fetchLogs = useCallback(async (date: string, options?: { background?: boolean }) => {
+    const requestId = ++logsRequestIdRef.current;
+    if (!options?.background) {
+      setLoadingLogs(true);
+    }
     // Keep selected log if it belongs to the new date, otherwise clear
-    if (selectedLog && !selectedLog.timestamp.startsWith(date)) {
+    const currentSelectedLog = selectedLogRef.current;
+    if (currentSelectedLog && !currentSelectedLog.timestamp.startsWith(date)) {
       setSelectedLog(null);
     }
     
     try {
       const data = await logsApi.getLogs(date);
+      if (requestId !== logsRequestIdRef.current || selectedDateRef.current !== date) return;
+
       const filteredLogs = data.filter((log) => !shouldHideLog(log.url));
       setLogs(filteredLogs);
       await setCachedValue<LogSummary[]>(`logs:date:${date}`, filteredLogs, LOG_ITEMS_CACHE_TTL_MS);
-      if (selectedLog && !filteredLogs.some((log) => log.id === selectedLog.id)) {
+      const selected = selectedLogRef.current;
+      if (selected && !filteredLogs.some((log) => log.id === selected.id)) {
         setSelectedLog(null);
       }
     } catch (err) {
+      if (requestId !== logsRequestIdRef.current || selectedDateRef.current !== date) return;
       console.error("Failed to fetch logs:", err);
       setError(`Failed to load logs for ${date}`);
     } finally {
+      if (requestId !== logsRequestIdRef.current || selectedDateRef.current !== date) return;
       setLoadingLogs(false);
     }
-  }, [selectedLog]);
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -96,7 +135,7 @@ function LogsContent() {
         const cachedDates = await getCachedValue<LogDate[]>("logs:dates");
         if (!cachedDates || !isMounted) return;
         setDates(cachedDates);
-        if (cachedDates.length > 0 && !selectedDate) {
+        if (cachedDates.length > 0 && !selectedDateRef.current) {
           setSelectedDate(cachedDates[0].date);
         }
         setLoadingDates(false);
@@ -113,10 +152,12 @@ function LogsContent() {
   // Fetch logs when date changes
   useEffect(() => {
     if (selectedDate) {
+      const requestedDate = selectedDate;
       const hydrateLogsFromCache = async () => {
         try {
-          const cachedLogs = await getCachedValue<LogSummary[]>(`logs:date:${selectedDate}`);
+          const cachedLogs = await getCachedValue<LogSummary[]>(`logs:date:${requestedDate}`);
           if (!cachedLogs) return;
+          if (selectedDateRef.current !== requestedDate) return;
           setLogs(cachedLogs);
           setLoadingLogs(false);
         } catch (_error) {
@@ -130,17 +171,24 @@ function LogsContent() {
   }, [selectedDate, fetchLogs]);
 
   useRealtimeEvents(() => {
-    if (selectedDate) {
-      fetchLogs(selectedDate);
+    const activeDate = selectedDateRef.current;
+    setIsRealtimeUpdating(true);
+    if (activeDate) {
+      fetchLogs(activeDate, { background: true }).finally(() => {
+        setIsRealtimeUpdating(false);
+      });
+    } else {
+      setIsRealtimeUpdating(false);
     }
-    fetchDates();
+    fetchDates({ background: true });
   });
 
   const handleRefresh = () => {
     setIsRefreshing(true);
+    const activeDate = selectedDateRef.current;
     Promise.all([
-      selectedDate ? fetchLogs(selectedDate) : Promise.resolve(),
-      fetchDates()
+      activeDate ? fetchLogs(activeDate, { background: true }) : Promise.resolve(),
+      fetchDates({ background: true })
     ]).finally(() => setIsRefreshing(false));
   };
 
@@ -173,9 +221,7 @@ function LogsContent() {
           variant="secondary"
           onClick={handleRefresh}
           disabled={isRefreshing}
-          leftIcon={
-            <LuRefreshCw className={clsx("w-4 h-4", isRefreshing && "animate-spin")} />
-          }
+          leftIcon={<LuRefreshCw className="w-4 h-4" />}
         >
           Refresh
         </Button>
@@ -203,7 +249,13 @@ function LogsContent() {
           
           {showDateDropdown && (
             <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-lg z-20 max-h-64 overflow-y-auto">
-              {dates.length === 0 ? (
+              {loadingDates ? (
+                <div className="p-3 space-y-2">
+                  <Skeleton className="h-9 w-full rounded-lg" />
+                  <Skeleton className="h-9 w-full rounded-lg" />
+                  <Skeleton className="h-9 w-full rounded-lg" />
+                </div>
+              ) : dates.length === 0 ? (
                 <div className="p-4 text-center text-sm text-slate-400">
                   No logs available
                 </div>
@@ -253,8 +305,12 @@ function LogsContent() {
             </div>
             <div className="flex-1 overflow-y-auto p-2 space-y-1">
               {loadingDates ? (
-                <div className="p-4 text-center">
-                  <LuLoader className="w-6 h-6 text-primary-500 animate-spin mx-auto" />
+                <div className="space-y-2 p-1">
+                  <Skeleton className="h-9 w-full rounded-lg" />
+                  <Skeleton className="h-9 w-full rounded-lg" />
+                  <Skeleton className="h-9 w-full rounded-lg" />
+                  <Skeleton className="h-9 w-full rounded-lg" />
+                  <Skeleton className="h-9 w-full rounded-lg" />
                 </div>
               ) : dates.length === 0 ? (
                 <div className="p-4 text-center text-sm text-slate-400">
@@ -297,6 +353,7 @@ function LogsContent() {
             selectedId={selectedLog?.id} 
             onSelectLog={setSelectedLog}
             loading={loadingLogs}
+            refreshing={isRealtimeUpdating || isRefreshing}
           />
         </div>
 

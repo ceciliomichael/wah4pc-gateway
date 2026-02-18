@@ -5,12 +5,14 @@ import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { LuFileText } from "react-icons/lu";
 import { clsx } from "clsx";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface LogsTableProps {
   logs: LogSummary[];
   selectedId?: string;
   onSelectLog: (log: LogSummary) => void;
   loading?: boolean;
+  refreshing?: boolean;
 }
 
 function getStatusVariant(statusCode: number): BadgeVariant {
@@ -40,6 +42,7 @@ export function LogsTable({
   selectedId,
   onSelectLog,
   loading = false,
+  refreshing = false,
 }: LogsTableProps) {
   // Format time (e.g., "11:34 AM")
   const formatTime = (dateString: string): string => {
@@ -117,9 +120,30 @@ export function LogsTable({
             </div>
           </div>
         ))}
-        {loading && (
-          <div className="px-4 py-8 text-center text-slate-400">
-            Loading logs...
+        {loading && logs.length === 0 && (
+          <div className="p-3 space-y-2">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div key={`logs-loading-${index}`} className="grid grid-cols-[80px_70px_1fr_60px_70px] gap-2">
+                <Skeleton className="h-6 w-full rounded-md" />
+                <Skeleton className="h-6 w-full rounded-md" />
+                <Skeleton className="h-6 w-full rounded-md" />
+                <Skeleton className="h-6 w-full rounded-md" />
+                <Skeleton className="h-6 w-full rounded-md" />
+              </div>
+            ))}
+          </div>
+        )}
+        {refreshing && logs.length > 0 && (
+          <div className="p-2 space-y-2 border-t border-slate-100 bg-slate-50/60">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={`logs-refreshing-${index}`} className="grid grid-cols-[80px_70px_1fr_60px_70px] gap-2">
+                <Skeleton className="h-5 w-full rounded-md" />
+                <Skeleton className="h-5 w-full rounded-md" />
+                <Skeleton className="h-5 w-full rounded-md" />
+                <Skeleton className="h-5 w-full rounded-md" />
+                <Skeleton className="h-5 w-full rounded-md" />
+              </div>
+            ))}
           </div>
         )}
       </div>

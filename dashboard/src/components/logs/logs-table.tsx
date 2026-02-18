@@ -84,6 +84,19 @@ export function LogsTable({
       
       {/* Scrollable Body */}
       <div className="flex-1 overflow-y-auto min-h-0">
+        {refreshing && logs.length > 0 && (
+          <div className="p-2 space-y-2 border-b border-slate-100 bg-slate-50/60">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={`logs-refreshing-${index}`} className="grid grid-cols-[80px_70px_1fr_60px_70px] gap-2">
+                <Skeleton className="h-5 w-full rounded-md" />
+                <Skeleton className="h-5 w-full rounded-md" />
+                <Skeleton className="h-5 w-full rounded-md" />
+                <Skeleton className="h-5 w-full rounded-md" />
+                <Skeleton className="h-5 w-full rounded-md" />
+              </div>
+            ))}
+          </div>
+        )}
         {logs.map((log) => (
           <div
             key={log.id}
@@ -129,19 +142,6 @@ export function LogsTable({
                 <Skeleton className="h-6 w-full rounded-md" />
                 <Skeleton className="h-6 w-full rounded-md" />
                 <Skeleton className="h-6 w-full rounded-md" />
-              </div>
-            ))}
-          </div>
-        )}
-        {refreshing && logs.length > 0 && (
-          <div className="p-2 space-y-2 border-t border-slate-100 bg-slate-50/60">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <div key={`logs-refreshing-${index}`} className="grid grid-cols-[80px_70px_1fr_60px_70px] gap-2">
-                <Skeleton className="h-5 w-full rounded-md" />
-                <Skeleton className="h-5 w-full rounded-md" />
-                <Skeleton className="h-5 w-full rounded-md" />
-                <Skeleton className="h-5 w-full rounded-md" />
-                <Skeleton className="h-5 w-full rounded-md" />
               </div>
             ))}
           </div>

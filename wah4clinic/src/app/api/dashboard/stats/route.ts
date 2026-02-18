@@ -118,8 +118,10 @@ export async function GET() {
 		const encounters = DataService.findAll<FhirResource>("Encounter");
 		const immunizations = DataService.findAll<FhirResource>("Immunization");
 		const medications = DataService.findAll<FhirResource>("Medication");
+		const medicationRequests = DataService.findAll<FhirResource>("MedicationRequest");
 		const observations = DataService.findAll<FhirResource>("Observation");
 		const procedures = DataService.findAll<FhirResource>("Procedure");
+		const diagnosticReports = DataService.findAll<FhirResource>("DiagnosticReport");
 
 		// Calculate stats
 		const todayAppointments = appointments.filter((a) => a.start && isToday(a.start));
@@ -133,8 +135,10 @@ export async function GET() {
 			...encounters,
 			...immunizations,
 			...medications,
+			...medicationRequests,
 			...observations,
 			...procedures,
+			...diagnosticReports,
 		];
 
 		// Sort by lastUpdated descending and take top 10
@@ -166,11 +170,17 @@ export async function GET() {
 				case "Medication":
 					description = `Medication: ${resource.code?.text || resource.code?.coding?.[0]?.display || "Unknown medication"}`;
 					break;
+				case "MedicationRequest":
+					description = `Medication Request: ${resource.code?.text || resource.code?.coding?.[0]?.display || resource.status || "Unknown request"}`;
+					break;
 				case "Observation":
 					description = `Observation: ${resource.code?.text || resource.code?.coding?.[0]?.display || "Unknown observation"}`;
 					break;
 				case "Procedure":
 					description = `Procedure: ${resource.code?.text || resource.code?.coding?.[0]?.display || "Unknown procedure"}`;
+					break;
+				case "DiagnosticReport":
+					description = `Diagnostic Report: ${resource.code?.text || resource.code?.coding?.[0]?.display || resource.status || "Unknown report"}`;
 					break;
 				default:
 					description = `${resourceType} record`;
@@ -183,8 +193,10 @@ export async function GET() {
 				Encounter: "encounters",
 				Immunization: "immunizations",
 				Medication: "medications",
+				MedicationRequest: "medication-requests",
 				Observation: "observations",
 				Procedure: "procedures",
+				DiagnosticReport: "diagnostic-reports",
 			};
 
 			return {

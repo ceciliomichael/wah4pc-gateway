@@ -42,6 +42,11 @@ const navItems: NavItem[] = [
 		icon: LucidePill,
 	},
 	{
+		label: "Medication Requests",
+		href: "/medication-requests",
+		icon: LucidePill,
+	},
+	{
 		label: "Procedures",
 		href: "/procedures",
 		icon: LucideActivity,
@@ -55,6 +60,11 @@ const navItems: NavItem[] = [
 		label: "Observations",
 		href: "/observations",
 		icon: LucideHeartPulse,
+	},
+	{
+		label: "Diagnostic Reports",
+		href: "/diagnostic-reports",
+		icon: LucideFileText,
 	},
 	{
 		label: "Integration",

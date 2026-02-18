@@ -105,8 +105,10 @@ function getResourceTypeLabel(resourceType: string): string {
 		Encounter: "Encounter",
 		Observation: "Observation",
 		Medication: "Medication",
+		MedicationRequest: "Medication Request",
 		Immunization: "Immunization",
 		Procedure: "Procedure",
+		DiagnosticReport: "Diagnostic Report",
 	};
 	return labels[resourceType] || resourceType;
 }

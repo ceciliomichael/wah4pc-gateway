@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { Provider } from "@/types";
-import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
+import { LuBuilding2, LuSearch, LuStethoscope, LuUsers } from "react-icons/lu";
 import { Badge, ProviderTypeBadge } from "@/components/ui/badge";
-import { LuSearch, LuUsers, LuBuilding2, LuStethoscope } from "react-icons/lu";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import type { Provider } from "@/types";
 
 interface PractitionerDirectoryProps {
   providers: Provider[];
@@ -14,11 +14,13 @@ interface PractitionerDirectoryProps {
 function getPractitionerCount(providers: Provider[]): number {
   return providers.reduce(
     (total, provider) => total + (provider.practitionerList?.length || 0),
-    0
+    0,
   );
 }
 
-export function PractitionerDirectory({ providers }: PractitionerDirectoryProps) {
+export function PractitionerDirectory({
+  providers,
+}: PractitionerDirectoryProps) {
   const [query, setQuery] = useState("");
 
   const filteredProviders = useMemo(() => {
@@ -38,13 +40,15 @@ export function PractitionerDirectory({ providers }: PractitionerDirectoryProps)
       return practitioners.some(
         (practitioner) =>
           practitioner.code.toLowerCase().includes(normalizedQuery) ||
-          practitioner.display.toLowerCase().includes(normalizedQuery)
+          practitioner.display.toLowerCase().includes(normalizedQuery),
       );
     });
   }, [providers, query]);
 
   const totalPractitioners = getPractitionerCount(filteredProviders);
-  const activeProviders = filteredProviders.filter((provider) => provider.isActive).length;
+  const activeProviders = filteredProviders.filter(
+    (provider) => provider.isActive,
+  ).length;
 
   return (
     <div className="space-y-5">
@@ -55,8 +59,12 @@ export function PractitionerDirectory({ providers }: PractitionerDirectoryProps)
               <LuBuilding2 className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-slate-500">Providers</p>
-              <p className="text-xl font-semibold text-slate-800">{filteredProviders.length}</p>
+              <p className="text-xs uppercase tracking-wide text-slate-500">
+                Providers
+              </p>
+              <p className="text-xl font-semibold text-slate-800">
+                {filteredProviders.length}
+              </p>
             </div>
           </div>
         </Card>
@@ -66,8 +74,12 @@ export function PractitionerDirectory({ providers }: PractitionerDirectoryProps)
               <LuUsers className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-slate-500">Active Providers</p>
-              <p className="text-xl font-semibold text-slate-800">{activeProviders}</p>
+              <p className="text-xs uppercase tracking-wide text-slate-500">
+                Active Providers
+              </p>
+              <p className="text-xl font-semibold text-slate-800">
+                {activeProviders}
+              </p>
             </div>
           </div>
         </Card>
@@ -77,8 +89,12 @@ export function PractitionerDirectory({ providers }: PractitionerDirectoryProps)
               <LuStethoscope className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-slate-500">Practitioners</p>
-              <p className="text-xl font-semibold text-slate-800">{totalPractitioners}</p>
+              <p className="text-xs uppercase tracking-wide text-slate-500">
+                Practitioners
+              </p>
+              <p className="text-xl font-semibold text-slate-800">
+                {totalPractitioners}
+              </p>
             </div>
           </div>
         </Card>
@@ -94,7 +110,9 @@ export function PractitionerDirectory({ providers }: PractitionerDirectoryProps)
       {filteredProviders.length === 0 ? (
         <Card>
           <div className="py-10 text-center">
-            <p className="text-sm text-slate-500">No providers or practitioners matched your search.</p>
+            <p className="text-sm text-slate-500">
+              No providers or practitioners matched your search.
+            </p>
           </div>
         </Card>
       ) : (
@@ -102,18 +120,27 @@ export function PractitionerDirectory({ providers }: PractitionerDirectoryProps)
           {filteredProviders.map((provider) => {
             const practitioners = provider.practitionerList || [];
             return (
-              <Card key={provider.id} padding="none" className="overflow-hidden">
+              <Card
+                key={provider.id}
+                padding="none"
+                className="overflow-hidden"
+              >
                 <div className="border-b border-slate-100 bg-slate-50/70 px-4 py-3 md:px-5">
                   <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                     <div className="min-w-0">
-                      <p className="truncate text-base font-semibold text-slate-800">{provider.name}</p>
+                      <p className="truncate text-base font-semibold text-slate-800">
+                        {provider.name}
+                      </p>
                       <p className="truncate text-xs text-slate-500">
-                        Facility Code: {provider.facilityCode || "-"} • ID: {provider.id}
+                        Facility Code: {provider.facilityCode || "-"} • ID:{" "}
+                        {provider.id}
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <ProviderTypeBadge type={provider.type} />
-                      <Badge variant={provider.isActive ? "success" : "default"}>
+                      <Badge
+                        variant={provider.isActive ? "success" : "default"}
+                      >
                         {provider.isActive ? "Active" : "Inactive"}
                       </Badge>
                     </div>
@@ -152,11 +179,22 @@ export function PractitionerDirectory({ providers }: PractitionerDirectoryProps)
                         </thead>
                         <tbody className="divide-y divide-slate-100 bg-white">
                           {practitioners.map((practitioner) => (
-                            <tr key={`${provider.id}-${practitioner.code}`} className="hover:bg-slate-50">
-                              <td className="px-4 py-3 text-sm text-slate-800">{practitioner.display}</td>
-                              <td className="px-4 py-3 text-sm text-slate-600">{practitioner.code}</td>
+                            <tr
+                              key={`${provider.id}-${practitioner.code}`}
+                              className="hover:bg-slate-50"
+                            >
+                              <td className="px-4 py-3 text-sm text-slate-800">
+                                {practitioner.display}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-slate-600">
+                                {practitioner.code}
+                              </td>
                               <td className="px-4 py-3">
-                                <Badge variant={practitioner.active ? "success" : "default"}>
+                                <Badge
+                                  variant={
+                                    practitioner.active ? "success" : "default"
+                                  }
+                                >
                                   {practitioner.active ? "Yes" : "No"}
                                 </Badge>
                               </td>

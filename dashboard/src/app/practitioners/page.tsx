@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { LuCircleAlert, LuLoaderCircle } from "react-icons/lu";
 import { AuthGuard } from "@/components/auth-guard";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { PractitionerDirectory } from "@/components/practitioners/practitioner-directory";
 import { providerApi } from "@/lib/api";
 import type { Provider } from "@/types";
-import { LuCircleAlert, LuLoaderCircle } from "react-icons/lu";
 
 function PractitionersPageContent() {
   const [providers, setProviders] = useState<Provider[]>([]);
@@ -19,7 +19,11 @@ function PractitionersPageContent() {
       setProviders(data);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load practitioner directory");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to load practitioner directory",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -40,9 +44,12 @@ function PractitionersPageContent() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-semibold text-slate-800">Practitioner Directory</h1>
+        <h1 className="text-xl font-semibold text-slate-800">
+          Practitioner Directory
+        </h1>
         <p className="text-sm text-slate-500">
-          View providers, facility details, and synced practitioner lists in one screen.
+          View providers, facility details, and synced practitioner lists in one
+          screen.
         </p>
       </div>
 

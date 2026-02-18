@@ -1,18 +1,18 @@
+import { type AuthIdentity, loadStoredSession } from "@/lib/auth-session";
 import type {
-  Provider,
-  ProviderCreateRequest,
+  ApiError,
   ApiKey,
   ApiKeyCreateRequest,
   ApiKeyCreateResponse,
-  Transaction,
-  ApiError,
   ApiResponse,
   LogDate,
-  LogSummary,
   LogDetail,
+  LogSummary,
+  Provider,
+  ProviderCreateRequest,
   SystemSettings,
+  Transaction,
 } from "@/types";
-import { loadStoredSession, type AuthIdentity } from "@/lib/auth-session";
 
 interface ProviderApiShape {
   id: string;
@@ -49,7 +49,7 @@ export class ApiRequestError extends Error {
   constructor(
     public status: number,
     public statusText: string,
-    public data?: ApiError
+    public data?: ApiError,
   ) {
     super(data?.error || statusText);
     this.name = "ApiRequestError";
@@ -90,7 +90,7 @@ function getAuthHeadersFromSession(): Record<string, string> {
 // Base fetch wrapper with auth headers
 async function fetchWithAuth<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<T> {
   const headers: HeadersInit = {
     "Content-Type": "application/json",
@@ -112,11 +112,9 @@ async function fetchWithAuth<T>(
 
   // Handle API-level errors (success: false)
   if (!json.success) {
-    throw new ApiRequestError(
-      response.status,
-      json.error || "Request failed",
-      { error: json.error || "Unknown error" }
-    );
+    throw new ApiRequestError(response.status, json.error || "Request failed", {
+      error: json.error || "Unknown error",
+    });
   }
 
   // Handle HTTP errors that somehow have success: true (edge case)
@@ -157,7 +155,9 @@ function normalizeProvider(data: ProviderApiShape): Provider {
 // Provider API - routes through Next.js API
 export const providerApi = {
   getAll: async () => {
-    const providers = ensureArray(await fetchWithAuth<ProviderApiShape[]>("/providers"));
+    const providers = ensureArray(
+      await fetchWithAuth<ProviderApiShape[]>("/providers"),
+    );
     return providers.map(normalizeProvider);
   },
 
@@ -170,7 +170,7 @@ export const providerApi = {
         } catch {
           return provider;
         }
-      })
+      }),
     );
     return detailedProviders;
   },
@@ -229,17 +229,20 @@ export const apiKeyApi = {
 
 // Transaction API - routes through Next.js API
 export const transactionApi = {
-  getAll: async () => ensureArray(await fetchWithAuth<Transaction[]>("/transactions")),
+  getAll: async () =>
+    ensureArray(await fetchWithAuth<Transaction[]>("/transactions")),
 
-  getById: (id: string) =>
-    fetchWithAuth<Transaction>(`/transactions/${id}`),
+  getById: (id: string) => fetchWithAuth<Transaction>(`/transactions/${id}`),
 };
 
 // Logs API - routes through Next.js API
 export const logsApi = {
-  getDates: async () => ensureArray(await fetchWithAuth<LogDate[]>("/logs/dates")),
-  getLogs: async (date: string) => ensureArray(await fetchWithAuth<LogSummary[]>(`/logs/${date}`)),
-  getLogDetail: (date: string, id: string) => fetchWithAuth<LogDetail>(`/logs/${date}/${id}`),
+  getDates: async () =>
+    ensureArray(await fetchWithAuth<LogDate[]>("/logs/dates")),
+  getLogs: async (date: string) =>
+    ensureArray(await fetchWithAuth<LogSummary[]>(`/logs/${date}`)),
+  getLogDetail: (date: string, id: string) =>
+    fetchWithAuth<LogDetail>(`/logs/${date}/${id}`),
 };
 
 // Settings API
@@ -252,7 +255,9 @@ export const settingsApi = {
     }),
 };
 
-export async function fetchAuthIdentityWithMasterKey(key: string): Promise<AuthIdentity | null> {
+export async function fetchAuthIdentityWithMasterKey(
+  key: string,
+): Promise<AuthIdentity | null> {
   try {
     const response = await fetch(`${API_BASE_URL}/auth/identity`, {
       headers: {
@@ -269,7 +274,9 @@ export async function fetchAuthIdentityWithMasterKey(key: string): Promise<AuthI
   }
 }
 
-export async function fetchAuthIdentityWithApiKey(apiKey: string): Promise<AuthIdentity | null> {
+export async function fetchAuthIdentityWithApiKey(
+  apiKey: string,
+): Promise<AuthIdentity | null> {
   try {
     const response = await fetch(`${API_BASE_URL}/auth/identity`, {
       headers: {

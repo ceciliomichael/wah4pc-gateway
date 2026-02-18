@@ -104,11 +104,3 @@ type ProcessPushPayload struct {
 	Reason        string          `json:"reason,omitempty"`
 	Notes         string          `json:"notes,omitempty"`
 }
-
-// PractitionerOption is a normalized practitioner item for provider-side selector UIs.
-type PractitionerOption struct {
-	ID          string             `json:"id"`
-	Reference   string             `json:"reference"`
-	Display     string             `json:"display"`
-	Identifiers []model.Identifier `json:"identifiers,omitempty"`
-}

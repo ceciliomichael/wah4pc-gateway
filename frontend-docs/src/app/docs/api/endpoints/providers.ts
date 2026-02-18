@@ -21,27 +21,4 @@ export const providersEndpoints: EndpointCardProps[] = [
   ]
 }`,
   },
-  {
-    method: "GET",
-    path: "/api/v1/providers/facilities/{facilityCode}/practitioners",
-    description: "Fetch practitioners for a facility as selector-ready options",
-    headers: ["X-API-Key: your-api-key"],
-    responseStatus: 200,
-    responseBody: `{
-  "success": true,
-  "data": [
-    {
-      "id": "prac-123",
-      "reference": "Practitioner/prac-123",
-      "display": "Dr. Juan Dela Cruz",
-      "identifiers": [
-        {
-          "system": "http://prc.gov.ph/license",
-          "value": "PRC-001"
-        }
-      ]
-    }
-  ]
-}`,
-  },
 ];

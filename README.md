@@ -224,7 +224,6 @@ Manage healthcare provider registrations.
 | PUT | `/api/v1/providers/{id}` | Update provider |
 | DELETE | `/api/v1/providers/{id}` | Delete provider |
 | POST | `/api/v1/providers/{id}/status` | Set provider active/inactive |
-| GET | `/api/v1/providers/facilities/{facilityCode}/practitioners` | List practitioners for a facility (provider proxy) |
 
 **Register Provider:**
 
@@ -237,33 +236,6 @@ curl -X POST http://localhost:8080/api/v1/providers \
     "type": "hospital",
     "baseUrl": "http://localhost:9002"
   }'
-```
-
-**Get Practitioners by Facility:**
-
-```bash
-curl -X GET http://localhost:8080/api/v1/providers/facilities/HOSP-001/practitioners \
-  -H "X-API-Key: your-api-key"
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": "prac-123",
-      "reference": "Practitioner/prac-123",
-      "display": "Dr. Juan Dela Cruz",
-      "identifiers": [
-        {
-          "system": "http://prc.gov.ph/license",
-          "value": "PRC-001"
-        }
-      ]
-    }
-  ]
-}
 ```
 
 ---
@@ -546,5 +518,3 @@ wah4pc-gateway/
 ## License
 
 This project is proprietary software. All rights reserved.
-
-

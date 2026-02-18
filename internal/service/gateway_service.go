@@ -189,14 +189,17 @@ func (s *GatewayService) InitiateQuery(req QueryRequest) (*model.Transaction, er
 // Flow: Sender -> Gateway -> Target
 func (s *GatewayService) InitiatePush(req PushRequest) (*model.Transaction, error) {
 	// Validate required fields
-	if req.SenderID == "" || req.TargetID == "" {
-		return nil, ErrInvalidRequest
+	if strings.TrimSpace(req.SenderID) == "" {
+		return nil, fmt.Errorf("%w: senderId is required", ErrInvalidRequest)
 	}
-	if req.ResourceType == "" {
-		req.ResourceType = "Patient" // Default
+	if strings.TrimSpace(req.TargetID) == "" {
+		return nil, fmt.Errorf("%w: targetId is required", ErrInvalidRequest)
+	}
+	if strings.TrimSpace(req.ResourceType) == "" {
+		return nil, fmt.Errorf("%w: resourceType is required", ErrInvalidRequest)
 	}
 	if len(req.Resource) == 0 {
-		return nil, ErrInvalidRequest
+		return nil, fmt.Errorf("%w: resource is required", ErrInvalidRequest)
 	}
 
 	// Validate both providers exist
@@ -576,12 +579,12 @@ func (s *GatewayService) logRelayToRequester(url string, requestBody []byte, tra
 	}
 
 	entry := logger.DetailedLogEntry{
-		ID:        uuid.New().String(),
-		Timestamp: time.Now().UTC(),
-		Duration:  0,
-		Method:    http.MethodPost,
-		URL:       url,
-		Host:      "",
+		ID:         uuid.New().String(),
+		Timestamp:  time.Now().UTC(),
+		Duration:   0,
+		Method:     http.MethodPost,
+		URL:        url,
+		Host:       "",
 		RemoteAddr: "gateway-internal",
 		UserAgent:  "wah4pc-gateway/relay",
 		RequestHeaders: http.Header{

@@ -1,0 +1,49 @@
+Medication Push Request Body (Gateway -> Clinic)
+Endpoint: POST /api/v1/fhir/push/Medication
+
+JSON body:
+{
+  "senderId": "26ee95b0-9f39-40ed-ba80-969fecb8b6d3",
+  "targetId": "433b81f2-413d-4efa-9ce5-123198bfec6f",
+  "reason": "Medication update from WAH4P",
+  "notes": "Please reconcile in local formulary",
+  "resource": {
+    "resourceType": "Medication",
+    "id": "med-20260218-0001",
+    "identifier": [
+      {
+        "system": "http://wah4p.echosphere.cfd/medication-id",
+        "value": "MED-0001"
+      }
+    ],
+    "status": "active",
+    "code": {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "372687004",
+          "display": "Amoxicillin 500 mg capsule"
+        }
+      ],
+      "text": "Amoxicillin 500 mg capsule"
+    },
+    "form": {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "385055001",
+          "display": "Capsule"
+        }
+      ]
+    },
+    "manufacturer": {
+      "display": "Generic Pharma Inc."
+    }
+  }
+}
+
+cURL sample:
+curl -X POST "http://localhost:8080/api/v1/fhir/push/Medication" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: <your-api-key>" \
+  -d @medication-push.json

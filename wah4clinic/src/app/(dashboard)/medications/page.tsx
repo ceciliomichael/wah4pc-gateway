@@ -7,17 +7,25 @@ import { LucidePlus, LucidePill, LucideCalendar } from "lucide-react";
 interface Medication {
 	id: string;
 	code: {
-		text: string;
+		text?: string;
+		coding?: Array<{
+			code?: string;
+			display?: string;
+		}>;
 	};
 	status: string;
 	form?: {
 		coding: Array<{
-			display: string;
+			code?: string;
+			display?: string;
 		}>;
 	};
+	identifier?: Array<{
+		value?: string;
+	}>;
 	batch?: {
-		lotNumber: string;
-		expirationDate: string;
+		lotNumber?: string;
+		expirationDate?: string;
 	};
 }
 
@@ -74,6 +82,23 @@ export default function MedicationsPage() {
 			"entered-in-error": "bg-red-100 text-red-800",
 		};
 		return colors[status] || "bg-stone-100 text-stone-800";
+	};
+
+	const getDrugDisplay = (medication: Medication) => {
+		return (
+			medication.code?.text ||
+			medication.code?.coding?.[0]?.display ||
+			medication.code?.coding?.[0]?.code ||
+			"N/A"
+		);
+	};
+
+	const getFormDisplay = (medication: Medication) => {
+		return medication.form?.coding?.[0]?.display || medication.form?.coding?.[0]?.code || "N/A";
+	};
+
+	const getBatchDisplay = (medication: Medication) => {
+		return medication.batch?.lotNumber || medication.identifier?.[0]?.value || "N/A";
 	};
 
 	return (
@@ -146,15 +171,15 @@ export default function MedicationsPage() {
 								<div className="space-y-2 mb-4">
 									<div className="text-sm">
 										<span className="text-stone-600 font-medium">Drug:</span>
-										<span className="text-stone-900 ml-2">{medication.code?.text || "N/A"}</span>
+										<span className="text-stone-900 ml-2">{getDrugDisplay(medication)}</span>
 									</div>
 									<div className="text-sm">
 										<span className="text-stone-600 font-medium">Form:</span>
-										<span className="text-stone-900 ml-2">{medication.form?.coding?.[0]?.display || "N/A"}</span>
+										<span className="text-stone-900 ml-2">{getFormDisplay(medication)}</span>
 									</div>
 									<div className="text-sm">
 										<span className="text-stone-600 font-medium">Batch:</span>
-										<span className="text-stone-900 ml-2">{medication.batch?.lotNumber || "N/A"}</span>
+										<span className="text-stone-900 ml-2">{getBatchDisplay(medication)}</span>
 									</div>
 									{medication.batch?.expirationDate && (
 										<div className="flex items-center gap-2 text-sm">
@@ -197,14 +222,14 @@ export default function MedicationsPage() {
 												</span>
 											</td>
 											<td className="px-6 py-4">
-												<p className="font-medium text-stone-900">{medication.code?.text || "N/A"}</p>
+												<p className="font-medium text-stone-900">{getDrugDisplay(medication)}</p>
 												<p className="text-sm text-stone-500">ID: {medication.id.slice(0, 8)}</p>
 											</td>
 											<td className="px-6 py-4">
-												<p className="text-stone-900">{medication.form?.coding?.[0]?.display || "N/A"}</p>
+												<p className="text-stone-900">{getFormDisplay(medication)}</p>
 											</td>
 											<td className="px-6 py-4">
-												<p className="text-stone-900">{medication.batch?.lotNumber || "N/A"}</p>
+												<p className="text-stone-900">{getBatchDisplay(medication)}</p>
 											</td>
 											<td className="px-6 py-4">
 												<div className="flex items-center gap-2 text-stone-900">

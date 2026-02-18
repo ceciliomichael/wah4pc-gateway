@@ -53,7 +53,7 @@ For every pushed resource, include:
 
 Recommended minimum guidance by type:
 - `Patient`: include at least one `identifier`, plus `name` and demographics used by receiver matching.
-- `Appointment`: include `status`, schedule fields (`start`, `end`), and required `participant[].actor.identifier`.
+- `Appointment`: include `status` and at least one `participant` with `participant.status` plus either `participant.actor` or `participant.type`.
 - `Encounter`: include `status`, `class`, `subject`.
 - `Procedure`: include `status`, `code`, `subject`.
 - `Immunization`: include `status`, `vaccineCode`, `patient`, `occurrenceDateTime`.
@@ -81,12 +81,72 @@ Recommended minimum guidance by type:
 Note: The gateway validates envelope and schema, but domain completeness is integration-specific; send enough identifiers and context for the target to reconcile records safely.
 
 ## Appointment Extra Validation
-For `resourceType = Appointment`, each participant must use a logical identifier:
+For `resourceType = Appointment`, gateway enforces these FHIR-aligned checks before forwarding:
 
-- `participant[].actor.identifier.system` is required
-- `participant[].actor.identifier.value` is required
+- `resource.status` is required.
+- `resource.participant` must contain at least one entry.
+- Each `resource.participant[]` must include `status`.
+- Each `resource.participant[]` must include either `actor` or `type` (FHIR invariant `app-1`).
 
-If missing, the request is rejected with HTTP 400.
+If any of the above are missing, the request is rejected with HTTP 400.
+
+## Appointment Payload Schema (Gateway Push)
+Use this shape when sending `POST /api/v1/fhir/push/Appointment`:
+
+```json
+{
+  "senderId": "string (required, provider UUID)",
+  "targetId": "string (required, provider UUID)",
+  "reason": "string (optional)",
+  "notes": "string (optional)",
+  "resource": {
+    "resourceType": "Appointment (required)",
+    "id": "string (recommended)",
+    "status": "proposed | pending | booked | arrived | fulfilled | cancelled | noshow",
+    "start": "FHIR dateTime (recommended)",
+    "end": "FHIR dateTime (recommended)",
+    "appointmentType": {
+      "coding": [
+        {
+          "system": "string",
+          "code": "string",
+          "display": "string (recommended for UI)"
+        }
+      ]
+    },
+    "participant": [
+      {
+        "actor": {
+          "reference": "Patient/{id} | Practitioner/{id} | Location/{id} (optional)",
+          "display": "string (recommended)",
+          "identifier": {
+            "system": "string (optional)",
+            "value": "string (optional)"
+          }
+        },
+        "type": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/v3-ParticipationType",
+                "code": "PPRF",
+                "display": "primary performer"
+              }
+            ]
+          }
+        ],
+        "status": "accepted | declined | tentative | needs-action"
+      }
+    ]
+  }
+}
+```
+
+Notes:
+- `resource.resourceType` must match the URL path (`Appointment`).
+- Use real FHIR `Reference` in `participant.actor` (`reference` and/or `identifier` as needed by your system).
+- If `participant.actor` is omitted, provide `participant.type` to satisfy FHIR `app-1`.
+- For Wah4Clinic edit UX, include `actor.display` and `appointmentType.coding.display`.
 
 ## Minimum Valid Appointment Push
 ```json
@@ -97,9 +157,20 @@ If missing, the request is rejected with HTTP 400.
     "resourceType": "Appointment",
     "status": "proposed",
     "start": "2026-02-20T09:00:00Z",
+    "appointmentType": {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/v2-0276",
+          "code": "FOLLOWUP",
+          "display": "Follow-up"
+        }
+      ]
+    },
     "participant": [
       {
         "actor": {
+          "reference": "Patient/PAT-12345",
+          "display": "Juan Dela Cruz",
           "identifier": {
             "system": "https://sender.example/fhir/patient-id",
             "value": "PAT-12345"
@@ -137,6 +208,7 @@ If missing, the request is rejected with HTTP 400.
     "participant": [
       {
         "actor": {
+          "reference": "Patient/PAT-12345",
           "identifier": {
             "system": "https://sender.example/fhir/patient-id",
             "value": "PAT-12345"
@@ -147,12 +219,24 @@ If missing, the request is rejected with HTTP 400.
       },
       {
         "actor": {
+          "reference": "Practitioner/PRAC-56789",
           "identifier": {
             "system": "https://sender.example/fhir/practitioner-id",
             "value": "PRAC-56789"
           },
           "display": "Practitioner"
         },
+        "type": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/v3-ParticipationType",
+                "code": "PPRF",
+                "display": "primary performer"
+              }
+            ]
+          }
+        ],
         "status": "accepted"
       }
     ]
@@ -213,7 +297,7 @@ Gateway adds:
 - `X-Gateway-Auth: <target-provider-gateway-auth-key>` (when configured)
 
 ## Common Error Cases
-- `400 Bad Request`: missing `senderId`, `targetId`, `resource`, or Appointment participant identifier rules not met.
+- `400 Bad Request`: missing `senderId`, `targetId`, `resource`, URL/body `resourceType` mismatch, or Appointment FHIR invariant checks not met.
 - `401 Unauthorized`: missing/invalid API key.
 - `404 Not Found`: sender/target provider does not exist.
 - `422 Unprocessable Entity`: FHIR schema validation failed.

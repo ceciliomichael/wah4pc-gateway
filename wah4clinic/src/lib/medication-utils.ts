@@ -17,9 +17,9 @@ interface FHIRMedication {
 		coding: Array<{
 			system: string;
 			code: string;
-			display: string;
+			display?: string;
 		}>;
-		text: string;
+		text?: string;
 	};
 	status: string;
 	manufacturer?: {
@@ -29,7 +29,7 @@ interface FHIRMedication {
 		coding: Array<{
 			system: string;
 			code: string;
-			display: string;
+			display?: string;
 		}>;
 	};
 	amount?: {
@@ -68,19 +68,47 @@ const MEDICATION_FORM_MAP: Record<string, string> = {
 	OINT: "Ointment",
 };
 
+function normalizeDateForInput(value?: string): string {
+	if (!value) return "";
+	const trimmed = value.trim();
+	if (!trimmed) return "";
+	return trimmed.length >= 10 ? trimmed.slice(0, 10) : trimmed;
+}
+
+function getDrugCoding(medication: FHIRMedication) {
+	return medication.code?.coding?.[0];
+}
+
+function resolveDrugCode(medication: FHIRMedication): string {
+	const coding = getDrugCoding(medication);
+	return coding?.code || "";
+}
+
+function resolveDrugDisplay(medication: FHIRMedication): string {
+	const coding = getDrugCoding(medication);
+	return coding?.display || medication.code?.text || coding?.code || "";
+}
+
+function resolveFormCode(medication: FHIRMedication): string {
+	const coding = medication.form?.coding?.[0];
+	return coding?.code || "";
+}
+
+function resolveAmountUnit(medication: FHIRMedication): string {
+	return medication.amount?.numerator?.code || medication.amount?.numerator?.unit || "";
+}
+
 export function fhirToFormData(medication: FHIRMedication): MedicationFormData {
-	const drugCoding = medication.code?.coding?.[0];
-	
 	return {
-		drugCode: drugCoding?.code || "",
-		drugDisplay: drugCoding?.display || medication.code?.text || "",
+		drugCode: resolveDrugCode(medication),
+		drugDisplay: resolveDrugDisplay(medication),
 		status: medication.status || "",
 		manufacturer: medication.manufacturer?.display || "",
-		form: medication.form?.coding?.[0]?.code || "",
+		form: resolveFormCode(medication),
 		amountValue: medication.amount?.numerator?.value?.toString() || "",
-		amountUnit: medication.amount?.numerator?.unit || "",
+		amountUnit: resolveAmountUnit(medication),
 		batchNumber: medication.batch?.lotNumber || "",
-		expirationDate: medication.batch?.expirationDate || "",
+		expirationDate: normalizeDateForInput(medication.batch?.expirationDate),
 	};
 }
 

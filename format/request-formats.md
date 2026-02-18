@@ -34,6 +34,7 @@ Push notes:
 - `resource` must be a full FHIR JSON resource payload.
 - `resource.resourceType` must exactly match `{resourceType}` in the URL path.
 - Top-level body `resourceType` is not used in push requests.
+- For `Appointment` pushes, gateway enforces minimal FHIR invariants: `status`, at least one `participant`, each participant has `status`, and each participant includes either `actor` or `type`.
 - Gateway forwards to target provider webhook: `POST /fhir/receive-push` with envelope:
 ```json
 {

@@ -43,6 +43,36 @@ export function MedicationForm({
 	drugsLoading = false,
 	disabled = false,
 }: MedicationFormProps) {
+	const drugOptions = [...drugs];
+	if (
+		formData.drugCode &&
+		!drugOptions.some((option) => option.code === formData.drugCode)
+	) {
+		drugOptions.push({
+			code: formData.drugCode,
+			display: formData.drugDisplay || formData.drugCode,
+		});
+	}
+
+	const formOptions = [...FORM_OPTIONS];
+	if (formData.form && !formOptions.some((option) => option.code === formData.form)) {
+		formOptions.push({
+			code: formData.form,
+			display: formData.form,
+		});
+	}
+
+	const unitOptions = [...UNIT_OPTIONS];
+	if (
+		formData.amountUnit &&
+		!unitOptions.some((option) => option.code === formData.amountUnit)
+	) {
+		unitOptions.push({
+			code: formData.amountUnit,
+			display: formData.amountUnit,
+		});
+	}
+
 	return (
 		<div className="space-y-8">
 			<section>
@@ -55,16 +85,16 @@ export function MedicationForm({
 						value={formData.drugCode}
 						onChange={(val) => {
 							onFieldChange("drugCode", val);
-							const selectedDrug = drugs.find((d) => d.code === val);
+							const selectedDrug = drugOptions.find((d) => d.code === val);
 							if (selectedDrug) {
 								onFieldChange("drugDisplay", selectedDrug.display);
 							}
 						}}
-						options={drugs}
+						options={drugOptions}
 						loading={drugsLoading}
 						required
 						disabled={disabled}
-						placeholder={drugsLoading ? "Loading drugs..." : drugs.length === 0 ? "No drugs available" : "Select a drug product"}
+						placeholder={drugsLoading ? "Loading drugs..." : drugOptions.length === 0 ? "No drugs available" : "Select a drug product"}
 					/>
 					<FormSelect
 						label="Status"
@@ -93,7 +123,7 @@ export function MedicationForm({
 						label="Form"
 						value={formData.form}
 						onChange={(val) => onFieldChange("form", val)}
-						options={FORM_OPTIONS}
+						options={formOptions}
 						disabled={disabled}
 						placeholder="Select dosage form"
 					/>
@@ -117,7 +147,7 @@ export function MedicationForm({
 						label="Amount Unit"
 						value={formData.amountUnit}
 						onChange={(val) => onFieldChange("amountUnit", val)}
-						options={UNIT_OPTIONS}
+						options={unitOptions}
 						disabled={disabled}
 						placeholder="Select unit"
 					/>

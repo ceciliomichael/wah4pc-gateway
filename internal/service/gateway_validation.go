@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 )
 
 // validatePushData performs specific business rule validation for pushed resources.
@@ -18,24 +19,17 @@ func (s *GatewayService) validatePushData(resourceType string, resource json.Raw
 	}
 }
 
-// validateAppointment enforces that Appointment participants use logical identifiers.
+// validateAppointment enforces a minimal set of real FHIR Appointment invariants
+// to keep push payloads predictable for downstream systems.
 func (s *GatewayService) validateAppointment(resource json.RawMessage) error {
-	// Define minimal structure needed for validation
-	type identifier struct {
-		System string `json:"system"`
-		Value  string `json:"value"`
-	}
-
-	type actor struct {
-		Reference  string      `json:"reference"`
-		Identifier *identifier `json:"identifier"`
-	}
-
 	type participant struct {
-		Actor actor `json:"actor"`
+		Type   []json.RawMessage `json:"type"`
+		Actor  *json.RawMessage  `json:"actor"`
+		Status string            `json:"status"`
 	}
 
 	type appointment struct {
+		Status      string        `json:"status"`
 		Participant []participant `json:"participant"`
 	}
 
@@ -44,19 +38,22 @@ func (s *GatewayService) validateAppointment(resource json.RawMessage) error {
 		return fmt.Errorf("failed to parse appointment resource: %w", err)
 	}
 
+	if strings.TrimSpace(appt.Status) == "" {
+		return errors.New("appointment.status is required")
+	}
+
 	if len(appt.Participant) == 0 {
 		return errors.New("appointment must have at least one participant")
 	}
 
 	for i, p := range appt.Participant {
-		// Check if identifier is present
-		if p.Actor.Identifier == nil {
-			return fmt.Errorf("participant[%d].actor must use a logical identifier (not just a direct reference)", i)
+		// FHIR app-1 invariant: either participant.type or participant.actor SHALL be present.
+		if len(p.Type) == 0 && p.Actor == nil {
+			return fmt.Errorf("participant[%d] must include either actor or type", i)
 		}
 
-		// Check if identifier has required fields
-		if p.Actor.Identifier.System == "" || p.Actor.Identifier.Value == "" {
-			return fmt.Errorf("participant[%d].actor.identifier must have both system and value", i)
+		if strings.TrimSpace(p.Status) == "" {
+			return fmt.Errorf("participant[%d].status is required", i)
 		}
 	}
 

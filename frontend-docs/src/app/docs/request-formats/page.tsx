@@ -4,12 +4,26 @@ import { DocsHeader } from "@/components/ui/docs-header";
 import { MarkdownRenderer } from "@/components/ai/markdown-renderer";
 
 function readRequestFormatsMarkdown(): string {
-  const markdownPath = path.resolve(process.cwd(), "..", "format", "request-formats.md");
-  try {
-    return fs.readFileSync(markdownPath, "utf-8");
-  } catch (_error) {
-    return "Failed to load format/request-formats.md";
+  const cwd = process.cwd();
+  const pathCandidates = [
+    path.resolve(cwd, "public", "format", "request-formats.md"),
+    path.resolve(cwd, "format", "request-formats.md"),
+    path.resolve(cwd, "..", "format", "request-formats.md"),
+    path.resolve(cwd, "frontend-docs", "public", "format", "request-formats.md"),
+    path.resolve(cwd, "frontend-docs", "format", "request-formats.md"),
+  ];
+
+  for (const markdownPath of pathCandidates) {
+    try {
+      if (fs.existsSync(markdownPath)) {
+        return fs.readFileSync(markdownPath, "utf-8");
+      }
+    } catch (_error) {
+      // Continue to the next candidate path.
+    }
   }
+
+  return "Failed to load format/request-formats.md";
 }
 
 export default function RequestFormatsPage() {

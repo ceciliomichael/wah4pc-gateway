@@ -46,6 +46,12 @@ export const PAGE_REGISTRY: Record<string, PageInfo> = {
     description:
       "Format-first guide for requester payloads and provider callback payloads, including links to 25-resource request formats and Core 8 return examples",
   },
+  "push-formats": {
+    id: "push-formats",
+    title: "Push Formats",
+    description:
+      "Complete sender push requirements for POST /api/v1/fhir/push/{resourceType}, including Appointment validation rules and end-to-end payload examples",
+  },
   api: {
     id: "api",
     title: "API Reference",

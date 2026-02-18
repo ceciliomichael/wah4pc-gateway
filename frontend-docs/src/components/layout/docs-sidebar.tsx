@@ -14,6 +14,7 @@ import {
   GitMerge,
   Database,
   Files,
+  Send,
 } from "lucide-react";
 
 interface NavItem {
@@ -100,6 +101,15 @@ const navigationItems: NavItem[] = [
     description: "Payload formats first",
     items: [
       { title: "Overview", href: "/docs/request-formats#overview" },
+    ],
+  },
+  {
+    title: "Push Formats",
+    href: "/docs/push-formats",
+    icon: <Send className="h-4 w-4" />,
+    description: "Sender push requirements",
+    items: [
+      { title: "Overview", href: "/docs/push-formats#overview" },
     ],
   },
   {

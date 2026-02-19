@@ -185,7 +185,105 @@ class IntegrationServiceClass {
       },
     );
 
-    DataService.create(resourceWithOrigin);
+    this.storePushResourceWithDedup(normalizedResourceType, resourceWithOrigin);
+  }
+
+  private storePushResourceWithDedup(
+    resourceType: string,
+    resource: StoredResource,
+  ): void {
+    if (resourceType !== "Appointment") {
+      DataService.create(resource);
+      return;
+    }
+
+    const existingAppointment = this.findExistingAppointment(resource);
+    if (!existingAppointment?.id) {
+      DataService.create(resource);
+      return;
+    }
+
+    const updatedAppointment: StoredResource = {
+      ...existingAppointment,
+      ...resource,
+      resourceType: "Appointment",
+      id: existingAppointment.id,
+    };
+
+    const updated = DataService.update(updatedAppointment);
+    if (!updated) {
+      DataService.create(resource);
+    }
+  }
+
+  private findExistingAppointment(
+    incomingAppointment: StoredResource,
+  ): StoredResource | null {
+    const incomingId = this.readString(incomingAppointment.id);
+    if (incomingId) {
+      const existingById = DataService.findById<StoredResource>(
+        "Appointment",
+        incomingId,
+      );
+      if (existingById) {
+        return existingById;
+      }
+    }
+
+    const incomingIdentifierKeys = this.readIdentifierKeys(
+      incomingAppointment.identifier,
+    );
+    if (incomingIdentifierKeys.length === 0) {
+      return null;
+    }
+
+    const appointments = DataService.findAll<StoredResource>("Appointment");
+    return (
+      appointments.find((appointment) =>
+        this.hasAnyMatchingIdentifier(
+          this.readIdentifierKeys(appointment.identifier),
+          incomingIdentifierKeys,
+        ),
+      ) || null
+    );
+  }
+
+  private readIdentifierKeys(value: JsonValue | undefined): Identifier[] {
+    if (!Array.isArray(value)) {
+      return [];
+    }
+
+    const identifiers: Identifier[] = [];
+    for (const item of value) {
+      if (!this.isJsonObject(item)) {
+        continue;
+      }
+
+      const system = this.readString(item.system);
+      const identifierValue = this.readString(item.value);
+      if (!system || !identifierValue) {
+        continue;
+      }
+
+      identifiers.push({
+        system,
+        value: identifierValue,
+      });
+    }
+
+    return identifiers;
+  }
+
+  private hasAnyMatchingIdentifier(
+    existingIdentifiers: Identifier[],
+    incomingIdentifiers: Identifier[],
+  ): boolean {
+    return existingIdentifiers.some((existing) =>
+      incomingIdentifiers.some(
+        (incoming) =>
+          existing.system === incoming.system && existing.value === incoming.value,
+      ),
+    );
   }
 
   private attachPushOriginMetadata(

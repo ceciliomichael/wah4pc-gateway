@@ -125,6 +125,7 @@ export async function POST(request: NextRequest) {
     // Store the received data and route it to resource-specific JSON file
     await IntegrationService.storeReceivedPushData(
       normalizedPayload.transactionId,
+      normalizedPayload.senderId,
       normalizedPayload.resourceType,
       normalizedPayload.resource,
     );

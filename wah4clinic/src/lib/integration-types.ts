@@ -47,6 +47,32 @@ export interface ReceivePushPayload {
 	notes?: string;
 }
 
+export type ResourceOriginMetadata = JsonObject & {
+	source: "gateway-push";
+	senderId: string;
+	transactionId: string;
+	receivedAt: string;
+	resourceType: string;
+};
+
+export type LocalIntegrationMetadata = JsonObject & {
+	origin?: ResourceOriginMetadata;
+};
+
+export type SourceTrackedResource = JsonObject & {
+	resourceType: string;
+	id?: string;
+	_integration?: LocalIntegrationMetadata;
+};
+
+export interface GatewayPushRequest {
+	senderId: string;
+	targetId: string;
+	resource: JsonValue;
+	reason?: string;
+	notes?: string;
+}
+
 // Direct push shape received from sender-facing gateway endpoint payloads.
 export interface DirectPushPayload {
 	senderId: string;

@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { SourceTrackedResource } from "@/lib/integration-types";
+import { syncUpdatedAppointmentToOrigin } from "@/lib/server/appointment-origin-sync";
 import { DataService } from "@/lib/server/data-service";
 
-interface AppointmentResource {
-	resourceType: string;
+type AppointmentResource = SourceTrackedResource & {
 	id: string;
 	meta: {
 		profile: string[];
 		lastUpdated: string;
 	};
-	[key: string]: unknown;
-}
+};
 
 export async function GET(
 	request: NextRequest,
@@ -63,7 +63,14 @@ export async function PUT(
 			);
 		}
 
-		return NextResponse.json(updatedAppointment);
+		const integrationSync = await syncUpdatedAppointmentToOrigin(
+			updatedAppointment,
+		);
+
+		return NextResponse.json({
+			...updatedAppointment,
+			integrationSync,
+		});
 	} catch (error) {
 		console.error("Appointment API Error:", error);
 		return NextResponse.json(

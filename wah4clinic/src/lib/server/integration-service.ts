@@ -5,7 +5,9 @@ import {
   type Identifier,
   type JsonObject,
   type JsonValue,
+  type ResourceOriginMetadata,
   type ReceivedData,
+  type SourceTrackedResource,
   TransactionStatus,
   type TransactionType,
   type WebhookTransaction,
@@ -26,7 +28,7 @@ interface FHIRPersonResource {
   identifier?: Identifier[];
 }
 
-type StoredResource = JsonObject & { resourceType: string };
+type StoredResource = SourceTrackedResource;
 
 class IntegrationServiceClass {
   private readonly dataPath: string;
@@ -157,6 +159,7 @@ class IntegrationServiceClass {
 
   async storeReceivedPushData(
     transactionId: string,
+    senderId: string,
     resourceType: string,
     resource: JsonValue,
   ): Promise<void> {
@@ -171,8 +174,33 @@ class IntegrationServiceClass {
       normalizedResourceType,
       resource,
     );
+    const resourceWithOrigin = this.attachPushOriginMetadata(
+      resourceForStore,
+      {
+        source: "gateway-push",
+        senderId,
+        transactionId,
+        resourceType: normalizedResourceType,
+        receivedAt: new Date().toISOString(),
+      },
+    );
 
-    DataService.create(resourceForStore);
+    DataService.create(resourceWithOrigin);
+  }
+
+  private attachPushOriginMetadata(
+    resource: StoredResource,
+    origin: ResourceOriginMetadata,
+  ): StoredResource {
+    return {
+      ...resource,
+      _integration: {
+        ...(this.isJsonObject(resource._integration)
+          ? resource._integration
+          : {}),
+        origin,
+      },
+    };
   }
 
   private normalizePushResourceForStore(

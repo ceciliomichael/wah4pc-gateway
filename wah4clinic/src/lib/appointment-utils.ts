@@ -251,6 +251,54 @@ export function fhirToFormData(
 	};
 }
 
+export function resolveAppointmentDisplayNames(
+	appointment: FHIRAppointment,
+	lookupData?: ParticipantLookupData,
+): { patientName: string; practitionerName: string } {
+	const patientParticipant = appointment.participant?.find(
+		(participant) => isPatientParticipant(participant),
+	);
+	const practitionerParticipant = appointment.participant?.find(
+		(participant) => isPractitionerParticipant(participant),
+	);
+
+	let patientName = patientParticipant?.actor?.display || "N/A";
+	let practitionerName = practitionerParticipant?.actor?.display || "N/A";
+
+	if (lookupData) {
+		const patientId = resolveParticipantId(
+			patientParticipant?.actor,
+			lookupData.patients,
+			getPatientDisplay,
+		);
+		if (patientId) {
+			const patient = lookupData.patients.find((item) => item.id === patientId);
+			if (patient) {
+				patientName = getPatientDisplay(patient) || patientName;
+			}
+		}
+
+		const practitionerId = resolveParticipantId(
+			practitionerParticipant?.actor,
+			lookupData.practitioners,
+			getPractitionerDisplay,
+		);
+		if (practitionerId) {
+			const practitioner = lookupData.practitioners.find(
+				(item) => item.id === practitionerId,
+			);
+			if (practitioner) {
+				practitionerName = getPractitionerDisplay(practitioner) || practitionerName;
+			}
+		}
+	}
+
+	return {
+		patientName,
+		practitionerName,
+	};
+}
+
 export function buildFHIRAppointment(
 	formData: AppointmentFormData,
 	patients: Patient[],

@@ -3,29 +3,17 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { LucidePlus, LucideCalendar, LucideClock } from "lucide-react";
+import {
+	type FHIRAppointment,
+	type Patient,
+	type Practitioner,
+	resolveAppointmentDisplayNames,
+} from "@/lib/appointment-utils";
 
-interface Appointment {
-	id: string;
-	status: string;
-	appointmentType?: {
-		coding: Array<{
-			code: string;
-			display: string;
-		}>;
-	};
-	description?: string;
-	start?: string;
-	end?: string;
-	participant: Array<{
-		actor: {
-			type: string;
-			display: string;
-		};
-	}>;
-}
+type Appointment = FHIRAppointment & { id: string };
 
 interface BundleEntry {
-	resource: Appointment;
+	resource: Appointment | Patient | Practitioner;
 }
 
 interface AppointmentsBundle {
@@ -35,6 +23,8 @@ interface AppointmentsBundle {
 
 export default function AppointmentsPage() {
 	const [appointments, setAppointments] = useState<Appointment[]>([]);
+	const [patients, setPatients] = useState<Patient[]>([]);
+	const [practitioners, setPractitioners] = useState<Practitioner[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
@@ -45,14 +35,37 @@ export default function AppointmentsPage() {
 	const fetchAppointments = async () => {
 		try {
 			setLoading(true);
-			const response = await fetch("/api/appointments");
+			const [appointmentsResponse, patientsResponse, practitionersResponse] =
+				await Promise.all([
+					fetch("/api/appointments"),
+					fetch("/api/patients"),
+					fetch("/api/practitioners"),
+				]);
 
-			if (!response.ok) {
+			if (
+				!appointmentsResponse.ok ||
+				!patientsResponse.ok ||
+				!practitionersResponse.ok
+			) {
 				throw new Error("Failed to fetch appointments");
 			}
 
-			const bundle: AppointmentsBundle = await response.json();
-			setAppointments(bundle.entry?.map((entry) => entry.resource) || []);
+			const appointmentsBundle: AppointmentsBundle =
+				await appointmentsResponse.json();
+			const patientsBundle: AppointmentsBundle = await patientsResponse.json();
+			const practitionersBundle: AppointmentsBundle =
+				await practitionersResponse.json();
+
+			setAppointments(
+				(appointmentsBundle.entry?.map((entry) => entry.resource) as Appointment[]) ||
+					[],
+			);
+			setPatients((patientsBundle.entry?.map((entry) => entry.resource) as Patient[]) || []);
+			setPractitioners(
+				(practitionersBundle.entry?.map(
+					(entry) => entry.resource,
+				) as Practitioner[]) || [],
+			);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "An error occurred");
 		} finally {
@@ -94,13 +107,17 @@ export default function AppointmentsPage() {
 	};
 
 	const getPatientName = (appointment: Appointment) => {
-		const patient = appointment.participant?.find((p) => p.actor?.type === "Patient");
-		return patient?.actor?.display || "N/A";
+		return resolveAppointmentDisplayNames(appointment, {
+			patients,
+			practitioners,
+		}).patientName;
 	};
 
 	const getPractitionerName = (appointment: Appointment) => {
-		const practitioner = appointment.participant?.find((p) => p.actor?.type === "Practitioner");
-		return practitioner?.actor?.display || "N/A";
+		return resolveAppointmentDisplayNames(appointment, {
+			patients,
+			practitioners,
+		}).practitionerName;
 	};
 
 	return (

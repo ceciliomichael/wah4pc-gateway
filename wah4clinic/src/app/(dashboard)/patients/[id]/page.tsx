@@ -138,9 +138,9 @@ export default function PatientDetailPage() {
 		return (
 			<div className="p-4 lg:p-8">
 				<div className="max-w-4xl mx-auto">
-					<div className="bg-red-50 border border-red-200 rounded-2xl p-8">
-						<h2 className="text-xl font-semibold text-red-900 mb-2">Error Loading Patient</h2>
-						<p className="text-red-700 mb-4">{error || "Patient not found"}</p>
+					<div className="bg-tertiary-50 border border-tertiary-200 rounded-2xl p-8">
+						<h2 className="text-xl font-semibold text-tertiary-900 mb-2">Error Loading Patient</h2>
+						<p className="text-tertiary-700 mb-4">{error || "Patient not found"}</p>
 						<button
 							onClick={() => router.push("/patients")}
 							className="px-6 h-12 rounded-xl bg-stone-900 text-white font-medium hover:bg-stone-800 transition-colors"

@@ -69,13 +69,13 @@ export default function ProceduresPage() {
 
 	const getStatusBadgeColor = (status: string) => {
 		const colors: Record<string, string> = {
-			preparation: "bg-blue-100 text-blue-800",
+			preparation: "bg-secondary-100 text-secondary-800",
 			"in-progress": "bg-amber-100 text-amber-800",
-			"not-done": "bg-red-100 text-red-800",
+			"not-done": "bg-tertiary-100 text-tertiary-800",
 			"on-hold": "bg-stone-100 text-stone-800",
-			stopped: "bg-red-100 text-red-800",
-			completed: "bg-green-100 text-green-800",
-			"entered-in-error": "bg-red-100 text-red-800",
+			stopped: "bg-tertiary-100 text-tertiary-800",
+			completed: "bg-secondary-100 text-secondary-800",
+			"entered-in-error": "bg-tertiary-100 text-tertiary-800",
 			unknown: "bg-stone-100 text-stone-800",
 		};
 		return colors[status] || "bg-stone-100 text-stone-800";
@@ -101,8 +101,8 @@ export default function ProceduresPage() {
 			</div>
 
 			{error && (
-				<div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-					<p className="text-red-800 text-sm">{error}</p>
+				<div className="bg-tertiary-50 border border-tertiary-200 rounded-xl p-4 mb-6">
+					<p className="text-tertiary-800 text-sm">{error}</p>
 				</div>
 			)}
 

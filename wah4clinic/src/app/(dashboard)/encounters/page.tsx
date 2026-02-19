@@ -86,11 +86,11 @@ export default function EncountersPage() {
 
 	const getStatusBadgeColor = (status: string) => {
 		const colors: Record<string, string> = {
-			planned: "bg-blue-100 text-blue-800",
-			arrived: "bg-purple-100 text-purple-800",
+			planned: "bg-secondary-100 text-secondary-800",
+			arrived: "bg-primary-100 text-primary-800",
 			"in-progress": "bg-amber-100 text-amber-800",
-			finished: "bg-green-100 text-green-800",
-			cancelled: "bg-red-100 text-red-800",
+			finished: "bg-secondary-100 text-secondary-800",
+			cancelled: "bg-tertiary-100 text-tertiary-800",
 		};
 		return colors[status] || "bg-stone-100 text-stone-800";
 	};
@@ -115,8 +115,8 @@ export default function EncountersPage() {
 			</div>
 
 			{error && (
-				<div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-					<p className="text-red-800 text-sm">{error}</p>
+				<div className="bg-tertiary-50 border border-tertiary-200 rounded-xl p-4 mb-6">
+					<p className="text-tertiary-800 text-sm">{error}</p>
 				</div>
 			)}
 

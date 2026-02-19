@@ -95,13 +95,13 @@ export default function AppointmentsPage() {
 
 	const getStatusBadgeColor = (status: string) => {
 		const colors: Record<string, string> = {
-			proposed: "bg-slate-100 text-slate-800",
-			pending: "bg-yellow-100 text-yellow-800",
-			booked: "bg-blue-100 text-blue-800",
-			arrived: "bg-purple-100 text-purple-800",
-			fulfilled: "bg-green-100 text-green-800",
-			cancelled: "bg-red-100 text-red-800",
-			noshow: "bg-orange-100 text-orange-800",
+			proposed: "bg-stone-100 text-stone-800",
+			pending: "bg-tertiary-100 text-tertiary-800",
+			booked: "bg-secondary-100 text-secondary-800",
+			arrived: "bg-primary-100 text-primary-800",
+			fulfilled: "bg-secondary-100 text-secondary-800",
+			cancelled: "bg-tertiary-100 text-tertiary-800",
+			noshow: "bg-tertiary-100 text-tertiary-800",
 		};
 		return colors[status] || "bg-stone-100 text-stone-800";
 	};
@@ -140,8 +140,8 @@ export default function AppointmentsPage() {
 			</div>
 
 			{error && (
-				<div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-					<p className="text-red-800 text-sm">{error}</p>
+				<div className="bg-tertiary-50 border border-tertiary-200 rounded-xl p-4 mb-6">
+					<p className="text-tertiary-800 text-sm">{error}</p>
 				</div>
 			)}
 
@@ -176,8 +176,8 @@ export default function AppointmentsPage() {
 							<div key={appointment.id} className="bg-white rounded-2xl border border-stone-100 shadow-sm p-4 hover:shadow-md transition-shadow">
 								<div className="flex items-start justify-between mb-3">
 									<div className="flex items-center gap-2">
-										<div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-											<LucideCalendar className="w-5 h-5 text-blue-600" />
+										<div className="w-10 h-10 bg-secondary-100 rounded-full flex items-center justify-center flex-shrink-0">
+											<LucideCalendar className="w-5 h-5 text-secondary-600" />
 										</div>
 										<div>
 											<span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeColor(appointment.status)}`}>

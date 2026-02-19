@@ -130,9 +130,9 @@ export default function PractitionerDetailPage() {
 		return (
 			<div className="p-4 lg:p-8">
 				<div className="max-w-4xl mx-auto">
-					<div className="bg-red-50 border border-red-200 rounded-2xl p-8">
-						<h2 className="text-xl font-semibold text-red-900 mb-2">Error Loading Practitioner</h2>
-						<p className="text-red-700 mb-4">{error || "Practitioner not found"}</p>
+					<div className="bg-tertiary-50 border border-tertiary-200 rounded-2xl p-8">
+						<h2 className="text-xl font-semibold text-tertiary-900 mb-2">Error Loading Practitioner</h2>
+						<p className="text-tertiary-700 mb-4">{error || "Practitioner not found"}</p>
 						<button
 							onClick={() => router.push("/practitioners")}
 							className="px-6 h-12 rounded-xl bg-stone-900 text-white font-medium hover:bg-stone-800 transition-colors"
@@ -193,8 +193,8 @@ export default function PractitionerDetailPage() {
 				<div className="bg-white rounded-2xl border border-stone-100 shadow-sm p-4 sm:p-8">
 					<div className="mb-8">
 						<div className="flex items-center gap-4 mb-4">
-							<div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-								<span className="text-xl sm:text-2xl font-semibold text-blue-600">
+							<div className="w-12 h-12 sm:w-16 sm:h-16 bg-secondary-100 rounded-full flex items-center justify-center flex-shrink-0">
+								<span className="text-xl sm:text-2xl font-semibold text-secondary-600">
 									{formData.firstName.charAt(0)}
 									{formData.lastName.charAt(0)}
 								</span>

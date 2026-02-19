@@ -49,7 +49,7 @@ export function FormInput({
 					focus:border-stone-400 focus:outline-none transition-colors
 					disabled:bg-stone-100 disabled:text-stone-500 disabled:cursor-not-allowed"
 			/>
-			{error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+			{error && <p className="mt-1 text-sm text-tertiary-600">{error}</p>}
 		</div>
 	);
 }

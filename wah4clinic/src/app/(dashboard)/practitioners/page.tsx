@@ -130,8 +130,8 @@ export default function PractitionersPage() {
 			</div>
 
 			{error && (
-				<div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-					<p className="text-red-800 text-sm">{error}</p>
+				<div className="bg-tertiary-50 border border-tertiary-200 rounded-xl p-4 mb-6">
+					<p className="text-tertiary-800 text-sm">{error}</p>
 				</div>
 			)}
 
@@ -165,8 +165,8 @@ export default function PractitionersPage() {
 						{practitioners.map((practitioner) => (
 							<div key={practitioner.id} className="bg-white rounded-2xl border border-stone-100 shadow-sm p-4 hover:shadow-md transition-shadow">
 								<div className="flex items-start gap-3 mb-3">
-									<div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-										<LucideUserCog className="w-6 h-6 text-blue-600" />
+									<div className="w-12 h-12 bg-secondary-100 rounded-full flex items-center justify-center flex-shrink-0">
+										<LucideUserCog className="w-6 h-6 text-secondary-600" />
 									</div>
 									<div className="flex-1 min-w-0">
 										<h3 className="font-semibold text-stone-900 mb-1">{getPractitionerName(practitioner)}</h3>
@@ -217,8 +217,8 @@ export default function PractitionersPage() {
 										<tr key={practitioner.id} className="hover:bg-stone-50 transition-colors">
 											<td className="px-6 py-4">
 												<div className="flex items-center gap-3">
-													<div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-														<LucideUserCog className="w-5 h-5 text-blue-600" />
+													<div className="w-10 h-10 bg-secondary-100 rounded-full flex items-center justify-center flex-shrink-0">
+														<LucideUserCog className="w-5 h-5 text-secondary-600" />
 													</div>
 													<div>
 														<p className="font-medium text-stone-900">{getPractitionerName(practitioner)}</p>

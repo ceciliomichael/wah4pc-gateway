@@ -69,7 +69,7 @@ export default function IntegrationPage() {
 								<p className="text-sm font-medium text-stone-600">Total Requests</p>
 								<p className="text-3xl font-bold text-stone-900">{transactions.length}</p>
 							</div>
-							<div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+							<div className="w-12 h-12 bg-secondary-100 rounded-full flex items-center justify-center">
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
 									width="24"
@@ -80,7 +80,7 @@ export default function IntegrationPage() {
 									strokeWidth="2"
 									strokeLinecap="round"
 									strokeLinejoin="round"
-									className="lucide lucide-network w-6 h-6 text-blue-600"
+									className="lucide lucide-network w-6 h-6 text-secondary-600"
 								>
 									<rect width="16" height="16" x="4" y="4" rx="2" />
 									<circle cx="12" cy="12" r="3" />
@@ -99,7 +99,7 @@ export default function IntegrationPage() {
 									{transactions.filter((tx) => tx.status === "SUCCESS").length}
 								</p>
 							</div>
-							<div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+							<div className="w-12 h-12 bg-secondary-100 rounded-full flex items-center justify-center">
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
 									width="24"
@@ -110,7 +110,7 @@ export default function IntegrationPage() {
 									strokeWidth="2"
 									strokeLinecap="round"
 									strokeLinejoin="round"
-									className="lucide lucide-check-circle-2 w-6 h-6 text-green-600"
+									className="lucide lucide-check-circle-2 w-6 h-6 text-secondary-600"
 								>
 									<circle cx="12" cy="12" r="10" />
 									<path d="m9 12 2 2 4-4" />
@@ -127,7 +127,7 @@ export default function IntegrationPage() {
 									{transactions.filter((tx) => tx.status === "REJECTED").length}
 								</p>
 							</div>
-							<div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+							<div className="w-12 h-12 bg-tertiary-100 rounded-full flex items-center justify-center">
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
 									width="24"
@@ -138,7 +138,7 @@ export default function IntegrationPage() {
 									strokeWidth="2"
 									strokeLinecap="round"
 									strokeLinejoin="round"
-									className="lucide lucide-x-circle w-6 h-6 text-red-600"
+									className="lucide lucide-x-circle w-6 h-6 text-tertiary-600"
 								>
 									<circle cx="12" cy="12" r="10" />
 									<path d="m15 9-6 6" />
@@ -156,7 +156,7 @@ export default function IntegrationPage() {
 									{transactions.filter((tx) => tx.status === "ERROR").length}
 								</p>
 							</div>
-							<div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+							<div className="w-12 h-12 bg-tertiary-100 rounded-full flex items-center justify-center">
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
 									width="24"
@@ -167,7 +167,7 @@ export default function IntegrationPage() {
 									strokeWidth="2"
 									strokeLinecap="round"
 									strokeLinejoin="round"
-									className="lucide lucide-alert-triangle w-6 h-6 text-yellow-600"
+									className="lucide lucide-alert-triangle w-6 h-6 text-tertiary-600"
 								>
 									<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
 									<path d="M12 9v4" />

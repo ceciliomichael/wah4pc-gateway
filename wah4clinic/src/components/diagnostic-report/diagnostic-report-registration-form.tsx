@@ -203,8 +203,8 @@ export function DiagnosticReportRegistrationForm({
 	return (
 		<div className="space-y-6">
 			{error && (
-				<div className="bg-red-50 border border-red-200 rounded-xl p-4">
-					<p className="text-red-800 text-sm">{error}</p>
+				<div className="bg-tertiary-50 border border-tertiary-200 rounded-xl p-4">
+					<p className="text-tertiary-800 text-sm">{error}</p>
 				</div>
 			)}
 
@@ -228,7 +228,7 @@ export function DiagnosticReportRegistrationForm({
 					<button
 						onClick={handleDelete}
 						disabled={submitting}
-						className="flex items-center justify-center gap-2 px-6 h-12 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+						className="flex items-center justify-center gap-2 px-6 h-12 rounded-xl bg-tertiary-600 text-white font-medium hover:bg-tertiary-700 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
 					>
 						Delete
 					</button>

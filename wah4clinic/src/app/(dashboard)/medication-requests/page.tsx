@@ -88,8 +88,8 @@ export default function MedicationRequestsPage() {
 			</div>
 
 			{error && (
-				<div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-					<p className="text-red-800 text-sm">{error}</p>
+				<div className="bg-tertiary-50 border border-tertiary-200 rounded-xl p-4 mb-6">
+					<p className="text-tertiary-800 text-sm">{error}</p>
 				</div>
 			)}
 

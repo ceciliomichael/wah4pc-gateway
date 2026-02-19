@@ -26,15 +26,15 @@ export function TransactionList({ transactions }: TransactionListProps) {
 	const getStatusColor = (status: TransactionStatus) => {
 		switch (status) {
 			case TransactionStatus.SUCCESS:
-				return "bg-green-100 text-green-800";
+				return "bg-secondary-100 text-secondary-800";
 			case TransactionStatus.REJECTED:
-				return "bg-red-100 text-red-800";
+				return "bg-tertiary-100 text-tertiary-800";
 			case TransactionStatus.ERROR:
-				return "bg-yellow-100 text-yellow-800";
+				return "bg-tertiary-100 text-tertiary-800";
 			case TransactionStatus.PENDING:
-				return "bg-blue-100 text-blue-800";
+				return "bg-secondary-100 text-secondary-800";
 			default:
-				return "bg-gray-100 text-gray-800";
+				return "bg-stone-100 text-stone-800";
 		}
 	};
 
@@ -76,7 +76,7 @@ export function TransactionList({ transactions }: TransactionListProps) {
 													.join(", ")}
 											</p>
 										)}
-										{tx.error && <p className="text-red-600">Error: {tx.error}</p>}
+										{tx.error && <p className="text-tertiary-600">Error: {tx.error}</p>}
 									</div>
 								</div>
 								<div className="text-right text-xs text-stone-500">

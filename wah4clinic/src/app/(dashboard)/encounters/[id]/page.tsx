@@ -171,7 +171,7 @@ export default function EncounterDetailPage({ params }: PageProps) {
 					<button
 						type="button"
 						onClick={() => setShowDeleteDialog(true)}
-						className="px-6 h-12 rounded-xl border border-red-200 bg-white text-red-600 font-medium hover:bg-red-50 transition-colors"
+						className="px-6 h-12 rounded-xl border border-tertiary-200 bg-white text-tertiary-600 font-medium hover:bg-tertiary-50 transition-colors"
 					>
 						Delete
 					</button>
@@ -212,7 +212,7 @@ export default function EncounterDetailPage({ params }: PageProps) {
 							<button
 								onClick={handleDelete}
 								disabled={isDeleting}
-								className="flex-1 h-12 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 transition-colors disabled:opacity-50"
+								className="flex-1 h-12 rounded-xl bg-tertiary-600 text-white font-medium hover:bg-tertiary-700 transition-colors disabled:opacity-50"
 							>
 								{isDeleting ? "Deleting..." : "Delete"}
 							</button>

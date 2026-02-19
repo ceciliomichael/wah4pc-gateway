@@ -184,9 +184,9 @@ export default function ProcedureDetailPage() {
 		return (
 			<div className="p-4 lg:p-8">
 				<div className="max-w-4xl mx-auto">
-					<div className="bg-red-50 border border-red-200 rounded-2xl p-8">
-						<h2 className="text-xl font-semibold text-red-900 mb-2">Error Loading Procedure</h2>
-						<p className="text-red-700 mb-4">{error || "Procedure not found"}</p>
+					<div className="bg-tertiary-50 border border-tertiary-200 rounded-2xl p-8">
+						<h2 className="text-xl font-semibold text-tertiary-900 mb-2">Error Loading Procedure</h2>
+						<p className="text-tertiary-700 mb-4">{error || "Procedure not found"}</p>
 						<button
 							onClick={() => router.push("/procedures")}
 							className="px-6 h-12 rounded-xl bg-stone-900 text-white font-medium hover:bg-stone-800 transition-colors"
@@ -218,7 +218,7 @@ export default function ProcedureDetailPage() {
 								<button
 									onClick={handleDelete}
 									disabled={deleting}
-									className="flex items-center justify-center gap-2 px-4 sm:px-6 h-12 rounded-xl bg-red-100 text-red-900 font-medium hover:bg-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+									className="flex items-center justify-center gap-2 px-4 sm:px-6 h-12 rounded-xl bg-tertiary-100 text-tertiary-900 font-medium hover:bg-tertiary-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 								>
 									<LucideTrash2 className="w-5 h-5" />
 									<span>{deleting ? "Deleting..." : "Delete"}</span>

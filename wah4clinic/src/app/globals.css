@@ -3,6 +3,11 @@
 @tailwind utilities;
 
 @layer base {
+  html,
+  body {
+    @apply bg-stone-50 text-stone-900;
+  }
+
   /* Thin scrollbar style */
   ::-webkit-scrollbar {
     width: 6px;

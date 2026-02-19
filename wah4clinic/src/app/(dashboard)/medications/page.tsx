@@ -77,9 +77,9 @@ export default function MedicationsPage() {
 
 	const getStatusBadgeColor = (status: string) => {
 		const colors: Record<string, string> = {
-			active: "bg-green-100 text-green-800",
+			active: "bg-secondary-100 text-secondary-800",
 			inactive: "bg-stone-100 text-stone-800",
-			"entered-in-error": "bg-red-100 text-red-800",
+			"entered-in-error": "bg-tertiary-100 text-tertiary-800",
 		};
 		return colors[status] || "bg-stone-100 text-stone-800";
 	};
@@ -121,8 +121,8 @@ export default function MedicationsPage() {
 			</div>
 
 			{error && (
-				<div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-					<p className="text-red-800 text-sm">{error}</p>
+				<div className="bg-tertiary-50 border border-tertiary-200 rounded-xl p-4 mb-6">
+					<p className="text-tertiary-800 text-sm">{error}</p>
 				</div>
 			)}
 

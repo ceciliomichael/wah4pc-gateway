@@ -21,6 +21,51 @@ interface DashboardData {
 	recentActivity: RecentActivity[];
 }
 
+interface DashboardStatsApiShape {
+	patients?: {
+		total?: number;
+	};
+	appointments?: {
+		today?: number;
+	};
+	practitioners?: {
+		total?: number;
+	};
+	encounters?: {
+		recent?: number;
+	};
+	recentActivity?: RecentActivity[];
+}
+
+interface DashboardLegacyApiShape {
+	stats?: DashboardStats;
+	recentActivity?: RecentActivity[];
+}
+
+function normalizeDashboardData(payload: DashboardStatsApiShape & DashboardLegacyApiShape): DashboardData {
+	if (payload.stats) {
+		return {
+			stats: {
+				totalPatients: payload.stats.totalPatients ?? 0,
+				appointmentsToday: payload.stats.appointmentsToday ?? 0,
+				activePractitioners: payload.stats.activePractitioners ?? 0,
+				recentEncounters: payload.stats.recentEncounters ?? 0,
+			},
+			recentActivity: payload.recentActivity ?? [],
+		};
+	}
+
+	return {
+		stats: {
+			totalPatients: payload.patients?.total ?? 0,
+			appointmentsToday: payload.appointments?.today ?? 0,
+			activePractitioners: payload.practitioners?.total ?? 0,
+			recentEncounters: payload.encounters?.recent ?? 0,
+		},
+		recentActivity: payload.recentActivity ?? [],
+	};
+}
+
 async function getDashboardData(): Promise<DashboardData> {
 	try {
 		const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
@@ -32,7 +77,8 @@ async function getDashboardData(): Promise<DashboardData> {
 			throw new Error("Failed to fetch dashboard data");
 		}
 		
-		return response.json();
+		const payload = (await response.json()) as DashboardStatsApiShape & DashboardLegacyApiShape;
+		return normalizeDashboardData(payload);
 	} catch (error) {
 		console.error("Dashboard data fetch error:", error);
 		return {
@@ -65,8 +111,8 @@ function StatCard({ title, value, icon: Icon, href }: StatCardProps) {
 					<p className="text-sm text-stone-600 mb-1">{title}</p>
 					<p className="text-3xl font-semibold text-stone-900">{value}</p>
 				</div>
-				<div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
-					<Icon className="w-6 h-6 text-amber-600" />
+				<div className="w-12 h-12 bg-secondary-100 rounded-xl flex items-center justify-center">
+					<Icon className="w-6 h-6 text-secondary-700" />
 				</div>
 			</div>
 		</Link>
@@ -84,10 +130,10 @@ function QuickAction({ title, description, icon: Icon, href }: QuickActionProps)
 	return (
 		<Link
 			href={href}
-			className="flex items-start gap-4 p-4 rounded-xl bg-white border border-stone-100 hover:bg-stone-50 transition-colors"
+			className="flex items-start gap-4 p-4 rounded-xl bg-white border border-stone-100 hover:bg-primary-50 transition-colors"
 		>
-			<div className="w-10 h-10 bg-stone-100 rounded-lg flex items-center justify-center flex-shrink-0">
-				<Icon className="w-5 h-5 text-stone-700" />
+			<div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
+				<Icon className="w-5 h-5 text-primary-700" />
 			</div>
 			<div>
 				<h3 className="font-medium text-stone-900 mb-1">{title}</h3>
@@ -136,10 +182,10 @@ function ActivityItem({ activity }: ActivityItemProps) {
 	return (
 		<Link
 			href={activity.href}
-			className="flex items-center gap-3 p-3 rounded-lg hover:bg-stone-50 transition-colors"
+			className="flex items-center gap-3 p-3 rounded-lg hover:bg-primary-50 transition-colors"
 		>
-			<div className="w-8 h-8 bg-stone-100 rounded-lg flex items-center justify-center flex-shrink-0">
-				<LucideActivity className="w-4 h-4 text-stone-600" />
+			<div className="w-8 h-8 bg-tertiary-100 rounded-lg flex items-center justify-center flex-shrink-0">
+				<LucideActivity className="w-4 h-4 text-tertiary-700" />
 			</div>
 			<div className="flex-1 min-w-0">
 				<p className="text-sm font-medium text-stone-900 truncate">

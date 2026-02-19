@@ -43,15 +43,28 @@ export async function PUT(
 	try {
 		const { id } = await params;
 		const body = await request.json();
+		const existingAppointment = DataService.findById<AppointmentResource>(
+			"Appointment",
+			id,
+		);
+
+		if (!existingAppointment) {
+			return NextResponse.json(
+				{ error: "Appointment not found" },
+				{ status: 404 }
+			);
+		}
 
 		const appointmentResource: AppointmentResource = {
+			...existingAppointment,
+			...body,
 			resourceType: "Appointment",
 			id,
 			meta: {
 				profile: ["http://hl7.org/fhir/StructureDefinition/Appointment"],
 				lastUpdated: new Date().toISOString(),
 			},
-			...body,
+			_integration: existingAppointment._integration,
 		};
 
 		const updatedAppointment = DataService.update(appointmentResource);

@@ -41,6 +41,7 @@ export interface ReceiveResultsPayload {
 export interface ReceivePushPayload {
 	transactionId: string;
 	senderId: string;
+	targetId?: string;
 	resourceType: string;
 	resource: JsonValue;
 	reason?: string;
@@ -50,6 +51,7 @@ export interface ReceivePushPayload {
 export type ResourceOriginMetadata = JsonObject & {
 	source: "gateway-push";
 	senderId: string;
+	targetId?: string;
 	transactionId: string;
 	receivedAt: string;
 	resourceType: string;

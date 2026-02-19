@@ -39,6 +39,19 @@ function readOriginSenderId(appointment: SourceTrackedResource): string {
 	return readString(origin.senderId);
 }
 
+function readOriginTargetId(appointment: SourceTrackedResource): string {
+	if (!isJsonObject(appointment._integration)) {
+		return "";
+	}
+
+	const origin = appointment._integration.origin;
+	if (!isJsonObject(origin)) {
+		return "";
+	}
+
+	return readString(origin.targetId);
+}
+
 function stripLocalIntegrationMetadata(
 	appointment: SourceTrackedResource,
 ): JsonObject {
@@ -50,7 +63,7 @@ function stripLocalIntegrationMetadata(
 export async function syncUpdatedAppointmentToOrigin(
 	appointment: SourceTrackedResource,
 ): Promise<AppointmentOriginSyncResult> {
-	const targetId = readOriginSenderId(appointment);
+	const targetId = readOriginTargetId(appointment) || readOriginSenderId(appointment);
 	if (!targetId) {
 		return {
 			attempted: false,

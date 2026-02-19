@@ -160,6 +160,7 @@ class IntegrationServiceClass {
   async storeReceivedPushData(
     transactionId: string,
     senderId: string,
+    targetId: string | undefined,
     resourceType: string,
     resource: JsonValue,
   ): Promise<void> {
@@ -174,15 +175,20 @@ class IntegrationServiceClass {
       normalizedResourceType,
       resource,
     );
+    const origin: ResourceOriginMetadata = {
+      source: "gateway-push",
+      senderId,
+      transactionId,
+      resourceType: normalizedResourceType,
+      receivedAt: new Date().toISOString(),
+    };
+    if (targetId) {
+      origin.targetId = targetId;
+    }
+
     const resourceWithOrigin = this.attachPushOriginMetadata(
       resourceForStore,
-      {
-        source: "gateway-push",
-        senderId,
-        transactionId,
-        resourceType: normalizedResourceType,
-        receivedAt: new Date().toISOString(),
-      },
+      origin,
     );
 
     this.storePushResourceWithDedup(normalizedResourceType, resourceWithOrigin);

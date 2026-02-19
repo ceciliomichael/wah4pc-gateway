@@ -77,6 +77,7 @@ function normalizeIncomingPushPayload(
   return {
     transactionId: crypto.randomUUID(),
     senderId: payload.senderId,
+    targetId: payload.targetId,
     resourceType,
     resource: payload.resource,
     reason: payload.reason,
@@ -126,6 +127,7 @@ export async function POST(request: NextRequest) {
     await IntegrationService.storeReceivedPushData(
       normalizedPayload.transactionId,
       normalizedPayload.senderId,
+      normalizedPayload.targetId,
       normalizedPayload.resourceType,
       normalizedPayload.resource,
     );
